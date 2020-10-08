@@ -1,0 +1,61 @@
+chinese_name_processor.py
+
+current version: 1.4.18
+
+--------------------------------------------------------------------------------
+
+1.4 | 2019-07-18
+    - 创建 Lexicon 类以替代 find_resource_dir()
+    - 重构词典资源
+    - 将 Lexicon 的资源字典规范为三级结构
+    - PinyinCutter 支持在初始化时选择前缀树或后缀树
+    - PinyinProcessor 支持在初始化时选择前缀树或后缀树
+    - 简化 PinyinProcessor 的 pinyin_patterns 的键名
+    - 优化 PinyinProcessor#is_chinese() 的判断方法
+    - 优化 HanzProcessor#chinese_name_to_pinyin() 方法
+    - 优化 HanzProcessor#polyphonic_conversion() 方法
+    - 优化 PinyinProcessor#is_chinese() 的判断方法
+    - HanzProcessor#polyphonic_conversion() 新增 "长" 多音字的处理方式
+    - 修正韦氏拼音表和拼音对照表的元数据
+    - 扩展非标准韦氏拼音表
+    - PinyinCutter 优化 merge_segs() 方法
+    - 优化 PinyinProcessor#is_chinese() 的判断方法
+    - PinyinProcessor 移除 get_pinyin_pattern() 方法
+    - 强化 PinyinProcessor#is_chinese() 的判断方法
+    - PinyinProcessor 的 pinyin patterns 增加 default 键
+    - PinyinProcessor 优化 is_pinyin() 方法
+    - 调整变量命名及作用域
+1.3 | 2019-04-25
+    - 将 PinyinProcessor 中的 cut_pinyin() 独立为 PinyinCutter
+    - PinyinCutter 使用翻转字符串匹配
+    - PinyinCutter 使用反向前缀树驱动
+    - 优化 PinyinCutter 的 merge_segs() 方法
+    - 修复 generate_trie_dict.py 在转换后缀树时的错误
+    - 简化 merge_segs() 的合并方法
+    - HanzProcessor 修复 is_chinese() 的检查错误
+    - 优化 "中国姓氏_单姓.txt" 词典
+    - PinyinCutter 取消 want_return 参数
+1.2
+    - chinese_name_checker 更名为 chinese_name_processor
+    - 创建 PinyinProcessor
+    - 简化 find_resource_dir() 方案
+    - 将 pinyin_patterns() 整合到 PinyinProcessor
+    - ChineseNameDetector 更名为 HanzProcessor
+    - PinyinProcessor 增加 get_pinyin_pattern() 方法
+    - PinyinProcessor 增加 is_pinyin() 方法
+    - PinyinProcessor 将 wade_mode 移到 __init__() 参数
+    - HanzProcessor 将 simple_detect() 重命名为 is_chinese()
+    - HanzProcessor 增加 chinese_name_to_pinyin()
+    - HanzProcessor.chinese_name_to_pinyin() 增加返回类型的选项
+    - 修复 PinyinProcessor.is_pinyin() 的检测错误
+    - 韦氏拼音表增加大量新词
+1.1
+    - 创建 ChineseNameDetector 类
+    - 创建 find_resource_dir() 方法
+    - 更新姓氏词典
+    - 将 pinyin_patterns() 中的列表独立为旁加载文件
+1.0
+    - 创建 chinese_name_checker.py
+    - 创建 name_patterns()
+    - 创建 ChineseNameChecker 类
+    - 将 name_patterns() 重命名为 pinyin_patterns()

@@ -1,0 +1,25 @@
+data_convert.py
+
+current version: 3.0.0
+
+--------------------------------------------------------------------------------
+
+3.0 | 2020-08-09
+    - html_table_converter.py 合并到本模块
+    - data_converter.py 重命名为 data_convert.py
+2.0 | 2019-10-14
+    - 将 pdf_handler.py 合并到本模块
+    - 基于 pdfminer.six 重构 pdf_2_txt() 方法
+    - pdf_2_txt() 解决图片导出时的重名覆盖问题
+    - pdf_2_txt() 显示 pageno 进度以及图片导出数量
+    - json_2_excel() 增加 list 类型的 reader 支持
+    - json_2_excel() 增加 purify_values 参数
+    - pdf_2_excel() 当 ofile 参数为空, 则使用 ifile 的文件名
+1.2 | 2019-09-04
+    - 将原 excel_2_json() 方法重命名为 excel_2_json_kv()
+    - 创建标准的 excel_2_json() 方法
+1.1 | 2019-08-20
+    - 创建 excel_2_json() 方法
+    - ifile, ofile 参数设置缺省值
+1.0 |
+    - 创建 json_2_excel() 方法

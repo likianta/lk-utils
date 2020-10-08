@@ -1,0 +1,17 @@
+time_utils.py
+
+current version: 1.1.3
+
+--------------------------------------------------------------------------------
+
+1.1 | 2019-04-26
+    - 创建 get_file_modified_time()
+    - 创建 get_file_created_time()
+    - 优化获取文件时间的输出格式
+    - generate_timestamp() 重命名为 simple_timestamp()
+    - 简化获取文件时间方法
+1.0
+    - 创建 time_utils.py
+    - 创建 seconds_to_hms()
+    - 创建 generate_timestamp()
+    - 使用 n 来表示时分秒中的 "分"

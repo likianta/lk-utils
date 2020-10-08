@@ -1,0 +1,74 @@
+lk_config.py
+
+current version: 1.6.9
+
+--------------------------------------------------------------------------------
+
+1.6 | 2019-06-26
+    - 创建 aestus_estus 类变量以保留原始的 root
+    - 修复 init_path() 在收集路径时无法区分末尾是否带空格的同一目录路径的问题
+    - 加强 validate_path() 在 sorting_file_and_dir 为 False 时的验证
+    - init_path.path_handler() 增加支持 "../" 的相对路径表示
+    - 调整 cfg 初始化逻辑, 允许在无配置文件时不生成且不报错
+    - LKConfig 从 Tree 继承关系中移除
+    - 允许在找不到配置文件时仍可以创建 LKConfig
+    - 优化 LKConfig 初始化行为
+    - init_path() 增加关键字 "{PRJ}"
+    - init_path() 移除键 "enable_lkdb", 改为默认支持
+    - validate_path() 增强安全性
+1.5 | 2019-04-26
+    - 完成快照存取功能
+    - 重写 get() 方法, 使用更严格的 get 方式
+    - validate_path() 增加 ask 参数
+    - validate_path() 使用 file_sniffer 模块的 isdir() 方法替代自带的判断方法
+    - validate_path() 增加 sorting_file_and_dir 参数
+    - init_path() 增加对 "{LKDB}" 环境变量的支持
+    - init_path() 使用 "enable_lkdb" 键控制是否启用 LKDB
+    - 修复 get() 方法在 len(data) == 1 时未触发报错机制的问题
+    - 新增 get() 方法对 len(data) == 0 的处理
+1.4 | 2019-04-21
+    - 开放 init_path() 的递推深度限制
+    - 在 save() 保存到 json 文件时, 自动将 "init_path" 设为 False
+1.3 |
+    - init_path() 跳过 "_comment" 键
+    - 使用绝对路径替代相对路径 (引入 find_project_dir, 取消 quiver)
+    - 优化 init_path() 和 validate_path()
+    - 修复 save() 方法
+    - 优化 init_path() 的子字典的替换逻辑
+    - validate_path() 当用户输入为空时, 也默认为 "y"
+    - init_path() 使用 "init_path" 作为定位实现懒加载
+    - 取消 __init__ 的 config_path 参数的缺省配置, 改为在 cfg 实例化时传入
+    - 调整 config.json 的路径查找顺序 (创建 find_config_file())
+    - 补充 save() 方法的 clear 参数的功能
+    - 加强约束 config 的书写格式
+    - 简化 init_path() 的处理逻辑
+1.2 |
+    - 增加类变量 lookup
+    - lk_config 变量重命名为 cfg
+    - 完善注释文档
+    - 升级 set_data(), 使支持多级键值对
+    - 移除 locate_project_path()
+    - 优化 init_path()
+    - 移除 init_path() 和 validate_path() 中的 is_key_field 参数
+    - 修改打印信息的层级
+    - set_data() 增加 len(data) == 1 的判断
+    - 将 get_value() 和 set_data() 重命名为 get() 和 set()
+    - 优化 init_path() 和 validate_path() 逻辑
+    - 创建 generate_config_shot()
+    - 引入 Tree, 并使 LKLogger 继承于 Tree
+    - 删除类变量 lock
+    - init_path() 增加对列表和字典的动态路径的计算支持
+1.1 |
+    - 将 LKLauncher 中的 init_path() 和 validate_path() 移植到 LKConfig
+    - 将 init_path() 和 validate_path() 独立为函数
+    - init_path() 增加 is_key_field 参数
+    - validate_path() 增加 is_key_field 参数
+    - get_value() 参数改为形参
+    - 优化 init_path() 代码
+    - 增加 locate_project_path() 函数
+    - 增加 close() 函数
+    - missing_path_collector 不计入重复的路径
+1.0 |
+    - 创建 LKConfig
+    - 创建 find_config_path(), 使用递归查找默认配置文件
+    - 将 set_kv() 改为 set_data

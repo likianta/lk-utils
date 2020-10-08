@@ -1,0 +1,28 @@
+tree_and_trie.py
+
+current version: 1.1.5
+
+--------------------------------------------------------------------------------
+
+1.1 | 2019-04-25
+    - 模块重命名 tree.py -> tree_and_trie.py
+    - 简化 Tree 的 set() 方法
+    - Trie 将 add() 方法拆分为 add() 和 add_list()
+    - 优化 Tree 的 set() 方法
+    - 优化代码 (`self.end in node.keys()` -> `self.end in node`)
+    - 将 save() 中的 clear 参数独立为 clear() 方法并从 save() 参数中移除
+1.0 | 
+    - 创建 Tree
+    - 创建 Trie
+    - Trie 的 find() 函数增加 allow_partial 参数
+    - Trie 的 findall() 函数增加 allow_partial 参数
+    - Trie 修复部分逻辑错误
+    - Trie add() 增加列表类型的参数支持
+    - Trie 创建 find_node() 方法
+    - Tree 创建 load() 方法
+    - Tree 创建 get() 方法
+    - 更新 Tree 的 set() 方法
+    - 将 load() 拆分成 load() 和 update()
+    - 抽取 Tree 和 Trie 的公共方法为 Prototype
+    - 创建 ElementTrie
+    - Trie find_node() 方法增加 allow_partial 参数

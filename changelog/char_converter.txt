@@ -1,0 +1,29 @@
+char_converter.py
+
+current version: 2.1.4
+
+--------------------------------------------------------------------------------
+
+2.1 | 2019-06-27
+    - 模块重命名 char_translator.py -> char_converter.py
+    - CharTranslator 重命名为 DiacriticalMarksCleaner
+    - SymbolTranslator 重命名为 PunctuationConverter
+    - DiacriticalMarksCleaner 将自定义字典参数转移到 __init__()
+    - DiacriticalMarksCleaner#cedilla_dict 增加变音符号 Đ
+    - PunctuationConverter 优化代码
+    - 调整变量命名及作用域
+2.0 | 2019-05-30
+    - 重构 CharTranslator, 使用新的去变音符方法
+    - CharTranslator 类变量 strict_mode 默认改为 False
+    - 删除 collect_uniq_char() 函数
+    - 创建 discover() 函数
+    - 简化 custom_dict 的定义
+1.3 |
+    - 增加 SymbolTranslator 类
+    - 增加一些变音符号
+    - 创建 collect_uniq_char() 函数
+    - 增加一些变音符号
+1.2 |
+    - 重构为 class 对象 (CharTranslator)
+    - 精简代码
+    - 将变音字母和符号拆分成两个字典
