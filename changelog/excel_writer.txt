@@ -13,6 +13,8 @@ current version: 2.3
     - [更新] 保存时的打印信息降级为 tag D
     - [移除] ExcelWriter.add_new_sheet() 移除 prompt 参数
     - [优化] excel_writer.py 自己使用 typing hints
+    - [修复] ExcelWriter.merging_logical() 逻辑错误
+    - [新增] ExcelWriter.save() 保存失败时提醒用户重试
 2.2 | 2020-08-02
     - 增加 with 语法支持
     - 优化合并单元格方法, 创建 "visual" "logical" 两种方式

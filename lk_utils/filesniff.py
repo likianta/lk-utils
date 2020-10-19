@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-09-10
-@Version : 1.8.4
+@Updated : 2020-10-08
+@Version : 1.8.6
 @Desc    : Get filepath in elegant way.
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -203,7 +203,7 @@ def lkdb(*subpath):
     
     NOTE: you should preset Windows environment path:
         Key: LKDB
-        Value (e.g.): D:\database
+        Value (e.g.): D:\\database
     Only works in Pycharm & Windows system.
     
     Tricks:
@@ -276,27 +276,31 @@ def _find_paths(adir: str, path_type: str, fmt: str,
                 paths.extend((f'{root}/{d}' for d in dirnames))
         out = zip(paths, names)
     
-    # suffix
-    if suffix:
-        out = filter(lambda x: x[1].endswith(suffix), out)
+    _not_empty = bool(names)
+    #   True: not empty; False: empty (no paths found)
     
-    # custom_filter
-    if custom_filter:
-        out = filter(custom_filter, out)
+    if _not_empty:
+        # suffix
+        if suffix:
+            out = filter(lambda x: x[1].endswith(suffix), out)
+        
+        # custom_filter
+        if custom_filter:
+            out = filter(custom_filter, out)
     
     # fmt
     if fmt in ('filepath', 'dirpath', 'path'):
-        return [fp for fp, fn in out]
+        return [fp for (fp, fn) in out]
     elif fmt in ('filename', 'dirname', 'name'):
-        return [fn for fp, fn in out]
+        return [fn for (fp, fn) in out]
     elif fmt == 'zip':
         return out
     elif fmt == 'dict':
         return dict(out)
     elif fmt in ('dlist', 'list'):
-        return zip(*out)
+        return zip(*out) if _not_empty else (None, None)
     else:
-        raise ValueError('Unknown fmt', fmt)
+        raise ValueError('Unknown format', fmt)
 
 
 def find_files(adir, fmt='filepath', suffix=''):
@@ -324,7 +328,8 @@ def find_subdirs(adir, fmt='dirpath', suffix='',
     """
     
     def _filter(x):
-        return not bool(x[0].startswith(('.', '__')))
+        return not bool(x[1].startswith(('.', '__')))
+        #   x[1] indicates to 'filename'
     
     return _find_paths(
         adir, 'dir', fmt, suffix, False,
@@ -339,7 +344,8 @@ def findall_subdirs(adir, fmt='dirpath', suffix='',
     """
     
     def _filter(x):
-        return not bool(x[0].startswith(('.', '__')))
+        return not bool(x[1].startswith(('.', '__')))
+        #   x[1] indicates to 'filename'
     
     return _find_paths(
         adir, 'dir', fmt, suffix, True,

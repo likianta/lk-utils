@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : excel_writer.py
 @Created : 2018-00-00
-@Updated : 2020-09-10
-@Version : 2.3.4
+@Updated : 2020-10-19
+@Version : 2.3.6
 @Desc    : ExcelWriter is a post-packing implementation based on XlsxWriter.
 """
 from typing import *
@@ -93,7 +93,15 @@ class ExcelWriter:
             'valign': 'vcenter',
             # 'text_wrap': False,  # auto line wrap (default False)
         })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
-    
+
+    def add_new_sheet(self, sheet_name=''):
+        self.sheetx += 1
+        self.rowx = -1
+        # create sheet name
+        if not sheet_name:
+            sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
+        self.sheet = self.book.add_worksheet(sheet_name)
+
     def __enter__(self):
         """ Return self to use with `with` statement.
         Use case: `with ExcelWriter(filepath) as writer: pass`.
@@ -107,10 +115,20 @@ class ExcelWriter:
         self.__h = 'parent'  # reset
     
     def save(self):
+        from xlsxwriter.exceptions import FileCreateError
+        try:
+            self.book.close()
+        except FileCreateError:
+            if input('Permission denied on saving excel: \n'
+                     '\t\t{}\n'
+                     '\tPlease close the opened file manually and input "Y" to '
+                     'retry to save.'.format(self.filepath)).lower() == 'y':
+                self.book.close()
+            else:
+                raise FileCreateError
         from .lk_logger import lk
         lk.logt('[ExcelWriter][D1139]', f'Excel saved to "{self.filepath}"',
                 h=self.__h)
-        self.book.close()
     
     close = save
     
@@ -244,23 +262,19 @@ class ExcelWriter:
                     cell, cell_format=fmt or self._merge_format
                 )
     
-    def merging_logical(self, point: Tuple[int, int], span_x: int, span_y: int,
+    def merging_logical(self, p: Tuple[int, int], q: Tuple[int, int],
                         value: _CellValue, fmt=None):
         """ Merge cells in "logical" mode.
-        TODO: Check legality of merging range (find if conflicts on overlapped
-            cells.)
+        
+        NOTE:
+            1. 本方法不检查传入的单元格范围是否有交叠或冲突
+            2. 注意 p 和 q 的坐标是 (rowx, colx), 也就是先定义第几行, 再定义第几
+               列
         """
+        if p == q:  # 如果要合并的单元格范围实际上只有一格, 则不要合并. 否则
+            #   xlsxwriter 会发出 "合并无效" 的警告.
+            return
         self.sheet.merge_range(
-            point[0], point[1], point[0] + span_x, point[1] + span_y,
+            p[0], p[1], q[0], q[1],
             value, cell_format=fmt or self._merge_format
         )
-    
-    # --------------------------------------------------------------------------
-    
-    def add_new_sheet(self, sheet_name=''):
-        self.sheetx += 1
-        self.rowx = -1
-        # create sheet name
-        if not sheet_name:
-            sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
-        self.sheet = self.book.add_worksheet(sheet_name)
