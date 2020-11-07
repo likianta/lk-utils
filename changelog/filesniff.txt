@@ -13,6 +13,7 @@ current version: 1.8
     - [修复] get_dirname() 对 './' 和 '../' 的错误处理
     - [修复] find_subdirs(), findall_subdirs() 的过滤器错误
     - [修复] _find_paths() 无结果时 `fmt='dlist'` 产生的报错
+    - [新增] get_dir()
 1.7 | 2020-08-22
     - 创建 class FSPath
 1.6 | 2020-08-02

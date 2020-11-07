@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-10-08
-@Version : 1.8.6
+@Updated : 2020-11-07
+@Version : 1.8.7
 @Desc    : Get filepath in elegant way.
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -103,9 +103,19 @@ def prettify_file(filepath: str) -> str:
 # ------------------------------------------------------------------------------
 # Path Getters
 
+def get_dir(path: str) -> str:
+    """ Input a filepath, return the directory.
+    *We don't check the path exists or not.*
+    """
+    if isdir(path):
+        return path
+    else:
+        return path.rsplit('/', 1)[0]
+
+
 def get_dirname(path: str) -> str:
     """ Input a dirpath or filepath, return the dirname.
-    *We don't check the dirpath exists or not.*
+    *We don't check the path exists or not.*
     """
     if os.path.exists(path):
         return os.path.dirname(path)
@@ -328,8 +338,8 @@ def find_subdirs(adir, fmt='dirpath', suffix='',
     """
     
     def _filter(x):
+        # x: (path, name)
         return not bool(x[1].startswith(('.', '__')))
-        #   x[1] indicates to 'filename'
     
     return _find_paths(
         adir, 'dir', fmt, suffix, False,
@@ -344,8 +354,8 @@ def findall_subdirs(adir, fmt='dirpath', suffix='',
     """
     
     def _filter(x):
+        # x: (path, name)
         return not bool(x[1].startswith(('.', '__')))
-        #   x[1] indicates to 'filename'
     
     return _find_paths(
         adir, 'dir', fmt, suffix, True,
