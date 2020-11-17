@@ -2,25 +2,16 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : excel_writer.py
 @Created : 2018-00-00
-@Updated : 2020-10-19
-@Version : 2.3.6
+@Updated : 2020-11-17
+@Version : 2.3.10
 @Desc    : ExcelWriter is a post-packing implementation based on XlsxWriter.
 """
-from typing import *
 from warnings import filterwarnings
 
-from xlsxwriter.format import Format as ExlFormat
+from ._typing import ExcelWriterHint as Hint
 
 # shield Python 3.8 SyntaxWarning from XlsxWriter.
 filterwarnings('ignore', category=SyntaxWarning)
-
-# typing hints
-_CellFormat = ExlFormat
-_CellValue = Union[str, bool, int, float, None,]
-_ColValues = _RowValues = Iterable
-
-_ColsValues = List[_ColValues]
-_RowsValues = List[_RowValues]
 
 
 class ExcelWriter:
@@ -32,15 +23,17 @@ class ExcelWriter:
     Palette: `xlsxwriter.format.Format._get_color`
     """
     __h: str
+    
     _is_constant_memory: bool
-    _merge_format: ...
-    book: ...
+    _merge_format: Hint.CellFormat
+    
+    book: Hint.WorkBook
     filepath: str
     rowx: int  # auto increasing row index, see self.writeln, self.writelnx.
-    sheet: ...
+    sheet: Hint.WorkSheet
     sheetx: int
     
-    def __init__(self, filepath: str, sheet_name: Union[str, None] = '',
+    def __init__(self, filepath: str, sheet_name: Hint.SheetName = '',
                  **options):
         """
         :param filepath: a filepath ends with '.xlsx' ('.xls' is not supported).
@@ -55,7 +48,7 @@ class ExcelWriter:
         #   `self.__exit__` and `self.save`.
         self._is_constant_memory = options.get('constant_memory', False)
         self.sheetx = 0
-        self.rowx = -1
+        self.rowx = 0
         
         if not filepath.endswith('.xlsx'):
             raise ValueError('ExcelWriter only supports .xlsx file type.',
@@ -93,15 +86,15 @@ class ExcelWriter:
             'valign': 'vcenter',
             # 'text_wrap': False,  # auto line wrap (default False)
         })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
-
+    
     def add_new_sheet(self, sheet_name=''):
         self.sheetx += 1
-        self.rowx = -1
+        self.rowx = 0
         # create sheet name
         if not sheet_name:
             sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
         self.sheet = self.book.add_worksheet(sheet_name)
-
+    
     def __enter__(self):
         """ Return self to use with `with` statement.
         Use case: `with ExcelWriter(filepath) as writer: pass`.
@@ -118,23 +111,27 @@ class ExcelWriter:
         from xlsxwriter.exceptions import FileCreateError
         try:
             self.book.close()
-        except FileCreateError:
-            if input('Permission denied on saving excel: \n'
-                     '\t\t{}\n'
+        except FileCreateError as e:
+            if input('\tPermission denied while saving excel: \n'
+                     '\t\t"{}:0"\n'
                      '\tPlease close the opened file manually and input "Y" to '
                      'retry to save.'.format(self.filepath)).lower() == 'y':
                 self.book.close()
             else:
-                raise FileCreateError
+                raise e
         from .lk_logger import lk
-        lk.logt('[ExcelWriter][D1139]', f'Excel saved to "{self.filepath}"',
-                h=self.__h)
+        lk.logt(
+            '[ExcelWriter][D1139]',
+            f'\n\tExcel saved to "{self.filepath}:0"',
+            h=self.__h
+        )
     
     close = save
     
     # --------------------------------------------------------------------------
     
-    def write(self, rowx: int, colx: int, data: _CellValue, fmt=None):
+    def write(self, rowx: Hint.Rowx, colx: Hint.Colx, data: Hint.CellValue,
+              fmt=None):
         """ Write data to cell.
         
         :param rowx: int. Row number, starts from 0.
@@ -144,29 +141,29 @@ class ExcelWriter:
         """
         self.sheet.write(rowx, colx, data, fmt)
     
-    def writeln(self, *row: _RowValues, auto_index=False, purify_values=False,
-                fmt=None):
+    def writeln(self, *row: Hint.CellValue, auto_index=False,
+                purify_values=False, fmt=None):
         """ Write line of data to cells (with auto line breaks). """
         if purify_values:
             row = self.purify_values(row)
-        self.rowx += 1
         if self.rowx == 0 or not auto_index:
             self.sheet.write_row(self.rowx, 0, row, fmt)
         else:
             self.sheet.write(self.rowx, 0, self.rowx, fmt)
             self.sheet.write_row(self.rowx, 1, row, fmt)
+        self.rowx += 1
     
-    def writelnx(self, *row: _RowValues, fmt=None):
+    def writelnx(self, *row: Hint.CellValue, fmt=None):
         self.writeln(*row, auto_index=True, fmt=fmt)
     
-    def writerow(self, rowx: int, data: _CellValue, offset=0,
+    def writerow(self, rowx: int, data: Hint.CellValue, offset=0,
                  purify_values=False, fmt=None):
         """ Write row of data to cells. """
         if purify_values:
             data = self.purify_values(data)
         self.sheet.write_row(rowx, offset, data, fmt)
     
-    def writecol(self, colx: int, data: _CellValue, offset=0,
+    def writecol(self, colx: int, data: Hint.CellValue, offset=0,
                  purify_values=False, fmt=None):
         """ Write column of data to cells. """
         if purify_values:
@@ -174,7 +171,7 @@ class ExcelWriter:
         self.sheet.write_column(offset, colx, data, fmt)
     
     @staticmethod
-    def purify_values(row: _RowValues):
+    def purify_values(row: Hint.RowValues):
         """
         Callers: self.writeln, self.writerow, self.writecol.
         """
@@ -188,7 +185,7 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def merging_visual(self, rows: _RowValues, to_left='<', to_up='^',
+    def merging_visual(self, rows: Hint.RowValues, to_left='<', to_up='^',
                        offset=(0, 0), fmt=None):
         """ Merge cells in "visual" mode.
         Symbol: '<' means merged to the left cell, '^' merged to the upper cell.
@@ -211,8 +208,9 @@ class ExcelWriter:
             raise Exception('Cannot effect when constant memory enabled.')
         
         length = tuple(len(x) for x in rows)
-        assert min(length) == max(length), 'Please make sure the length of ' \
-                                           'each row is equivalent.'
+        assert (x := min(length)) == max(length), \
+            'Please make sure the length of each row is equivalent.'
+        self.rowx = x
         del length
         
         # encoding mask
@@ -253,7 +251,8 @@ class ExcelWriter:
             cell = uid_2_cell[uid]
             if len(pos) == 1:
                 self.sheet.write(
-                    offset[0] + pos[0][0], offset[1] + pos[0][1], cell
+                    offset[0] + pos[0][0], offset[1] + pos[0][1], cell,
+                    fmt or self._merge_format
                 )
             else:
                 self.sheet.merge_range(
@@ -262,8 +261,8 @@ class ExcelWriter:
                     cell, cell_format=fmt or self._merge_format
                 )
     
-    def merging_logical(self, p: Tuple[int, int], q: Tuple[int, int],
-                        value: _CellValue, fmt=None):
+    def merging_logical(self, p: Hint.Cell, q: Hint.Cell,
+                        value: Hint.CellValue, fmt=None):
         """ Merge cells in "logical" mode.
         
         NOTE:

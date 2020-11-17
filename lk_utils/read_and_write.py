@@ -2,18 +2,19 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2020-09-06
-@Version : 1.7.2
+@Updated : 2020-11-17
+@Version : 1.7.3
 @Desc    :
 """
 from json import dumps as jdumps, loads as jloads
-from os.path import exists, getsize
+from os.path import exists
+
+from ._typing import ReadAndWriteHint as Hint
 
 
 def get_num_of_lines(filepath: str) -> int:
     """ 该方法可以高效地读取文件一共有多少行, 支持大文件的读取.
-    python 统计文件行数 - CSDN博客 https://blog.csdn.net/qq_29422251/article
-        /details/77713741
+    REF: https://blog.csdn.net/qq_29422251/article/details/77713741
     """
     # noinspection PyUnusedLocal
     return len(["" for line in open(filepath, mode='r')])
@@ -26,6 +27,7 @@ def is_file_empty(filepath: str) -> bool:
         True: file has content.
         False: file is empty.
     """
+    from os.path import getsize
     return bool(exists(filepath) and getsize(filepath))
 
 
@@ -105,7 +107,7 @@ def write_json(data: [dict, list, tuple], path: str):
         f.write(jdumps(data, ensure_ascii=False))
 
 
-def write_multi_list(path: str, *mlist):
+def write_multi_list(path: str, *mlist):  # DELETE ME
     """
     REF: 数组 (矩阵) 转置: https://blog.csdn.net/yongh701/article/details
         /50283689
@@ -120,7 +122,7 @@ def write_multi_list(path: str, *mlist):
 
 # ------------------------------------------------------------------------------
 
-def loads(path: str, offset=0) -> [str, list, dict]:
+def loads(path: str, offset=0) -> Hint.LoadedData:
     """
     ARGS:
         path
@@ -145,7 +147,7 @@ def loads(path: str, offset=0) -> [str, list, dict]:
         raise ValueError('Unknown filetype!', path)
 
 
-def dumps(data: [dict, list, tuple], path: str):
+def dumps(data: Hint.DumpableData, path: str):
     if path.endswith('.json'):
         write_json(data, path)
     elif path.endswith(('.txt', '.html', '.htm')):

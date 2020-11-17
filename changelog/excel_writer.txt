@@ -15,6 +15,10 @@ current version: 2.3
     - [优化] excel_writer.py 自己使用 typing hints
     - [修复] ExcelWriter.merging_logical() 逻辑错误
     - [新增] ExcelWriter.save() 保存失败时提醒用户重试
+    - [优化] 类型提示
+    - [优化] 保存时的提示信息
+    - [优化] ExcelWriter.merging_visual() 对 ExcelWriter.rowx 更新
+    - [变更] ExcelWriter.rowx 默认从 0 开始数
 2.2 | 2020-08-02
     - 增加 with 语法支持
     - 优化合并单元格方法, 创建 "visual" "logical" 两种方式

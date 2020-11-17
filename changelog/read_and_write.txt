@@ -8,6 +8,7 @@ current version: 1.7
     - [移除] FileSword
     - [优化] 完善类型提示
     - [移除] 不再调用 lk_logger 模块
+    - [新增] 引入 _typing.py
 1.6 | 2019-11-06
     - read_and_write_basic.py 重命名为 read_and_write.py
     - loads, dumps 添加别名 read, write

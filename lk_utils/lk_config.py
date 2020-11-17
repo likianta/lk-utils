@@ -415,8 +415,8 @@ def validate_path(collected_paths: list, sorting_file_and_dir=True, ask=True):
                 os.mkdir(d)
             lk.logt('[LKConfig][I3119]', 'creating path succeed', h='parent')
         else:
-            from . import exit_ways
-            exit_ways.main('please create by yourself')
+            from . import easy_launcher
+            easy_launcher.main('please create by yourself')
 
 
 # ------------------------------------------------------------------------------

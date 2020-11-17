@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 from lk_logger import lk
 
-from . import exit_ways
+from . import easy_launcher
 from .excel_reader import ExcelReader
 from .excel_writer import ExcelWriter
 from .read_and_write import read_file, write_file
@@ -280,7 +280,7 @@ def excel_2_html(ifile, ofile, title='', dialog=False):
                 cmd = int(cmd)
                 reader.activate_sheet(cmd)
             except Exception:
-                exit_ways.main('无法处理您的命令')
+                easy_launcher.main('无法处理您的命令')
         
         select_sheet()
     else:
@@ -419,7 +419,7 @@ def html_2_excel(ifile, ofile, single_sheet=True):
     try:
         soup = BeautifulSoup(read_file(ifile), 'html.parser')
     except UnicodeDecodeError:
-        exit_ways.main('UnicodeDecodeError. please make sure the target file '
+        easy_launcher.main('UnicodeDecodeError. please make sure the target file '
                        'should be encoded with "utf-8"', 5)
         return
     
@@ -432,7 +432,7 @@ def html_2_excel(ifile, ofile, single_sheet=True):
     解释: `i.is_empty_element` 表示 table 的内容是非空的
     """
     if not tables:
-        exit_ways.main('未能在目标文件中发现表格, 请检查输入文件是否有误')
+        easy_launcher.main('未能在目标文件中发现表格, 请检查输入文件是否有误')
         return
     
     # ------------------------------------------------

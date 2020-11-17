@@ -1,14 +1,14 @@
 name = 'lk_utils'
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 __all__ = [
     "char_converter",
     "chinese_name_processor",
     "data_convert",
+    "easy_launcher",
     "excel_reader",
     "excel_writer",
-    "exit_ways",
     "file_combinator",
     "filesniff",
     "lk_browser",
