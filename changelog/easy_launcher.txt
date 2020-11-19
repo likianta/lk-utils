@@ -1,17 +1,23 @@
 exit_ways.py
 
-current version: 2.0
+current version: 2.1
 
 --------------------------------------------------------------------------------
 
+2.1 | 2020-11-19
+
+- [变更] launch() 作为装饰器使用
+- [移除] 旧的退出方法已不再使用并删除
+
 2.0 | 2020-11-17
-    - [变更] 模块重命名为 'easy_launcher.py'
-    - [新增] launch() 函数
+
+- [变更] 模块重命名为 'easy_launcher.py'
+- [新增] launch() 函数
+
 1.0 | 2019-05-29
-    - 优化 msg 类型判断
-    - msg 参数允许使用缺省值
-    - 增加 sleepsecs 参数对是否大于0的判断
-    - 取消导入 sys.exit 模块, 改为直接使用 exit()
-    - 恢复使用 sys.exit, 以解决 pyinstaller 打包错误
-    - 将 sleepsecs 与 exit_action 合并为复合参数
-    - 优化对 msg 的裁剪
+
+- [优化] msg 类型判断
+- [新增] msg 参数允许使用缺省值
+- [更新] sleepsecs 参数对是否大于 0 的判断
+- [优化] 将 sleepsecs 与 exit_action 合并为复合参数
+- [优化] 对 msg 的裁剪方法
