@@ -24,6 +24,7 @@ xlsxwriter = "^1.3"
 # pdfminer = "*"
 # pdfplumber = "*"
 # pypinyin = "*"
+# pyyaml = "*"
 
 [build-system]
 requires = ["poetry>=0.12"]

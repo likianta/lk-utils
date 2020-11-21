@@ -164,7 +164,7 @@ def loads(file: str, offset=-1) -> Hint.LoadedData:
         return read_json(file)
     elif file.endswith(Hint.PlainFileTypes):
         if offset >= 0:
-            return load_list(file, offset)
+            return read_file_by_line(file, offset)
         else:
             return read_file(file)
     elif file.endswith(Hint.BinaryFileTypes):
@@ -197,8 +197,8 @@ def dumps(data: Hint.DumpableData, file: str):
 # ------------------------------------------------------------------------------
 
 @contextmanager
-def read(file: str):
-    data = loads(file)
+def read(file: str, **kwargs):
+    data = loads(file, **kwargs)
     try:
         yield data
     finally:
@@ -206,7 +206,7 @@ def read(file: str):
 
 
 @contextmanager
-def write(file: str, data=None):
+def write(file: str, data=None, **kwargs):
     """
     Usage:
         with write('result.json', []) as w:
@@ -224,7 +224,7 @@ def write(file: str, data=None):
     except AssertionError as e:
         if data is None and file.endswith('.xlsx'):
             from .excel_writer import ExcelWriter
-            holder = ExcelWriter(file)
+            holder = ExcelWriter(file, **kwargs)
             try:
                 yield holder
             finally:

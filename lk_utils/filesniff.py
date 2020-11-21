@@ -2,9 +2,9 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-10-08
-@Version : 1.8.6
-@Desc    : Get filepath in elegant way.
+@Updated : 2020-11-22
+@Version : 1.8.7
+@Desc    : Get filepath in elegant way (os.path oriented).
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
     1. `filesniff` uses '/' as path delimeter than '\\' in Windows.
@@ -20,71 +20,20 @@
 """
 import os
 import sys
+from functools import wraps
+from pathlib import Path
 
-from typing import *
+from ._typing import FilesniffHint as Hint
 
 
-class FSPath(str):  # TODO: 暂未投入使用.
-    """ FSPath 是在 str 类型的路径的基础上, 附加了一些简便的路径操作. 您可以将它
-        完全当作普通的字符串使用. """
+def ret_str(func):
+    """ Convert return value from pathlib.Path type to str type. """
     
-    _path: str
-    path_type: str  # 'filepath' or 'dirpath'.
+    @wraps
+    def decor(*args, **kwargs):
+        return str(func(*args, **kwargs))
     
-    # file related
-    filepath = ''
-    filename = ''
-    stem = ''
-    ext = ''  # extension
-    suffix = ''  # the same to `ext`
-    
-    # directory related
-    dirpath = ''
-    dirname = ''
-    
-    def __init__(self, path: str, path_type=''):
-        super().__init__()
-        self._path = path
-        self.path_type = path_type or 'filepath' if isfile(path) else 'dirpath'
-        
-        if self.path_type == 'filepath':
-            self.filepath = path
-            self.filename = get_filename(path)
-            self.stem, self.ext = self.filename.rsplit('.', 1)
-            self.suffix = self.ext
-        else:
-            self.dirpath = path
-            self.dirname = get_dirname(path)
-    
-    @property
-    def isfile(self) -> bool:
-        return self.path_type == 'filepath'
-    
-    @property
-    def isdir(self) -> bool:
-        return self.path_type == 'dirpath'
-    
-    @property
-    def exists(self) -> bool:
-        return os.path.exists(self._path)
-    
-    is_exists = exists
-    
-    # 重载 `/` 运算符.
-    # https://blog.csdn.net/zhangshuaijun123/article/details/82149056
-    def __truediv__(self, node: str):
-        return FSPath(self._path + '/' + node)
-    
-    def force_create_path(self):
-        path_nodes = self.dirpath.split('/')
-        dirpath = path_nodes[0]
-        cnt = 0  # 计数创建了多少层目录.
-        for node in path_nodes[1:]:
-            dirpath += '/' + node
-            if not os.path.exists(dirpath):
-                cnt += 1
-                os.mkdir(dirpath)
-        return cnt
+    return decor
 
 
 # ------------------------------------------------------------------------------
@@ -120,13 +69,13 @@ def get_dirname(path: str) -> str:
             return path.rsplit('/', 2)[-2]
 
 
+@ret_str
 def get_filename(filepath: str, suffix=True) -> str:
     """ Input a filepath, return the filename.
     The filepath can be absolute or relative, or just a filename.
     """
-    if '/' in filepath:
-        filepath = filepath.rsplit('/', 1)[-1]
-    return filepath if suffix else filepath.rsplit('.', 1)[0]
+    p = Path(filepath)
+    return p.name if suffix else p.suffix[1:]
 
 
 def __get_launch_path() -> str:
@@ -224,8 +173,8 @@ def lkdb(*subpath):
 # Path Finders (File Finders)
 
 def _find_paths(adir: str, path_type: str, fmt: str,
-                suffix: Union[str, Tuple] = '', recursive=False,
-                custom_filter=None):
+                suffix: Hint.Suffix = '', recursive=False,
+                custom_filter=None) -> Hint.FinderReturn:
     """ Basic find.
     
     :param adir: target path to find in.
@@ -250,7 +199,7 @@ def _find_paths(adir: str, path_type: str, fmt: str,
         fmt = 'filename'/'dirname'/'name' -> return [filename, ...]
         fmt = 'zip' -> return zip([filepath, ...], [filename, ...])
         fmt = 'dict' -> return {filepath: filename, ...}
-        fmt = 'dlist'/'list' -> return [filepath, ...], [filename, ...]
+        fmt = 'dlist'/'list' -> return ([filepath, ...], [filename, ...])
     """
     adir = prettify_dir(adir)
     
@@ -410,7 +359,7 @@ def isdir(dirpath: str) -> bool:
 # ------------------------------------------------------------------------------
 # Path Getters 2
 
-def _calc_path(base: str, offset: str):
+def _calc_path(base: str, offset: str) -> str:
     """ Calculate path by relative offset.
     The typical case is:
         base = 'D:/myprj', offset = 'model/sample.txt'
@@ -429,14 +378,14 @@ def _calc_path(base: str, offset: str):
         return '/'.join(segs1[:-move_cnt] + segs2[move_cnt:])
 
 
-def path_on_prj(offset: str):
+def path_on_prj(offset: str) -> str:
     """ Calculate path based on PRJDIR as pivot.
     E.g. PRJDIR = 'D:/myprj', path = 'src/main.py' -> 'D:/myprj/src/main.py'
     """
     return _calc_path(PRJDIR, offset)
 
 
-def path_on_self(offset: str, self: str = ''):
+def path_on_self(offset: str, self: str = '') -> str:
     """ Calculate path based on caller's `__file__` as pivot.
     
     :param offset:

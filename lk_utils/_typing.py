@@ -1,7 +1,7 @@
 """
 @Author   : Likianta <likianta@foxmail.com>
 @FileName : _typing.py
-@Version  : 0.1.2
+@Version  : 0.1.3
 @Created  : 2020-11-17
 @Updated  : 2020-11-22
 @Desc     : 
@@ -29,19 +29,28 @@ class ExcelWriterHint:
     WorkBook = _Workbook
     WorkSheet = _Worksheet
     SheetName = Union[str, None]
+    
+
+class FilesniffHint:
+    File = str
+    FileName = str
+    FilePath = str
+    
+    FileNames = List[FileName]
+    FilePaths = List[FilePath]
+    
+    FileDict = Dict[FilePath, FileName]
+    FileZip = Iterable[Tuple[FilePath, FileName]]
+    FileDualList = Tuple[FilePaths, FileNames]
+    
+    FinderReturn = Union[FilePaths, FileNames, FileDict, FileZip, FileDualList]
+    
+    Suffix = Union[str, tuple]
 
 
 class ReadAndWriteHint:
-    from pathlib import Path
-    File = Union[str, Path]
-    FileName = str
-    FilePath = File
-    FileNames = List[FileName]
-    FilePaths = List[FilePath]
-    FileDict = Dict[FilePath, FileName]
-    
-    PlainFileTypes = ('.txt', '.html', '.md', '.rst', '.htm')
-    StructFileTypes = ('.json', '.yaml')
+    PlainFileTypes = ('.txt', '.html', '.md', '.rst', '.htm', '.ini')
+    StructFileTypes = ('.json', '.json5', '.yaml')
     BinaryFileTypes = ('.xlsx', '.xls', '.pdf')
     
     LoadedData = Union[str, list, dict]
