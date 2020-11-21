@@ -1,14 +1,26 @@
 ﻿read_and_write.py
 
-current version: 1.7
+current version: 1.9
 
 --------------------------------------------------------------------------------
 
+1.9 | 2020-11-22
+    - [变更] read() 和 write() 从 loads()/dumps() 概念中独立, 并使用 with 结构支持
+1.8 | 2020-11-22
+    - [新增] ropen() 和 wopen()
+    - [优化] 统一参数命名
+    - [新增] write_json() 支持输出到 yaml 文件
+    - [新增] write_json() 接受 set 类型的数据
 1.7 | 2020-08-09
     - [移除] FileSword
     - [优化] 完善类型提示
     - [移除] 不再调用 lk_logger 模块
     - [新增] 引入 _typing.py
+    - [新增] loads() 支持更多文件格式
+    - [变更] 将 loads() 读取文本文件的默认行为指向 read_file()
+    - [新增] load_list()
+    - [新增] load_dict()
+    - [变更] is_file_empty() 重命名为 is_file_has_content()
 1.6 | 2019-11-06
     - read_and_write_basic.py 重命名为 read_and_write.py
     - loads, dumps 添加别名 read, write

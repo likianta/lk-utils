@@ -1,9 +1,9 @@
 """
 @Author   : Likianta <likianta@foxmail.com>
 @FileName : _typing.py
-@Version  : 0.1.0
+@Version  : 0.1.2
 @Created  : 2020-11-17
-@Updated  : 2020-11-17
+@Updated  : 2020-11-22
 @Desc     : 
 """
 from typing import *
@@ -32,11 +32,17 @@ class ExcelWriterHint:
 
 
 class ReadAndWriteHint:
-    File = str
+    from pathlib import Path
+    File = Union[str, Path]
     FileName = str
-    FilePath = str
+    FilePath = File
     FileNames = List[FileName]
     FilePaths = List[FilePath]
     FileDict = Dict[FilePath, FileName]
+    
+    PlainFileTypes = ('.txt', '.html', '.md', '.rst', '.htm')
+    StructFileTypes = ('.json', '.yaml')
+    BinaryFileTypes = ('.xlsx', '.xls', '.pdf')
+    
     LoadedData = Union[str, list, dict]
-    DumpableData = Union[str, list, dict]
+    DumpableData = Union[str, list, tuple, dict, set]
