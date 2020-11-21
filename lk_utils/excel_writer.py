@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : excel_writer.py
 @Created : 2018-00-00
-@Updated : 2020-11-17
-@Version : 2.3.10
+@Updated : 2020-11-22
+@Version : 2.3.13
 @Desc    : ExcelWriter is a post-packing implementation based on XlsxWriter.
 """
 from warnings import filterwarnings
@@ -26,6 +26,7 @@ class ExcelWriter:
     
     _is_constant_memory: bool
     _merge_format: Hint.CellFormat
+    _sheet_mgr: Hint.SheetManager
     
     book: Hint.WorkBook
     filepath: str
@@ -44,15 +45,21 @@ class ExcelWriter:
                 sheet in `__init__` stage.
         :param options: workbook format.
         """
-        self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
-        #   `self.__exit__` and `self.save`.
-        self._is_constant_memory = options.get('constant_memory', False)
-        self.sheetx = 0
-        self.rowx = 0
-        
         if not filepath.endswith('.xlsx'):
             raise ValueError('ExcelWriter only supports .xlsx file type.',
                              filepath)
+        
+        self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
+        #   `self.__exit__` and `self.save`.
+        
+        self._is_constant_memory = options.get('constant_memory', False)
+        self._sheet_mgr = {'sheets': [], 0: {}}
+        #   注: xlsxwriter.Workbook 已提供 sheet_names 的访问, 所以 self._sheet_mgr
+        #   ['sheets'] 其实是没有必要的. 我会在未来调整 (简化) self._sheet_mgr.
+        
+        self.sheetx = 0
+        self.rowx = 0
+        
         self.filepath = filepath
         
         # create workbook
@@ -88,12 +95,35 @@ class ExcelWriter:
         })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
     
     def add_new_sheet(self, sheet_name=''):
+        # Save current sheet info
+        self._sheet_mgr[self.sheetx].update({
+            'sheetx': self.sheetx,
+            'rowx': self.rowx,
+        })
+        
         self.sheetx += 1
         self.rowx = 0
-        # create sheet name
-        if not sheet_name:
+        if not sheet_name:  # auto create sheet name
             sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
         self.sheet = self.book.add_worksheet(sheet_name)
+        
+        # Add new sheet info
+        self._sheet_mgr['sheets'].append(sheet_name)
+        self._sheet_mgr[self.sheetx] = {
+            'sheet_name': sheet_name,
+            'sheetx'    : self.sheetx,
+            'rowx'      : self.rowx,
+        }
+        
+    def activate_sheet(self, sheetx: Hint.Sheetx):
+        if isinstance(sheetx, int):
+            self.sheetx = sheetx
+            sheet_name = self._sheet_mgr['sheets'][sheetx]
+        else:
+            self.sheetx = self._sheet_mgr['sheets'].index(sheetx)
+            sheet_name = sheetx
+        self.sheet = self.book.get_worksheet_by_name(sheet_name)
+        self.rowx = self._sheet_mgr[sheetx]['rowx']
     
     def __enter__(self):
         """ Return self to use with `with` statement.
@@ -106,27 +136,6 @@ class ExcelWriter:
         self.__h = 'grand_parent'  # prompt
         self.save()
         self.__h = 'parent'  # reset
-    
-    def save(self):
-        from xlsxwriter.exceptions import FileCreateError
-        try:
-            self.book.close()
-        except FileCreateError as e:
-            if input('\tPermission denied while saving excel: \n'
-                     '\t\t"{}:0"\n'
-                     '\tPlease close the opened file manually and input "Y" to '
-                     'retry to save.'.format(self.filepath)).lower() == 'y':
-                self.book.close()
-            else:
-                raise e
-        from .lk_logger import lk
-        lk.logt(
-            '[ExcelWriter][D1139]',
-            f'\n\tExcel saved to "{self.filepath}:0"',
-            h=self.__h
-        )
-    
-    close = save
     
     # --------------------------------------------------------------------------
     
@@ -277,3 +286,39 @@ class ExcelWriter:
             p[0], p[1], q[0], q[1],
             value, cell_format=fmt or self._merge_format
         )
+
+    # --------------------------------------------------------------------------
+
+    def save(self, alt=False, open_after_saved=False):
+        from xlsxwriter.exceptions import FileCreateError
+        try:
+            self.book.close()
+        except FileCreateError as e:  # 注意: 此错误在 macOS 平台无法捕获!
+            if alt:  # 尝试对文件改名后保存
+                from time import strftime
+                self.book.filename = self.filepath = self.filepath.replace(
+                    '.xlsx', strftime('_%Y%m%d_%H%M%S.xlsx')
+                )
+                self.book.close()
+            elif input(
+                    '\tPermission denied while saving excel: \n'
+                    '\t\t"{}:0"\n'
+                    '\tPlease close the opened file manually and input "Y" to '
+                    'retry to save.'.format(self.filepath)
+            ).lower() == 'y':
+                self.book.close()
+            else:
+                raise e
+        
+        if open_after_saved:
+            import os
+            os.startfile(os.path.abspath(self.filepath))
+        else:
+            from .lk_logger import lk
+            lk.logt(
+                '[ExcelWriter][D1139]',
+                f'\n\tExcel saved to "{self.filepath}:0"',
+                h=self.__h
+            )
+
+    close = save

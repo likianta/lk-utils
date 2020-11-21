@@ -2,7 +2,7 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : data_convert.py
 @Created : 2018-00-00
-@Updated : 2020-09-06
+@Updated : 2020-11-22
 @Version : 3.0.2
 @Desc    : Convert source file type to target file type.
 """
@@ -12,10 +12,10 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 from lk_logger import lk
 
-from . import easy_launcher
-from .excel_reader import ExcelReader
-from .excel_writer import ExcelWriter
-from .read_and_write import read_file, write_file
+from lk_utils import easy_launcher
+from lk_utils.excel_reader import ExcelReader
+from lk_utils.excel_writer import ExcelWriter
+from lk_utils.read_and_write import read_file, write_file
 
 
 def json_2_excel(ifile='../temp/in.json', ofile='../temp/out.xlsx',
@@ -30,8 +30,8 @@ def json_2_excel(ifile='../temp/in.json', ofile='../temp/out.xlsx',
             Dict[str, Rows] (未来将尽快支持)
             Dict[str, Dict]
     """
-    from .excel_writer import ExcelWriter
-    from .read_and_write import read_json
+    from ..excel_writer import ExcelWriter
+    from ..read_and_write import read_json
     
     rdata = read_json(ifile)
     with ExcelWriter(ofile) as writer:
@@ -62,8 +62,8 @@ def excel_2_json(ifile='../temp/in.xlsx', ofile='../temp/out.json',
         可以定义表格中的某个字段为主键. 另外, 如果 key 设为空字符串, 则以列表形
         式输出每一行.
     """
-    from .excel_reader import ExcelReader
-    from .read_and_write import write_json
+    from ..excel_reader import ExcelReader
+    from ..read_and_write import write_json
     
     reader = ExcelReader(ifile)
     writer = {}
@@ -106,8 +106,8 @@ def excel_2_json_kv(ifile='../temp/in.xlsx', ofile='../temp/out.json',
     要求 excel 只有两列数据 (占据第一, 第二列位置), 且目标数据位于 sheet 1. 最后
     转换的结果是以第一列为 keys, 第二列为 values.
     """
-    from .excel_reader import ExcelReader
-    from .read_and_write import write_json
+    from ..excel_reader import ExcelReader
+    from ..read_and_write import write_json
     
     reader = ExcelReader(ifile)
     
@@ -419,8 +419,10 @@ def html_2_excel(ifile, ofile, single_sheet=True):
     try:
         soup = BeautifulSoup(read_file(ifile), 'html.parser')
     except UnicodeDecodeError:
-        easy_launcher.main('UnicodeDecodeError. please make sure the target file '
-                       'should be encoded with "utf-8"', 5)
+        easy_launcher.main(
+            'UnicodeDecodeError. please make sure the target file should be '
+            'encoded with "utf-8"', 5
+        )
         return
     
     # 找到 html 中的所有 <table>.

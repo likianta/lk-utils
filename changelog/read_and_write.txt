@@ -1,16 +1,16 @@
 ﻿read_and_write.py
 
-current version: 1.9
+current version: 1.8
 
 --------------------------------------------------------------------------------
 
-1.9 | 2020-11-22
-    - [变更] read() 和 write() 从 loads()/dumps() 概念中独立, 并使用 with 结构支持
 1.8 | 2020-11-22
     - [新增] ropen() 和 wopen()
     - [优化] 统一参数命名
     - [新增] write_json() 支持输出到 yaml 文件
     - [新增] write_json() 接受 set 类型的数据
+    - [变更] read() 和 write() 从 loads()/dumps() 概念中独立, 并使用 with 结构支持
+    - [修复] 不正确的 raise Exceptions
 1.7 | 2020-08-09
     - [移除] FileSword
     - [优化] 完善类型提示

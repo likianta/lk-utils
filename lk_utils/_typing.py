@@ -20,15 +20,25 @@ class ExcelWriterHint:
     
     CellFormat = _Format
     CellValue = Union[None, bool, float, int, str]
-    RowValues = Iterable
-    ColValues = Iterable
+    RowValues = Iterable[CellValue]
+    ColValues = Iterable[CellValue]
+    Header = List[CellValue]
     
     RowsValues = List[RowValues]
     ColsValues = List[ColValues]
     
     WorkBook = _Workbook
     WorkSheet = _Worksheet
+    Sheetx = Union[int, str]
     SheetName = Union[str, None]
+    SheetManager = Dict[Union[str, int], Union[List[str], dict]]
+    ''' {
+            'sheets': [str sheet_name, ...],
+            0: {'sheet_name': str, 'sheetx': int, 'rowx': int,
+                'header': Header, ...},
+            ...
+        }
+    '''
     
 
 class FilesniffHint:

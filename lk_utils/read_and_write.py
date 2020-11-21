@@ -3,11 +3,11 @@
 @Module  : read_and_write.py
 @Created : 2018-08-00
 @Updated : 2020-11-22
-@Version : 1.9.0
+@Version : 1.8.3
 @Desc    :
 """
-from os.path import exists
 from contextlib import contextmanager
+from os.path import exists
 
 from ._typing import ReadAndWriteHint as Hint
 
@@ -19,22 +19,20 @@ def ropen(file: str, mode='r', encoding='utf-8'):
     :param mode:
     :param encoding: ['utf-8'|'utf-8-sig']
     """
+    # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使用的是它,
+    # 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函数只是为了简化此书写步骤.
+    handle = open(file, mode=mode, encoding=encoding)
     try:
-        # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使用的
-        # 是它, 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函数只是为了简
-        # 化此书写步骤.
-        handle = open(file, mode=mode, encoding=encoding)
         yield handle
     finally:
-        # noinspection PyUnboundLocalVariable
         handle.close()
-        
-        
+
+
 @contextmanager
 def wopen(file: str, mode='w', encoding='utf-8'):
     """
     :param file:
-    :param mode: ['w'|'a']
+    :param mode: ['w'|'a'|'wb']
         w: 写入前清空原文件已有内容
         a: 增量写入
     :param encoding: ['utf-8'|'utf-8-sig']
@@ -135,8 +133,11 @@ def read_json(file: str) -> dict:
         # noinspection PyUnresolvedReferences
         from yaml import safe_load  # pip install pyyaml
         return safe_load(file)
-    raise Exception('Unknown file type! Please pass a file ends with ".json" '
-                    'or ".yaml".')
+    else:
+        raise Exception(
+            'Unknown file type! Please pass a file ends with '
+            '".json" or ".yaml".'
+        )
 
 
 def write_json(data: Hint.DumpableData, file: str):
@@ -171,7 +172,8 @@ def loads(file: str, offset=-1) -> Hint.LoadedData:
         if file.endswith(('.xlsx', '.xls')):
             from .excel_reader import ExcelReader
             return ExcelReader(file)
-    raise Exception('Unsupported filetype!', file)
+    else:
+        raise Exception('Unsupported filetype!', file)
 
 
 def load_list(file: str, offset=0) -> list:
@@ -183,7 +185,8 @@ def load_dict(file: str) -> dict:
         return read_json(file)
     # elif file.endswith('.txt'):
     #     return {lineno: line for (lineno, line) in enumerate(load_list(file))}
-    raise Exception('Unsupported filetype!', file)
+    else:
+        raise Exception('Unsupported filetype!', file)
 
 
 def dumps(data: Hint.DumpableData, file: str):
@@ -191,7 +194,8 @@ def dumps(data: Hint.DumpableData, file: str):
         write_json(data, file)
     elif file.endswith(Hint.PlainFileTypes):
         write_file(data, file)
-    raise Exception('Unsupported filetype!', file)
+    else:
+        raise Exception('Unsupported filetype!', file)
 
 
 # ------------------------------------------------------------------------------
@@ -224,10 +228,12 @@ def write(file: str, data=None, **kwargs):
     except AssertionError as e:
         if data is None and file.endswith('.xlsx'):
             from .excel_writer import ExcelWriter
-            holder = ExcelWriter(file, **kwargs)
+            handle = ExcelWriter(file, **kwargs)
             try:
-                yield holder
+                yield handle
             finally:
-                holder.save()
+                handle.__h = 'grand_parent'
+                handle.save()
+                handle.__h = 'parent'
         else:
             raise e
