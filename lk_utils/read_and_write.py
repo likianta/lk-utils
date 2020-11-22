@@ -3,7 +3,7 @@
 @Module  : read_and_write.py
 @Created : 2018-08-00
 @Updated : 2020-11-22
-@Version : 1.8.5
+@Version : 1.8.6
 @Desc    :
 """
 from contextlib import contextmanager
@@ -15,9 +15,13 @@ from ._typing import ReadAndWriteHint as Hint
 @contextmanager
 def ropen(file: str, mode='r', encoding='utf-8'):
     """
-    :param file:
-    :param mode:
-    :param encoding: ['utf-8'|'utf-8-sig']
+    Args:
+        file
+        mode (['r'|'rb'])
+        encoding (['utf-8'|'utf-8-sig'])
+    
+    Returns:
+        file_handle
     """
     # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使用的是它,
     # 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函数只是为了简化此书写步骤.
@@ -31,11 +35,16 @@ def ropen(file: str, mode='r', encoding='utf-8'):
 @contextmanager
 def wopen(file: str, mode='w', encoding='utf-8'):
     """
-    :param file:
-    :param mode: ['w'|'a'|'wb']
-        w: 写入前清空原文件已有内容
-        a: 增量写入
-    :param encoding: ['utf-8'|'utf-8-sig']
+    Args:
+        file (str):
+        mode (['w'|'a'|'wb']):
+            w: 写入前清空原文件已有内容
+            a: 增量写入
+            wb: 以二进制字节流写入
+        encoding (['utf-8'|'utf-8-sig']):
+        
+    Returns:
+        file_handle
     """
     try:
         handle = open(file, mode=mode, encoding=encoding)
@@ -47,7 +56,8 @@ def wopen(file: str, mode='w', encoding='utf-8'):
 
 def get_num_of_lines(file: str) -> int:
     """ 该方法可以高效地读取文件一共有多少行, 支持大文件的读取.
-    REF: https://blog.csdn.net/qq_29422251/article/details/77713741
+    
+    Refer: https://blog.csdn.net/qq_29422251/article/details/77713741
     """
     with ropen(file) as f:
         return len(['' for _ in f])
@@ -55,8 +65,9 @@ def get_num_of_lines(file: str) -> int:
 
 def is_file_has_content(file: str) -> bool:
     """
-    REF: https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
-    :return: bool.
+    Refer: https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
+    
+    Returns (bool):
         True: file has content
         False: file is empty
     """
@@ -77,12 +88,12 @@ def read_file(file: str) -> str:
 
 def read_file_by_line(file: str, offset=0) -> list:
     """
-    IN: file: str. e.g. 'test.txt'
-        offset: int.
+    IN: file (str): e.g. 'test.txt'
+        offset (int):
             0: 表示返回完整的列表
             n: 传一个大于 0 的数字, 表示返回 list[n:]. (ps: 如果该数字大于列表的
                长度, python 会返回一个空列表, 不会报错)
-    OT: e.g. ['aaa', 'bbb', 'ccc', ...]
+    OT: [str, ...]
     """
     # https://blog.csdn.net/qq_40925239/article/details/81486637
     with ropen(file) as f:
@@ -93,23 +104,22 @@ def read_file_by_line(file: str, offset=0) -> list:
 def write_file(content: iter, file: str, mode='w', adhesion='\n'):
     """ 写入文件, 传入内容可以是字符串, 也可以是数组.
 
-    ARGS:
-        content: 需要写入的文本, 可以是字符串, 也可以是数组. 传入数组时, 会自动
-            将它转换为 "\n" 拼接的文本
+    Args:
+        content: 需要写入的文本, 可以是字符串, 也可以是数组. 传入数组时, 会自动将它转换为
+            "\n" 拼接的文本
         file: 写入的路径, 建议使用相对路径
-        mode: ['w'|'a'|'wb']. 写入模式, 有三种可选:
+        mode (['w'|'a'|'wb']): 写入模式, 有三种可选:
             a: 增量写入 (默认)
             w: 清空原内容后写入
             wb: 在 w 的基础上以比特流的形式写入
         adhesion: ['\n'|'\t'|...]. 拼接方式, 只有当 content 为列表时会用到, 用于将列表
             转换为文本时选择的拼接方式
-            E.g.
+            Example:
                 content = adhesion.join(content)
                 # ['a', 'b', 'c'] -> 'a\nb\nc'
 
-    参考:
-        python 在最后一行追加 - 张乐乐章 - 博客园 https://www.cnblogs.com
-            /zle1992/p/6138125.html
+    Refer:
+        python 在最后一行追加 https://www.cnblogs.com/zle1992/p/6138125.html
         python map https://blog.csdn.net/yongh701/article/details/50283689
     """
     if not isinstance(content, str):
@@ -142,11 +152,18 @@ def read_json(file: str) -> dict:
 
 def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
     """
+    Args:
+        data
+        file: Ends with '.json'.
+            Note: '.yaml' needs PyYaml to be installed.
+        pretty_dump:
+            True: Output json with pretty-printed format (4 spaces each level).
+            False: The most compact representation.
+            
     Improvements:
-        - convert `set` as `list` to make it serializable
-        - convert `pathlib.PosixPath` as `str` to make it serializable
+        Convert `set` as `list` to make it serializable.
+        Convert `pathlib.PosixPath` as `str` to make it serializable.
     """
-    # assert file.endswith('.json')
     from json import dumps as _dumps
     
     if isinstance(data, Hint.SerialikableData):
@@ -167,14 +184,15 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
 
 def loads(file: str, offset=-1, **kwargs) -> Hint.LoadedData:
     """
-    :param file:
-    :param offset: [-1|0|1|2|3|...]
-            -1: 当为负数时, 表示调用 read_file()
-            0, 1, 2, 3, ...: 表示调用 read_file_by_line(), offset 作为
-                read_file_by_line() 的相应参数传入
-    :param kwargs: supported only for excel file ('.xlsx' or '.xls')
-        sheetx=0
-        formatting_info=False
+    Args:
+        file:
+        offset: [-1|0|1|2|3|...]
+            -1: If it is negative number (typically -1), means calling
+                `read_file`
+            0, 1, 2, 3, ...: See `read_file_by_line`
+        kwargs: See `ExcelReader`.
+            sheetx=0
+            formatting_info=False
     """
     if file.endswith(Hint.StructFileTypes):
         return read_json(file)
@@ -226,29 +244,25 @@ def read(file: str, **kwargs):
 
 @contextmanager
 def write(file: str, data=None, **kwargs):
-    """
+    """ Yields a write handle to caller, the file will be generated after the
+        `with` block closed.
+        
+    Args:
+        file: See `dumps`.
+        data ([list|dict|set|str]): If the data type is incorrect, an Assertion
+            Error will be raised.
+        kwargs: See `dumps`.
+        
     Usage:
         with write('result.json', []) as w:
             for i in range(10):
                 w.append(i)
-        # Then when we exit the `with` block, the data will be automatically
-        # saved to 'result.json'.
+        print('See "result.json:1"')
+        # When we exit the `with` block, the data will be automatically saved to
+        # 'result.json' file.
     """
+    assert isinstance(data, (list, dict, set, str))
     try:
-        assert isinstance(data, (list, dict, set, str))
-        try:
-            yield data
-        finally:
-            dumps(data, file)
-    except AssertionError as e:
-        if data is None and file.endswith('.xlsx'):
-            from .excel_writer import ExcelWriter
-            handle = ExcelWriter(file, **kwargs)
-            try:
-                yield handle
-            finally:
-                handle.__h = 'grand_parent'
-                handle.save()
-                handle.__h = 'parent'
-        else:
-            raise e
+        yield data
+    finally:
+        dumps(data, file, **kwargs)

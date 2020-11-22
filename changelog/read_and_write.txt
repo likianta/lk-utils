@@ -13,6 +13,7 @@ current version: 1.8
 - [变更] read() 和 write() 从 loads()/dumps() 概念中独立, 并使用 with 结构支持
 - [修复] 不正确的 raise Exceptions
 - [优化] write_json() 增强适应性
+- [移除] write() 不再支持 .xlsx 文件格式
 
 # 1.7 | 2020-08-09
 
