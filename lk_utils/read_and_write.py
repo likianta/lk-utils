@@ -3,7 +3,7 @@
 @Module  : read_and_write.py
 @Created : 2018-08-00
 @Updated : 2020-11-22
-@Version : 1.8.3
+@Version : 1.8.5
 @Desc    :
 """
 from contextlib import contextmanager
@@ -140,26 +140,41 @@ def read_json(file: str) -> dict:
         )
 
 
-def write_json(data: Hint.DumpableData, file: str):
+def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
+    """
+    Improvements:
+        - convert `set` as `list` to make it serializable
+        - convert `pathlib.PosixPath` as `str` to make it serializable
+    """
     # assert file.endswith('.json')
     from json import dumps as _dumps
-    if isinstance(data, set):
-        data = tuple(data)
+    
+    if isinstance(data, Hint.SerialikableData):
+        data = list(data)
+        #   Note: `zip([A, B], [C, D])` will be converted to
+        #   `[(A, C), (B, D)]`
+    
     with wopen(file) as f:
-        f.write(_dumps(data, ensure_ascii=False))
-        #   ensure_ascii: json.dumps 如何输出中文:
+        f.write(_dumps(data, ensure_ascii=False, default=str,
+                       indent=None if pretty_dump is False else 4))
+        #   ensure_ascii=False: Set to False to support Chinese characters:
         #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
+        #   default=str: When something is not serializble, try to use its
+        #       __str__() attribute, it is useful to resolve `pathlib.PosixPath`
 
 
 # ------------------------------------------------------------------------------
 
-def loads(file: str, offset=-1) -> Hint.LoadedData:
+def loads(file: str, offset=-1, **kwargs) -> Hint.LoadedData:
     """
     :param file:
     :param offset: [-1|0|1|2|3|...]
             -1: 当为负数时, 表示调用 read_file()
             0, 1, 2, 3, ...: 表示调用 read_file_by_line(), offset 作为
                 read_file_by_line() 的相应参数传入
+    :param kwargs: supported only for excel file ('.xlsx' or '.xls')
+        sheetx=0
+        formatting_info=False
     """
     if file.endswith(Hint.StructFileTypes):
         return read_json(file)
@@ -171,7 +186,7 @@ def loads(file: str, offset=-1) -> Hint.LoadedData:
     elif file.endswith(Hint.BinaryFileTypes):
         if file.endswith(('.xlsx', '.xls')):
             from .excel_reader import ExcelReader
-            return ExcelReader(file)
+            return ExcelReader(file, **kwargs)
     else:
         raise Exception('Unsupported filetype!', file)
 
@@ -189,11 +204,11 @@ def load_dict(file: str) -> dict:
         raise Exception('Unsupported filetype!', file)
 
 
-def dumps(data: Hint.DumpableData, file: str):
+def dumps(data: Hint.DumpableData, file: str, **kwargs):
     if file.endswith(Hint.StructFileTypes):
-        write_json(data, file)
+        write_json(data, file, **kwargs)
     elif file.endswith(Hint.PlainFileTypes):
-        write_file(data, file)
+        write_file(data, file, **kwargs)
     else:
         raise Exception('Unsupported filetype!', file)
 

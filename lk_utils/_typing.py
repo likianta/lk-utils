@@ -64,4 +64,6 @@ class ReadAndWriteHint:
     BinaryFileTypes = ('.xlsx', '.xls', '.pdf')
     
     LoadedData = Union[str, list, dict]
-    DumpableData = Union[str, list, tuple, dict, set]
+    SerializableData = Union[str, list, tuple, dict, None]
+    SerialikableData = Union[set, Generator]
+    DumpableData = Union[SerializableData, SerialikableData]
