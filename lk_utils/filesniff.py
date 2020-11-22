@@ -3,7 +3,7 @@
 @Module  : filesniff.py
 @Created : 2018-00-00
 @Updated : 2020-11-22
-@Version : 1.8.8
+@Version : 1.8.9
 @Desc    : Get filepath in elegant way (os.path oriented).
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -403,7 +403,7 @@ def path_on_prj(offset: str) -> str:
     return _calc_path(PRJDIR, offset)
 
 
-def relpath(file: str, self: str = '') -> str:
+def relpath(file: str, curr_file='') -> str:
     """ Consider relative path always based on caller's.
     
     Assumed a project like:
@@ -429,19 +429,23 @@ def relpath(file: str, self: str = '') -> str:
     Even when `aaa.py` imports `aa.py`, they can still use 'relative path' based
     their own way respectively.
     
+    Refer: https://blog.csdn.net/Likianta/article/details/89299937
+    
     Args:
         file: This param name makes a trick that when we call the function in
             Pycharm, Pycharm will consider the first argument as a file-like
             param (bacause of the param name), thus Pycharm gives us path hint
             when we type into strings.
-        self ([__file__|'']): Recommended passing `__file__` as argument. It
+        curr_file ([__file__|'']): Recommended passing `__file__` as argument. It
             will be faster than passing an empty string.
     """
-    if self == '':
-        # noinspection PyProtectedMember,PyUnresolvedReferences
+    if curr_file == '':
+        # noinspection PyProtectedMember, PyUnresolvedReferences
         frame = sys._getframe(1)
-        self = frame.f_code.co_filename.replace('\\', '/')
-    return _calc_path(prettify_dir(os.path.dirname(self)), file)
+        curr_file = frame.f_code.co_filename
+    curr_file = Path(curr_file)
+    curr_dir = curr_file.parent
+    return prettify_file(str(curr_dir.joinpath(file).resolve()))
 
 
 getpath = get_path = path_on_prj  # alias

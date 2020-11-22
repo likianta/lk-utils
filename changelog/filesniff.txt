@@ -15,6 +15,7 @@ current version: 1.8
     - [修复] _find_paths() 无结果时 `fmt='dlist'` 产生的报错
     - [新增] ret_str() 装饰器
     - [更新] 部分函数使用 pathlib.Path
+    - [变更] path_on_rel() & path_on_self() 重命名为 relpath()
 1.7 | 2020-08-22
     - 创建 class FSPath
 1.6 | 2020-08-02

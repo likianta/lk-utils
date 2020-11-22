@@ -8,6 +8,7 @@ current version: 1.4.3
 
 - [修复] read_and_write.py 错误的 raise Exceptions 行为
 - [变更] 将部分模块标记为 depreciated
+- [更新] filesniff.py 优化与更新
 
 ## 1.4.2 | 2020-11-22
 
