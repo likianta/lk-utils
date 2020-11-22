@@ -165,14 +165,14 @@ class ExcelWriter:
     def writelnx(self, *row: Hint.CellValue, fmt=None):
         self.writeln(*row, auto_index=True, fmt=fmt)
     
-    def writerow(self, rowx: int, data: Hint.CellValue, offset=0,
+    def writerow(self, rowx: int, data: Hint.RowValues, offset=0,
                  purify_values=False, fmt=None):
         """ Write row of data to cells. """
         if purify_values:
             data = self.purify_values(data)
         self.sheet.write_row(rowx, offset, data, fmt)
     
-    def writecol(self, colx: int, data: Hint.CellValue, offset=0,
+    def writecol(self, colx: int, data: Hint.ColValues, offset=0,
                  purify_values=False, fmt=None):
         """ Write column of data to cells. """
         if purify_values:

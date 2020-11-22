@@ -2,19 +2,22 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : easy_launcher.py
 @Created : 2019-05-29
-@Updated : 2020-11-17
-@Version : 2.0.0
+@Updated : 2020-11-22
+@Version : 2.0.1
 @Desc    :
 """
 
 
-def launch(func):
+def launch(func, *args, **kwargs):
     """
-    如何使用?
-    您可以复制此文件到您的项目下, 再对 try 块中的内容进行自定义, 完成后, 在外部双击
-    此文件 (指您在项目中的副本) 运行.
-    此模块旨在发生报错时, 使窗口不要立即关闭, 留给用户查看错误信息的时间.
-    当错误发生时, 按下任意键可结束程序.
+    Usage:
+        # my_main.py
+        from lk_utils.easy_launcher import launch
+        
+        def main(a, b):
+            print(a + b)
+            
+        launch(main, a=1, b=2)
     """
 
     # noinspection PyUnusedLocal
@@ -31,9 +34,9 @@ def launch(func):
         messagebox.showerror(title='Runtime Error', message=err)
     
     try:
-        func()  # edit your main function here
-    except Exception:
-        # To gain more message about this error.
+        func(*args, **kwargs)
+    except:
+        # To obtain more message about this error.
         #   https://stackoverflow.com/questions/1278705/when-i-catch-an
         #   -exception-how-do-i-get-the-type-file-and-line-number
         import traceback
@@ -46,8 +49,9 @@ def launch(func):
 
 def main(msg='', sleepsecs=0):  # DELETE ME
     """
-    :param msg
-    :param sleepsecs: 0 表示按任意键退出; 大于 0 表示 n 秒后自动关闭
+    Args:
+        msg
+        sleepsecs: 0 表示按任意键退出; 大于 0 表示 n 秒后自动关闭
     """
     from time import sleep
     from sys import exit

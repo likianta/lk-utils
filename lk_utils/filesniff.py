@@ -3,7 +3,7 @@
 @Module  : filesniff.py
 @Created : 2018-00-00
 @Updated : 2020-11-22
-@Version : 1.8.7
+@Version : 1.8.8
 @Desc    : Get filepath in elegant way (os.path oriented).
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -54,7 +54,8 @@ def prettify_file(filepath: str) -> str:
 
 def get_dirname(path: str) -> str:
     """ Input a dirpath or filepath, return the dirname.
-    *We don't check the dirpath exists or not.*
+    
+    Note: We don't check the dirpath exists or not.
     """
     if os.path.exists(path):
         return os.path.dirname(path)
@@ -72,6 +73,7 @@ def get_dirname(path: str) -> str:
 @ret_str
 def get_filename(filepath: str, suffix=True) -> str:
     """ Input a filepath, return the filename.
+    
     The filepath can be absolute or relative, or just a filename.
     """
     p = Path(filepath)
@@ -80,9 +82,12 @@ def get_filename(filepath: str, suffix=True) -> str:
 
 def __get_launch_path() -> str:
     """ Get launcher's filepath.
-    NOTE: this method only works in Pycharm.
-    :return: e.g.
-        sys.argv = ['D:\\myprj\\src\\main.py', ...] -> 'D:/myprj/src/main.py'
+    
+    Note: this method only works in Pycharm.
+    
+    Returns:
+        Example:
+            sys.argv: ['D:/myprj/src/main.py', ...] -> 'D:/myprj/src/main.py'
     """
     path = os.path.abspath(sys.argv[0])
     return prettify_file(path)
@@ -90,8 +95,12 @@ def __get_launch_path() -> str:
 
 def __get_launch_dir() -> str:
     """ Get launcher's dirpath.
-    NOTE: this method only works in Pycharm.
-    :return: e.g. launcher = 'D:/myprj/src/main.py' -> 'D:/myprj/src'
+    
+    Note: this method only works in Pycharm.
+    
+    Returns:
+        Example:
+            launcher: 'D:/myprj/src/main.py' -> 'D:/myprj/src'
     """
     dirpath = os.path.split(__get_launch_path())[0]
     return prettify_dir(dirpath)
@@ -99,7 +108,8 @@ def __get_launch_dir() -> str:
 
 def __get_prj_dir(working_dir=''):
     """ Get project dirpath.
-    NOTE: This method only works in Pycharm.
+    
+    Note: This method only works in Pycharm.
     
     When script launched in Pycharm, the `sys.path[1]` is project's dirpath.
     If script launched in cmd or exe (pyinstaller), `_get_launch_dir()` is
@@ -110,7 +120,7 @@ def __get_prj_dir(working_dir=''):
         dirpath = prettify_dir(os.path.abspath(working_dir))
         # assert prj dirpath is launcher's parent path or launcher's itself.
         assert __get_launch_dir().startswith(dirpath), \
-            'something wrong with `working_dir` (if you set it)'
+            'Something wrong with `working_dir` (if you set it)'
     else:
         dirpath = __get_launch_dir()
     return dirpath
@@ -126,19 +136,15 @@ PRJDIR = __get_prj_dir()  # project's dirpath
 # ------------------------------------------------------------------------------
 # Path Stitches
 
-def stitch_path(*path_nodes, wrapper=None):
+def stitch_path(*path_nodes, wrapper=None):  # DELETE
     """
-    Usecase:
+    Usage:
         class FileReader:
             def __init__(self, path):
                 self.holder = open(path, 'r')
                 
         reader = stitch_path('D:', 'myprj', 'model', 'sample.txt', FileReader)
         #   equals to: `reader = FileReader('D:/myprj/model/sample.txt')`
-        
-    :param path_nodes:
-    :param wrapper:
-    :return:
     """
     path = '/'.join(map(str, path_nodes))
     return path if wrapper is None else wrapper(path)
@@ -150,7 +156,7 @@ LKDB = prettify_dir(os.environ.get('LKDB', CURRDIR))  # dbpath
 def lkdb(*subpath):
     """ Get path starswith os.environ['LKDB'].
     
-    NOTE: you should preset Windows environment path:
+    Note: you should have set Windows environment path:
         Key: LKDB
         Value (e.g.): D:\\database
     Only works in Pycharm & Windows system.
@@ -177,29 +183,31 @@ def _find_paths(adir: str, path_type: str, fmt: str,
                 custom_filter=None) -> Hint.FinderReturn:
     """ Basic find.
     
-    :param adir: target path to find in.
-    :param path_type: 'file'/'dir'.
-    :param fmt: decides the which structure of data returned. options below:
-        'filepath'/'dirpath'/'path'
-        'filename'/'dirname'/'name'
-        'zip'
-        'dict'
-        'dlist'/'list'
-    :param suffix: assign a filter to which file types we want to fetch.
-        NOTICE:
-            1. Each suffix name must start with a dot ('.jpg', '.txt', etc.).
-            2. Case sensitive.
-            3. Param type is str or tuple, cannot be list.
-    :param recursive: whether to find descendant folders.
-    :param custom_filter: if you want a more powerful filter than `suffix`
-        param, set it here. The `custom_filter` works after `suffix` filter.
-        Usecase: see `find_subdirs()`, `findall_subdirs()`.
-    :return:
-        fmt = 'filepath'/'dirpath'/'path' -> return [filepath, ...]
-        fmt = 'filename'/'dirname'/'name' -> return [filename, ...]
-        fmt = 'zip' -> return zip([filepath, ...], [filename, ...])
-        fmt = 'dict' -> return {filepath: filename, ...}
-        fmt = 'dlist'/'list' -> return ([filepath, ...], [filename, ...])
+    Args:
+        adir: target path to find in.
+        path_type: 'file'/'dir'.
+        fmt: decides the which structure of data returned. options below:
+            'filepath'/'dirpath'/'path'
+            'filename'/'dirname'/'name'
+            'zip'
+            'dict'
+            'dlist'/'list'
+        suffix: assign a filter to which file types we want to fetch.
+            NOTICE:
+                1. Each suffix name must start with a dot ('.jpg', '.txt', etc.)
+                2. Case sensitive
+                3. Param type is str or tuple, cannot be list
+        recursive: whether to find descendant folders.
+        custom_filter: if you want a more powerful filter than `suffix`
+            param, set it here. The `custom_filter` works after `suffix` filter.
+            Usecase: see `find_subdirs()`, `findall_subdirs()`.
+    
+    Returns:
+        fmt: 'filepath'/'dirpath'/'path' -> return [filepath, ...]
+        fmt: 'filename'/'dirname'/'name' -> return [filename, ...]
+        fmt: 'zip' -> return zip([filepath, ...], [filename, ...])
+        fmt: 'dict' -> return {filepath: filename, ...}
+        fmt: 'dlist'/'list' -> return ([filepath, ...], [filename, ...])
     """
     adir = prettify_dir(adir)
     
@@ -267,13 +275,13 @@ def findall_files(adir, fmt='filepath', suffix=''):
 def find_subdirs(adir, fmt='dirpath', suffix='',
                  exclude_protected_folder=True):
     """
-    
-    :param adir:
-    :param fmt:
-    :param suffix:
-    :param exclude_protected_folder: exclude folders which startswith "." or
-        "__" (e.g. ".git", ".idea", "__pycache__", etc.).
-    :return:
+    Args:
+        adir
+        fmt
+        suffix
+        exclude_protected_folder: exclude folders which startswith "." or "__".
+            Example:
+                ".git", ".idea", "__pycache__", etc.
     """
     
     def _filter(x):
@@ -289,7 +297,7 @@ def find_subdirs(adir, fmt='dirpath', suffix='',
 def findall_subdirs(adir, fmt='dirpath', suffix='',
                     exclude_protected_folder=True):
     """
-    REF: https://www.cnblogs.com/bigtreei/p/9316369.html
+    Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
     
     def _filter(x):
@@ -311,16 +319,20 @@ findall_dirs = findall_subdirs  # alias
 
 def isfile(filepath: str) -> bool:
     """ Unsafe method judging path-like string.
+    
     TLDR: If `filepath` looks like a filepath, will return True; otherwise
         return False.
+    
     Judgement based:
         - Does it end with '/'? -> False
         - Does it really exist on system? -> True
         - Does it contain a dot ("xxx.xxx")? -> True
+    
     Positive cases:
         print(isfile('D:/myprj/README.md'))  # -> True (no matter exists or not)
         print(isfile('D:/myprj/README'))  # -> True (if it really exists)
         print(isfile('D:/myprj/README'))  # -> False (if it really not exists)
+    
     Negative cases: (the function judges seems not that good)
         print(isfile('D:/myprj/.idea'))  # -> True (it should be False)
         print(isfile('D:/!@#$%^&*/README.md'))  # -> True (it should be False)
@@ -339,8 +351,10 @@ def isfile(filepath: str) -> bool:
 
 def isdir(dirpath: str) -> bool:
     """ Unsafe method judging dirpath-like string.
+    
     TLDR: If `dirpath` looks like a dirpath, will return True; otherwise return
         False.
+    
     Judgement based:
         - Is it a dot/dot-slash/slash? -> True
         - Does it really exist on system? -> True
@@ -361,12 +375,14 @@ def isdir(dirpath: str) -> bool:
 
 def _calc_path(base: str, offset: str) -> str:
     """ Calculate path by relative offset.
+    
     The typical case is:
         base = 'D:/myprj', offset = 'model/sample.txt'
          -> return 'D:/myprj/model/sample.txt' (`return f'{base}/{offset}'`)
-    :param base: absolute path
-    :param offset: relative path (offset) to `base`
-    :return:
+         
+    Args:
+        base: absolute path
+        offset: relative path (offset) to `base`
     """
     if offset.startswith('./'):
         return f'{base}/{offset[2:]}'
@@ -380,35 +396,55 @@ def _calc_path(base: str, offset: str) -> str:
 
 def path_on_prj(offset: str) -> str:
     """ Calculate path based on PRJDIR as pivot.
-    E.g. PRJDIR = 'D:/myprj', path = 'src/main.py' -> 'D:/myprj/src/main.py'
+    
+    Example:
+        PRJDIR = 'D:/myprj', path = 'src/main.py' -> 'D:/myprj/src/main.py'
     """
     return _calc_path(PRJDIR, offset)
 
 
-def path_on_self(offset: str, self: str = '') -> str:
-    """ Calculate path based on caller's `__file__` as pivot.
+def relpath(file: str, self: str = '') -> str:
+    """ Consider relative path always based on caller's.
     
-    :param offset:
-    :param self: Recommended passing __file__ as value.
-        E.g.
-            # == D:/myprj/utils/abc.py ==
-            from lk_utils import filesniff
-            main_script = filesniff.path_on_self('../src/main.py', __file__)
-            # -> main_script = 'D:/myprj/src/main.py'
-        If `self` use default value (empty string), method will auto find out
-        caller's path by analysing caller's Frame (this does the same result of
-        `__file__` but consuming more time, so the default is not recommended.)
-    :return:
+    Assumed a project like:
+        some_prj
+        |- A
+            |- a.py
+            |- AA
+                |- aa.py
+                |- AAA
+                    |- aaa.py
+        |- B
+            |- b.txt
+    No matter which module gets 'b.txt', they can always use this:
+        # a.py
+        from lk_utils.filesniff import relpath
+        txt_file = relpath('../B/b.txt')
+        # aa.py
+        from lk_utils.filesniff import relpath
+        txt_file = relpath('../../B/b.txt')
+        # aaa.py
+        from lk_utils.filesniff import relpath
+        txt_file = relpath('../../../B/b.txt')
+    Even when `aaa.py` imports `aa.py`, they can still use 'relative path' based
+    their own way respectively.
+    
+    Args:
+        file: This param name makes a trick that when we call the function in
+            Pycharm, Pycharm will consider the first argument as a file-like
+            param (bacause of the param name), thus Pycharm gives us path hint
+            when we type into strings.
+        self ([__file__|'']): Recommended passing `__file__` as argument. It
+            will be faster than passing an empty string.
     """
     if self == '':
         # noinspection PyProtectedMember,PyUnresolvedReferences
         frame = sys._getframe(1)
         self = frame.f_code.co_filename.replace('\\', '/')
-    return _calc_path(prettify_dir(os.path.dirname(self)), offset)
+    return _calc_path(prettify_dir(os.path.dirname(self)), file)
 
 
 getpath = get_path = path_on_prj  # alias
-path_on_rel = path_on_self  # alias
 
 
 # ------------------------------------------------------------------------------
