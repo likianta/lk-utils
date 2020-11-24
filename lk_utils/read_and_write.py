@@ -233,6 +233,12 @@ def dumps(data: Hint.DumpableData, file: str, **kwargs):
 
 @contextmanager
 def read(file: str, **kwargs):
+    """ Open file as a read handle.
+    
+    Usage:
+        with read('input.json') as r:
+            print(len(r))
+    """
     data = loads(file, **kwargs)
     try:
         yield data
@@ -242,8 +248,8 @@ def read(file: str, **kwargs):
 
 @contextmanager
 def write(file: str, data=None, **kwargs):
-    """ Yields a write handle to caller, the file will be generated after the
-        `with` block closed.
+    """ Create a write handle, file will be generated after the `with` block
+        closed.
         
     Args:
         file: See `dumps`.
@@ -252,12 +258,10 @@ def write(file: str, data=None, **kwargs):
         kwargs: See `dumps`.
         
     Usage:
-        with write('result.json', []) as w:
+        with write('output.json', []) as w:
             for i in range(10):
                 w.append(i)
         print('See "result.json:1"')
-        # When we exit the `with` block, the data will be automatically saved to
-        # 'result.json' file.
     """
     assert isinstance(data, (list, dict, set, str))
     try:
