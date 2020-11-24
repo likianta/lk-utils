@@ -2,28 +2,28 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : easy_launcher.py
 @Created : 2019-05-29
-@Updated : 2020-11-22
-@Version : 2.0.1
+@Updated : 2020-11-24
+@Version : 2.0.2
 @Desc    :
 """
 
 
-def launch(func, *args, **kwargs):
+def run(func, *args, **kwargs):
     """
     Usage:
         # my_main.py
-        from lk_utils.easy_launcher import launch
+        from lk_utils.easy_launcher import run
         
         def main(a, b):
             print(a + b)
             
-        launch(main, a=1, b=2)
+        run(main, a=1, b=2)
     """
 
     # noinspection PyUnusedLocal
     def show_err_on_console(err):
         print('Runtime Error:', f'\n\t{err}')
-        input('Press any key to leave...')
+        input('Prgress terminated, press ENTER to leave...')
     
     def show_err_on_msgbox(err):
         # https://stackoverflow.com/questions/17280637/tkinter-messagebox
@@ -43,8 +43,6 @@ def launch(func, *args, **kwargs):
         msg = traceback.format_exc()
         show_err_on_msgbox(msg)
         #   show_err_on_console(msg)
-    finally:
-        input('Prgress finished, press ENTER to leave...')
 
 
 def main(msg='', sleepsecs=0):  # DELETE ME

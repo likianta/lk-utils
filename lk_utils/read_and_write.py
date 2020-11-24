@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2020-11-22
-@Version : 1.8.6
+@Updated : 2020-11-24
+@Version : 1.8.8
 @Desc    :
 """
 from contextlib import contextmanager
@@ -134,20 +134,20 @@ def write_file(content: iter, file: str, mode='w', adhesion='\n'):
         f.write(content + '\n')
 
 
-def read_json(file: str) -> dict:
+def read_json(file: str) -> Hint.StructData:
     if file.endswith('.json'):
         from json import loads as _loads
         # 注意: 如果文件内容不符合 json 格式, _loads() 会报 JSONDecodeError.
-        return _loads(read_file(file))
     elif file.endswith('.yaml'):
-        # noinspection PyUnresolvedReferences
-        from yaml import safe_load  # pip install pyyaml
-        return safe_load(file)
+        # pip install pyyaml
+        from yaml import safe_load as _loads
     else:
         raise Exception(
             'Unknown file type! Please pass a file ends with '
             '".json" or ".yaml".'
         )
+    with ropen(file) as f:
+        return _loads(f.read())
 
 
 def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
@@ -166,10 +166,8 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
     """
     from json import dumps as _dumps
     
-    if isinstance(data, Hint.SerialikableData):
+    if isinstance(data, set):
         data = list(data)
-        #   Note: `zip([A, B], [C, D])` will be converted to
-        #   `[(A, C), (B, D)]`
     
     with wopen(file) as f:
         f.write(_dumps(data, ensure_ascii=False, default=str,
@@ -213,7 +211,7 @@ def load_list(file: str, offset=0) -> list:
     return read_file_by_line(file, offset)
 
 
-def load_dict(file: str) -> dict:
+def load_dict(file: str) -> Hint.StructData:
     if file.endswith(Hint.StructFileTypes):
         return read_json(file)
     # elif file.endswith('.txt'):

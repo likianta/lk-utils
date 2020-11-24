@@ -63,7 +63,7 @@ class ReadAndWriteHint:
     StructFileTypes = ('.json', '.json5', '.yaml')
     BinaryFileTypes = ('.xlsx', '.xls', '.pdf')
     
+    PlainData = str
+    StructData = Union[dict, list]
     LoadedData = Union[str, list, dict]
-    SerializableData = Union[str, list, tuple, dict, None]
-    SerialikableData = Union[set, Generator]
-    DumpableData = Union[SerializableData, SerialikableData]
+    DumpableData = Union[dict, list, tuple, str, set, None]

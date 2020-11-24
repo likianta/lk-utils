@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-11-22
-@Version : 1.8.9
+@Updated : 2020-11-23
+@Version : 1.8.10
 @Desc    : Get filepath in elegant way (os.path oriented).
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -20,20 +20,19 @@
 """
 import os
 import sys
-from functools import wraps
 from pathlib import Path
 
 from ._typing import FilesniffHint as Hint
 
 
-def ret_str(func):
-    """ Convert return value from pathlib.Path type to str type. """
-    
-    @wraps
-    def decor(*args, **kwargs):
-        return str(func(*args, **kwargs))
-    
-    return decor
+# def ret_str(func):
+#     """ Convert return value from pathlib.Path type to str type. """
+#
+#     @wraps(func)
+#     def decor(*args, **kwargs):
+#         return str(func(*args, **kwargs))
+#
+#     return decor
 
 
 # ------------------------------------------------------------------------------
@@ -70,14 +69,13 @@ def get_dirname(path: str) -> str:
             return path.rsplit('/', 2)[-2]
 
 
-@ret_str
 def get_filename(filepath: str, suffix=True) -> str:
     """ Input a filepath, return the filename.
     
     The filepath can be absolute or relative, or just a filename.
     """
     p = Path(filepath)
-    return p.name if suffix else p.suffix[1:]
+    return p.name if suffix else p.stem
 
 
 def __get_launch_path() -> str:
