@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-11-23
-@Version : 1.8.10
+@Updated : 2020-11-25
+@Version : 1.8.11
 @Desc    : Get filepath in elegant way (os.path oriented).
     Note: in this module getters' behaviors are somewhat different from
     `os.path` or `pathlib`, see below:
@@ -25,16 +25,6 @@ from pathlib import Path
 from ._typing import FilesniffHint as Hint
 
 
-# def ret_str(func):
-#     """ Convert return value from pathlib.Path type to str type. """
-#
-#     @wraps(func)
-#     def decor(*args, **kwargs):
-#         return str(func(*args, **kwargs))
-#
-#     return decor
-
-
 # ------------------------------------------------------------------------------
 # Prettifiers
 
@@ -52,30 +42,49 @@ def prettify_file(filepath: str) -> str:
 # Path Getters
 
 def get_dirname(path: str) -> str:
-    """ Input a dirpath or filepath, return the dirname.
+    """ Return the directory name from path.
     
-    Note: We don't check the dirpath exists or not.
+    Args:
+        path: filepath or dirpath
+
+    Examples:
+        IN: path = 'a/b/c/d.txt'
+        OT: 'c'
+        IN: path = 'a/b/c'
+        OT: 'c'
+    
+    Notes:
+        This not works like `os.path.dirname`, as a comparison, we use examples
+        above:
+            IN: path = 'a/b/c/d.txt'
+            OT (os.path.dirname): 'a/b/c'
+            IN: path = 'a/b/c'
+            OT (os.path.dirname): 'a/b'
     """
-    if os.path.exists(path):
-        return os.path.dirname(path)
-    elif isdir(path):
-        return path.rsplit('/', 1)[-1]
+    nodes = path.split('/')
+    if isfile(path):
+        return nodes[-2]
     else:
-        if path.count('/') == 0:
-            raise Exception('Cannot resolve dirname from this path', path)
-        elif path.count('/') == 1:
-            return path.split('/', 1)[0]
-        else:
-            return path.rsplit('/', 2)[-2]
-
-
-def get_filename(filepath: str, suffix=True) -> str:
-    """ Input a filepath, return the filename.
+        return nodes[-1]
     
-    The filepath can be absolute or relative, or just a filename.
+
+def get_filename(path: str, suffix=True, strict=False) -> str:
+    """ Return the file name from path.
+    
+    Examples:
+        suffix = True, strict = False
+            IN: path = 'a/b/c/d.txt'
+            OT: 'd.txt'
+            IN: path = 'a/b/c'
+            OT: 'c'  # assumed it is a no-suffix file (if strict is False)
     """
-    p = Path(filepath)
-    return p.name if suffix else p.stem
+    if strict and isdir(path):
+        raise Exception('Cannot get filename from a directory!')
+    name = os.path.split(path)[1]
+    if suffix:
+        return name
+    else:
+        return os.path.splitext(name)[0]
 
 
 def __get_launch_path() -> str:
@@ -404,30 +413,7 @@ def path_on_prj(offset: str) -> str:
 def relpath(file: str, curr_file='') -> str:
     """ Consider relative path always based on caller's.
     
-    Assumed a project like:
-        some_prj
-        |- A
-            |- a.py
-            |- AA
-                |- aa.py
-                |- AAA
-                    |- aaa.py
-        |- B
-            |- b.txt
-    No matter which module gets 'b.txt', they can always use this:
-        # a.py
-        from lk_utils.filesniff import relpath
-        txt_file = relpath('../B/b.txt')
-        # aa.py
-        from lk_utils.filesniff import relpath
-        txt_file = relpath('../../B/b.txt')
-        # aaa.py
-        from lk_utils.filesniff import relpath
-        txt_file = relpath('../../../B/b.txt')
-    Even when `aaa.py` imports `aa.py`, they can still use 'relative path' based
-    their own way respectively.
-    
-    Refer: https://blog.csdn.net/Likianta/article/details/89299937
+    References: https://blog.csdn.net/Likianta/article/details/89299937
     
     Args:
         file: This param name makes a trick that when we call the function in
@@ -452,7 +438,7 @@ getpath = get_path = path_on_prj  # alias
 # ------------------------------------------------------------------------------
 # Other
 
-def dialog(adir, suffix, prompt='请选择您所需文件的对应序号') -> str:
+def dialog(adir: str, suffix, prompt='请选择您所需文件的对应序号') -> str:
     """ File select dialog (Chinese). """
     print(f'当前目录为: {adir}')
     

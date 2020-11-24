@@ -4,7 +4,7 @@ current version: 1.8
 
 --------------------------------------------------------------------------------
 
-# 1.8 | 2020-11-22
+## 1.8 | 2020-11-22
 
 - [新增] ropen() 和 wopen()
 - [优化] 统一参数命名
@@ -16,8 +16,10 @@ current version: 1.8
 - [移除] write() 不再支持 .xlsx 文件格式
 - [优化] 类型提示
 - [优化] read_json()
+- [修复] read_file_by_line() 错误的 strip 行为
+- [优化] loads(), dumps() 支持更多文件类型
 
-# 1.7 | 2020-08-09
+## 1.7 | 2020-08-09
 
 - [移除] FileSword
 - [优化] 完善类型提示
@@ -29,20 +31,20 @@ current version: 1.8
 - [新增] load_dict()
 - [变更] is_file_empty() 重命名为 is_file_has_content()
 
-# 1.6 | 2019-11-06
+## 1.6 | 2019-11-06
 
 - read_and_write_basic.py 重命名为 read_and_write.py
 - loads, dumps 添加别名 read, write
 - loads() 调整对 html 文件的读取方式的判别
 
-# 1.5 | 2019-10-25
+## 1.5 | 2019-10-25
 
 - 新增 loads(), dumps() 函数
 - 移除 _json_holder 变量
 - 调整 loads() 传参
 - 调整 dumps() 后缀的识别范围
 
-# 1.4
+## 1.4
 
 - FileSword 简化文件是否为空的判断方法
 - 完善 write_json(), 使 json.dumps() 输出中文不要被转码
@@ -61,7 +63,7 @@ current version: 1.8
 - 简化 write_file() 操作逻辑
 - read_file_by_line() 新增 offset=0 参数
 
-# 1.3
+## 1.3
 
 - 增加 FileSword
 - 减少了旧方法的代码量

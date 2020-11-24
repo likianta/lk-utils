@@ -1,16 +1,23 @@
 lk_utils.py
 
-current version: 1.4.3
+current version: 1.4.4
 
 --------------------------------------------------------------------------------
 
-## 1.4.3 | 2020-11-22
+## 1.4 | 2020-09-06
+
+### 1.4.4 | 2020-11-27
+
+- [修复] read_and_write.py 一系列错误
+- [修复] filesniff.py 一系列错误
+
+### 1.4.3 | 2020-11-22
 
 - [修复] read_and_write.py 错误的 raise Exceptions 行为
 - [变更] 将部分模块标记为 depreciated
 - [更新] filesniff.py 优化与更新
 
-## 1.4.2 | 2020-11-22
+### 1.4.2 | 2020-11-22
 
 - [变更] 恢复 _typings.py
 - [变更] exit_ways.py 重命名为 easy_launcher.py 并重新实现
@@ -19,7 +26,7 @@ current version: 1.4.3
 - [修复] excel_writer.ExcelWriter 一些错误
 - [更新] excel_writer.py 优化与更新
 
-## 1.4.1 | 2020-09-06
+### 1.4.1 | 2020-09-06
 
 - [变更] filesniff._find_paths() 返回格式调整为 fp-fn
 - [移除] 将 lk-logger 模块从 lk-utils 中剥离并独立
@@ -33,6 +40,8 @@ current version: 1.4.3
 
 - html_table_converter.py 合并到 data_convert.py
 - 修正方法细节, 提高模块易用性
+
+--------------------------------------------------------------------------------
 
 ## 1.2 | 2019-11-01
 
@@ -50,6 +59,8 @@ current version: 1.4.3
 - 将 lk_wrapper.BeautifulSoup 加入到 toolbox
 - 优化模块方法
 - 移除废弃的模块 (ast_analyser.py, html_reader.py)
+
+--------------------------------------------------------------------------------
 
 ## 1.1 | 2019-09-27
 

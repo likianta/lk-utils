@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "1.4.3"
+version = "1.4.4"
 description = "LK Utils is made for data processing."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"

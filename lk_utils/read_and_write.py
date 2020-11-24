@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2020-11-24
-@Version : 1.8.8
+@Updated : 2020-11-27
+@Version : 1.8.9
 @Desc    :
 """
 from contextlib import contextmanager
@@ -37,7 +37,7 @@ def wopen(file: str, mode='w', encoding='utf-8'):
     """
     Args:
         file (str):
-        mode (['w'|'a'|'wb']):
+        mode ('w'|'a'|'wb'):
             w: 写入前清空原文件已有内容
             a: 增量写入
             wb: 以二进制字节流写入
@@ -46,18 +46,18 @@ def wopen(file: str, mode='w', encoding='utf-8'):
     Returns:
         file_handle
     """
+    handle = open(file, mode=mode, encoding=encoding)
     try:
-        handle = open(file, mode=mode, encoding=encoding)
         yield handle
     finally:
-        # noinspection PyUnboundLocalVariable
         handle.close()
 
 
 def get_num_of_lines(file: str) -> int:
     """ 该方法可以高效地读取文件一共有多少行, 支持大文件的读取.
     
-    Refer: https://blog.csdn.net/qq_29422251/article/details/77713741
+    References:
+        https://blog.csdn.net/qq_29422251/article/details/77713741
     """
     with ropen(file) as f:
         return len(['' for _ in f])
@@ -65,7 +65,8 @@ def get_num_of_lines(file: str) -> int:
 
 def is_file_has_content(file: str) -> bool:
     """
-    Refer: https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
+    References:
+        https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
     
     Returns (bool):
         True: file has content
@@ -94,10 +95,12 @@ def read_file_by_line(file: str, offset=0) -> list:
             n: 传一个大于 0 的数字, 表示返回 list[n:]. (ps: 如果该数字大于列表的
                长度, python 会返回一个空列表, 不会报错)
     OT: [str, ...]
+    
+    References:
+        https://blog.csdn.net/qq_40925239/article/details/81486637
     """
-    # https://blog.csdn.net/qq_40925239/article/details/81486637
     with ropen(file) as f:
-        out = [line.strip() for line in f]
+        out = [line.rstrip() for line in f]
     return out[offset:]
 
 
@@ -188,9 +191,11 @@ def loads(file: str, offset=-1, **kwargs) -> Hint.LoadedData:
             -1: If it is negative number (typically -1), means calling
                 `read_file`
             0, 1, 2, 3, ...: See `read_file_by_line`
-        kwargs: See `ExcelReader`.
-            sheetx=0
-            formatting_info=False
+        **kwargs:
+    
+    Keyword Args:
+        sheetx (int): Default 0. See `excel_reader.ExcelReader`
+        formatting_info (bool): Default False. See `excel_reader.ExcelReader`
     """
     if file.endswith(Hint.StructFileTypes):
         return read_json(file)
@@ -203,8 +208,10 @@ def loads(file: str, offset=-1, **kwargs) -> Hint.LoadedData:
         if file.endswith(('.xlsx', '.xls')):
             from .excel_reader import ExcelReader
             return ExcelReader(file, **kwargs)
-    else:
-        raise Exception('Unsupported filetype!', file)
+        else:
+            raise Exception('Unsupported filetype!', file)
+    else:  # .js, .css, .py, etc.
+        return read_file(file)
 
 
 def load_list(file: str, offset=0) -> list:
@@ -225,14 +232,22 @@ def dumps(data: Hint.DumpableData, file: str, **kwargs):
         write_json(data, file, **kwargs)
     elif file.endswith(Hint.PlainFileTypes):
         write_file(data, file, **kwargs)
-    else:
+    elif file.endswith(Hint.BinaryFileTypes):
         raise Exception('Unsupported filetype!', file)
+    else:  # .js, .css, .py, etc.
+        write_file(data, file, **kwargs)
 
 
 # ------------------------------------------------------------------------------
 
 @contextmanager
 def read(file: str, **kwargs):
+    """ Open file as a read handle.
+    
+    Usage:
+        with read('input.json') as r:
+            print(len(r))
+    """
     data = loads(file, **kwargs)
     try:
         yield data
@@ -242,8 +257,8 @@ def read(file: str, **kwargs):
 
 @contextmanager
 def write(file: str, data=None, **kwargs):
-    """ Yields a write handle to caller, the file will be generated after the
-        `with` block closed.
+    """ Create a write handle, file will be generated after the `with` block
+        closed.
         
     Args:
         file: See `dumps`.
@@ -252,12 +267,10 @@ def write(file: str, data=None, **kwargs):
         kwargs: See `dumps`.
         
     Usage:
-        with write('result.json', []) as w:
+        with write('output.json', []) as w:
             for i in range(10):
                 w.append(i)
         print('See "result.json:1"')
-        # When we exit the `with` block, the data will be automatically saved to
-        # 'result.json' file.
     """
     assert isinstance(data, (list, dict, set, str))
     try:
