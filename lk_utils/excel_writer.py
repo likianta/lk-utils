@@ -2,7 +2,7 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : excel_writer.py
 @Created : 2018-00-00
-@Updated : 2020-11-22
+@Updated : 2020-11-28
 @Version : 2.3.13
 @Desc    : ExcelWriter is a post-packing implementation based on XlsxWriter.
 """
@@ -19,31 +19,33 @@ class ExcelWriter:
         designed to provide more flexible and ease of use excel writing
         experience.
     
-    Refer: https://www.jianshu.com/p/187e6b86e1d9
-    Palette: `xlsxwriter.format.Format._get_color`
+    References:
+        https://www.jianshu.com/p/187e6b86e1d9
+        Palette: `xlsxwriter.format.Format._get_color`
     """
-    __h: str
-    
-    _is_constant_memory: bool
-    _merge_format: Hint.CellFormat
-    _sheet_mgr: Hint.SheetManager
-    
     book: Hint.WorkBook
     filepath: str
     rowx: int  # auto increasing row index, see self.writeln, self.writelnx.
     sheet: Hint.WorkSheet
     sheetx: int
-    
+
+    _is_constant_memory: bool
+    _merge_format: Hint.CellFormat
+    _sheet_mgr: Hint.SheetManager
+
+    __h: str
+
     def __init__(self, filepath: str, sheet_name: Hint.SheetName = '',
                  **options):
         """
-        :param filepath: a filepath ends with '.xlsx' ('.xls' is not supported).
-        :param sheet_name: Union[str, None].
-            str: If string is empty, will create a sheet with default name --
-                'sheet 1'.
-            None: `None` is a special token, it tells ExcelWriter NOT to create
-                sheet in `__init__` stage.
-        :param options: workbook format.
+        Args:
+            filepath: a filepath ends with '.xlsx' ('.xls' is not supported).
+            sheet_name (str|None):
+                str: If string is empty, will create a sheet with default name
+                    -- 'sheet 1'.
+                None: `None` is a special token, it tells ExcelWriter NOT to
+                    create sheet in `__init__` stage.
+            options: workbook format.
         """
         if not filepath.endswith('.xlsx'):
             raise ValueError('ExcelWriter only supports .xlsx file type.',
@@ -143,10 +145,11 @@ class ExcelWriter:
               fmt=None):
         """ Write data to cell.
         
-        :param rowx: int. Row number, starts from 0.
-        :param colx: int. Col number, starts from 0.
-        :param data: Union[str, int, float, bool, None]
-        :param fmt: Union[None, Dict]
+        Args:
+            rowx (int): Row number, starts from 0
+            colx (int): Col number, starts from 0
+            data (str|int|float|bool|None):
+            fmt (dict|None):
         """
         self.sheet.write(rowx, colx, data, fmt)
     
@@ -182,7 +185,8 @@ class ExcelWriter:
     @staticmethod
     def purify_values(row: Hint.RowValues):
         """
-        Callers: self.writeln, self.writerow, self.writecol.
+        Callers:
+            self.writeln, self.writerow, self.writecol.
         """
         import re
         reg = re.compile(r'\s+')
@@ -197,13 +201,16 @@ class ExcelWriter:
     def merging_visual(self, rows: Hint.RowValues, to_left='<', to_up='^',
                        offset=(0, 0), fmt=None):
         """ Merge cells in "visual" mode.
+        
         Symbol: '<' means merged to the left cell, '^' merged to the upper cell.
-        E.g.
+        
+        Examples:
             Input: [[ A,  B,  C,  <,  D ],
                     [ ^,  ^,  E,  F,  < ]]
             Output: | A | B | C   * | D |
                     | * | * | E | F | * |
-        NOTE:
+                    
+        Notes:
             1. If you want to draw a rectangle, please use '<' first.
                E.g.
                     Input: [[ A,  B,  <,  C ],

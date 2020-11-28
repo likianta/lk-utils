@@ -9,6 +9,17 @@
 from typing import *
 
 
+class ExcelReaderHint:
+    CellValue = Union[None, bool, float, int, str]
+
+    RowValues = Iterable[CellValue]
+    ColValues = Union[Iterable[CellValue], None]
+    
+    RowDict = Dict[Union[str, int], CellValue]
+    
+    SheetNames = List[str]
+
+
 class ExcelWriterHint:
     from xlsxwriter.format import Format as _Format
     from xlsxwriter.workbook import Workbook as _Workbook

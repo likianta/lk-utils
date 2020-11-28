@@ -2,16 +2,13 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : excel_reader.py
 @Created : 2019-00-00
-@Updated : 2020-09-10
-@Version : 1.2.17
+@Updated : 2020-11-28
+@Version : 1.2.18
 @Desc    :
 """
-from typing import *
-
 import xlrd
 
-_CellValue = Union[str, bool, int, float, None,]
-_ColValues = _RowValues = Iterable
+from ._typing import ExcelReaderHint as Hint
 
 """
 假设表格为:
@@ -121,19 +118,20 @@ class ExcelReader(ColIndexLocator):
     # noinspection PyMissingConstructor
     def __init__(self, path: str, sheetx=0, formatting_info=False):
         """
-        :param path: 传入要读取的文件的路径.
-        :param sheetx: int. 选择要激活的 sheet. 默认读取第一个 sheet (sheetx=0),
-            最大不超过该 excel 的 sheet 总数. 您也可以通过 self.activate_sheet
-            (sheetx) 来切换要读取的 sheet.
-        :param formatting_info: bool. 是否保留源表格样式. 例如单元格的批注, 背景
-            色, 前景色等.
-            注: 只有 ".xls" 支持保留源表格样式, 如果对".xlsx" 使用会直接报错.
-            参考: http://www.bubuko.com/infodetail-2547924.html
+        Args:
+            path: 传入要读取的文件的路径.
+            sheetx: int. 选择要激活的 sheet. 默认读取第一个 sheet (sheetx=0),
+                最大不超过该 excel 的 sheet 总数. 您也可以通过
+                self.activate_sheet (sheetx) 来切换要读取的 sheet.
+            formatting_info: bool. 是否保留源表格样式. 例如单元格的批注, 背景
+                色, 前景色等.
+                注: 只有 ".xls" 支持保留源表格样式, 如果对".xlsx" 使用会直接报
+                错. 参考: http://www.bubuko.com/infodetail-2547924.html
         """
         self.filepath = path
         if '.xlsx' in path:
-            # 当要打开的文件为 ".xlsx" 格式时, 强制 formatting_info 参数为 False.
-            # 参考: http://www.bubuko.com/infodetail-2547924.html
+            # 当要打开的文件为 ".xlsx" 格式时, 强制 formatting_info 参数为
+            # False. 参考: http://www.bubuko.com/infodetail-2547924.html
             formatting_info = False
         # NOTE: ExcelReader 的实例化方法只能够一次性读取 Excel 到内存中. 如果您
         #   的表格非常大, 那么在此过程中会有明显卡顿.
@@ -162,7 +160,7 @@ class ExcelReader(ColIndexLocator):
     def get_num_of_sheets(self) -> int:
         return self.book.nsheets
     
-    def get_name_of_sheets(self) -> List[str]:
+    def get_name_of_sheets(self) -> Hint.SheetNames:
         return self.book.sheet_names()
     
     def get_num_of_rows(self) -> int:
@@ -193,7 +191,7 @@ class ExcelReader(ColIndexLocator):
     
     # noinspection PyUnboundLocalVariable
     @staticmethod
-    def _betterint(v: Any) -> _CellValue:
+    def _betterint(v: Hint.CellValue) -> Hint.CellValue:
         """
         在 excel 中, 所有数字皆以浮点储存. 但考虑到个人需求, 我需要将一些整数在
         python 中以 int 表示. 我将它上升为一个重要的决策. 尽管它可能带来一些负面
@@ -204,20 +202,20 @@ class ExcelReader(ColIndexLocator):
         else:
             return v
     
-    def cell_value(self, x, y) -> _CellValue:
+    def cell_value(self, x, y) -> Hint.CellValue:
         v = self.sheet.cell(x, y).value
         return self._betterint(v)
     
-    def row_values(self, rowx: int) -> _RowValues:
+    def row_values(self, rowx: int) -> Hint.RowValues:
         return [
             self._betterint(x)
             for x in self.sheet.row_values(rowx)
         ]
     
-    def row_dict(self, rowx: int) -> Dict[Union[str, int], _CellValue]:
+    def row_dict(self, rowx: int) -> Hint.RowDict:
         return dict(zip(self.header, self.row_values(rowx)))
     
-    def col_values(self, query, offset=0) -> Union[_ColValues, None]:
+    def col_values(self, query, offset=0) -> Hint.ColValues:
         if not isinstance(query, int):
             # str, list, tuple
             if isinstance(query, (str, bool, float)):
@@ -256,7 +254,9 @@ class ExcelReader(ColIndexLocator):
     # noinspection PyArgumentList
     def walk_rows(self, offset=0, fmt='list'):
         """
-        fmt: 'list'/'dict'
+        Args:
+            offset
+            fmt ('list'|'dict')
         """
         assert fmt in ('list', 'dict')
         handle = self.row_values if fmt == 'list' else self.row_dict
@@ -265,7 +265,9 @@ class ExcelReader(ColIndexLocator):
     # noinspection PyArgumentList
     def enum_rows(self, offset=1, fmt='list'):
         """
-        fmt: 'list'/'dict'
+        Args:
+            offset
+            fmt ('list'|'dict')
         """
         assert fmt in ('list', 'dict')
         handle = self.row_values if fmt == 'list' else self.row_dict
