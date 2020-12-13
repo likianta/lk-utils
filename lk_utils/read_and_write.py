@@ -2,7 +2,7 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2020-11-27
+@Updated : 2020-12-13
 @Version : 1.8.9
 @Desc    :
 """
@@ -13,18 +13,19 @@ from ._typing import ReadAndWriteHint as Hint
 
 
 @contextmanager
-def ropen(file: str, mode='r', encoding='utf-8'):
+def ropen(file: str, mode='r', encoding='utf-8') -> Hint.FileHandle:
     """
     Args:
         file
-        mode (['r'|'rb'])
-        encoding (['utf-8'|'utf-8-sig'])
+        mode ('r'|'rb')
+        encoding ('utf-8'|'utf-8-sig')
     
     Returns:
         file_handle
     """
-    # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使用的是它,
-    # 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函数只是为了简化此书写步骤.
+    # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使
+    # 用的是它, 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函
+    # 数只是为了简化此书写步骤.
     handle = open(file, mode=mode, encoding=encoding)
     try:
         yield handle
@@ -33,7 +34,7 @@ def ropen(file: str, mode='r', encoding='utf-8'):
 
 
 @contextmanager
-def wopen(file: str, mode='w', encoding='utf-8'):
+def wopen(file: str, mode='w', encoding='utf-8') -> Hint.FileHandle:
     """
     Args:
         file (str):
@@ -41,7 +42,7 @@ def wopen(file: str, mode='w', encoding='utf-8'):
             w: 写入前清空原文件已有内容
             a: 增量写入
             wb: 以二进制字节流写入
-        encoding (['utf-8'|'utf-8-sig']):
+        encoding ('utf-8'|'utf-8-sig'):
         
     Returns:
         file_handle
@@ -108,15 +109,15 @@ def write_file(content: iter, file: str, mode='w', adhesion='\n'):
     """ 写入文件, 传入内容可以是字符串, 也可以是数组.
 
     Args:
-        content: 需要写入的文本, 可以是字符串, 也可以是数组. 传入数组时, 会自动将它转换为
-            "\n" 拼接的文本
+        content: 需要写入的文本, 可以是字符串, 也可以是数组. 传入数组时, 会自动
+            将它转换为 "\n" 拼接的文本
         file: 写入的路径, 建议使用相对路径
-        mode (['w'|'a'|'wb']): 写入模式, 有三种可选:
+        mode ('w'|'a'|'wb'): 写入模式, 有三种可选:
             a: 增量写入 (默认)
             w: 清空原内容后写入
             wb: 在 w 的基础上以比特流的形式写入
-        adhesion: ['\n'|'\t'|...]. 拼接方式, 只有当 content 为列表时会用到, 用于将列表
-            转换为文本时选择的拼接方式
+        adhesion: ('\n'|'\t'|...). 拼接方式, 只有当 content 为列表时会用到, 用于
+            将列表转换为文本时选择的拼接方式
             Example:
                 content = adhesion.join(content)
                 # ['a', 'b', 'c'] -> 'a\nb\nc'
@@ -143,6 +144,7 @@ def read_json(file: str) -> Hint.StructData:
         # 注意: 如果文件内容不符合 json 格式, _loads() 会报 JSONDecodeError.
     elif file.endswith('.yaml'):
         # pip install pyyaml
+        # noinspection PyUnresolvedReferences
         from yaml import safe_load as _loads
     else:
         raise Exception(
@@ -262,7 +264,7 @@ def write(file: str, data=None, **kwargs):
         
     Args:
         file: See `dumps`.
-        data ([list|dict|set|str]): If the data type is incorrect, an Assertion
+        data (list|dict|set|str): If the data type is incorrect, an Assertion
             Error will be raised.
         kwargs: See `dumps`.
         

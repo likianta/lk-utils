@@ -1,9 +1,9 @@
 """
 @Author   : Likianta <likianta@foxmail.com>
 @FileName : _typing.py
-@Version  : 0.1.3
+@Version  : 0.1.4
 @Created  : 2020-11-17
-@Updated  : 2020-11-22
+@Updated  : 2020-12-13
 @Desc     : 
 """
 from typing import *
@@ -59,6 +59,9 @@ class FilesniffHint:
 
 
 class ReadAndWriteHint:
+    from io import TextIOWrapper
+    FileHandle = TextIOWrapper
+    
     PlainFileTypes = ('.txt', '.html', '.md', '.rst', '.htm', '.ini')
     StructFileTypes = ('.json', '.json5', '.yaml')
     BinaryFileTypes = ('.xlsx', '.xls', '.pdf')
