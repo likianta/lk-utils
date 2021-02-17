@@ -12,19 +12,17 @@ default = true
 
 [tool.poetry.dependencies]
 python = "^3.8"
-bs4 = "^0.0.1"
-lk-logger = "^3.5"
-requests = "^2.24"
-xlrd = "^1.2"
+lk-logger = "^3.6"
+xlrd = "1.2"
 xlsxwriter = "^1.3"
 
 [tool.poetry.dev-dependencies]
+# bs4
 # csv = "*"
 # lxml = "^4.5"
-# pdfminer = "*"
-# pdfplumber = "*"
 # pypinyin = "*"
 # pyyaml = "*"
+# request
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -2,25 +2,18 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2020-11-25
-@Version : 1.8.11
-@Desc    : Get filepath in elegant way (os.path oriented).
-    Note: in this module getters' behaviors are somewhat different from
-    `os.path` or `pathlib`, see below:
-    1. `filesniff` uses '/' as path delimeter than '\\' in Windows.
-    2. `filesniff` returns absolute path by default ways.
-    3. `filesniff` promtes progressing speed at the expense of sacrificing path
-       legality checking in some situations, it means `filesniff` would like to
-       return a fake or a hypothetical path which doesn't really exist on
-       system.
-    4. `filesniff` assumes the callers would not pass any values what are beyond
-       of expect, for example caller shouldn't pass '../!#$%?/./A.txt' as a path
-       value (`filesniff` will not check path legality in some situations).
-    5. Etc.
+@Updated : 2021-02-17
+@Version : 1.9.3
+@Desc    : Obtain files more easily.
+    
+Notes:
+    1. 本模块优先接受使用正斜杠
+    2. 本模块优先返回文件 (夹) 的绝对路径
 """
 import os
 import sys
-from pathlib import Path
+
+from os import path as ospath
 
 from ._typing import FilesniffHint as Hint
 
@@ -29,13 +22,23 @@ from ._typing import FilesniffHint as Hint
 # Prettifiers
 
 def prettify_dir(dirpath: str) -> str:
-    if dirpath == './' or dirpath == '../':
+    if '\\' in dirpath:
+        dirpath = dirpath.replace('\\', '/').rstrip('/')
+        if dirpath == '.' or dirpath == '..': 
+            dirpath += '/'
         return dirpath
-    return dirpath.replace('\\', '/').rstrip('/')
+    else:
+        return dirpath
 
 
 def prettify_file(filepath: str) -> str:
-    return filepath.replace('\\', '/')
+    if '\\' in filepath: 
+        return filepath.replace('\\', '/')
+    else:
+        return filepath
+
+
+prettify_path = prettify_file
 
 
 # ------------------------------------------------------------------------------
@@ -46,45 +49,37 @@ def get_dirname(path: str) -> str:
     
     Args:
         path: filepath or dirpath
-
-    Examples:
-        IN: path = 'a/b/c/d.txt'
-        OT: 'c'
-        IN: path = 'a/b/c'
-        OT: 'c'
     
     Notes:
-        This not works like `os.path.dirname`, as a comparison, we use examples
-        above:
-            IN: path = 'a/b/c/d.txt'
-            OT (os.path.dirname): 'a/b/c'
-            IN: path = 'a/b/c'
-            OT (os.path.dirname): 'a/b'
+        该函数与 ospath.dirname 的处理方式不同.
+
+    Examples:
+        path = 'a/b/c/d.txt' -> return 'c'
+        path = 'a/b/c' -> return 'c'
     """
-    nodes = path.split('/')
-    if isfile(path):
-        return nodes[-2]
+    segs = prettify_path(path).split('/')
+    if is_file_like(path):
+        return segs[-2]
     else:
-        return nodes[-1]
+        return segs[-1]
     
 
-def get_filename(path: str, suffix=True, strict=False) -> str:
+def get_filename(path: str, suffix=True, strict=True) -> str:
     """ Return the file name from path.
     
     Examples:
-        suffix = True, strict = False
-            IN: path = 'a/b/c/d.txt'
-            OT: 'd.txt'
-            IN: path = 'a/b/c'
-            OT: 'c'  # assumed it is a no-suffix file (if strict is False)
+        args: suffix = True, strict = False
+            path = 'a/b/c/d.txt' -> return 'd.txt'
+            path = 'a/b/c' -> strict is False -> return 'c' (假定它是无后缀的文件)
+                           -> strict is True -> raise Error  
     """
-    if strict and isdir(path):
-        raise Exception('Cannot get filename from a directory!')
-    name = os.path.split(path)[1]
+    if strict and is_dir_like(path):
+        raise ValueError('Path must be a file path, not directory!')
+    name = ospath.split(path)[1]
     if suffix:
         return name
     else:
-        return os.path.splitext(name)[0]
+        return ospath.splitext(name)[0]
 
 
 def __get_launch_path() -> str:
@@ -96,7 +91,7 @@ def __get_launch_path() -> str:
         Example:
             sys.argv: ['D:/myprj/src/main.py', ...] -> 'D:/myprj/src/main.py'
     """
-    path = os.path.abspath(sys.argv[0])
+    path = ospath.abspath(sys.argv[0])
     return prettify_file(path)
 
 
@@ -109,7 +104,7 @@ def __get_launch_dir() -> str:
         Example:
             launcher: 'D:/myprj/src/main.py' -> 'D:/myprj/src'
     """
-    dirpath = os.path.split(__get_launch_path())[0]
+    dirpath = ospath.split(__get_launch_path())[0]
     return prettify_dir(dirpath)
 
 
@@ -122,12 +117,11 @@ def __get_prj_dir(working_dir=''):
     If script launched in cmd or exe (pyinstaller), `_get_launch_dir()` is
     project's dirpath.
     """
-    # prj dirpath
     if working_dir:
-        dirpath = prettify_dir(os.path.abspath(working_dir))
+        dirpath = prettify_dir(ospath.abspath(working_dir))
         # assert prj dirpath is launcher's parent path or launcher's itself.
         assert __get_launch_dir().startswith(dirpath), \
-            'Something wrong with `working_dir` (if you set it)'
+            'Something wrong with `working_dir` (if you passed it)'
     else:
         dirpath = __get_launch_dir()
     return dirpath
@@ -135,102 +129,55 @@ def __get_prj_dir(working_dir=''):
 
 CURRDIR = __get_launch_dir()  # launcher's dirpath
 PRJDIR = __get_prj_dir()  # project's dirpath
-
-
-# usually PRJDIR == CURRDIR or CURRDIR.startswith(PRJDIR)
-
-
-# ------------------------------------------------------------------------------
-# Path Stitches
-
-def stitch_path(*path_nodes, wrapper=None):  # DELETE
-    """
-    Usage:
-        class FileReader:
-            def __init__(self, path):
-                self.holder = open(path, 'r')
-                
-        reader = stitch_path('D:', 'myprj', 'model', 'sample.txt', FileReader)
-        #   equals to: `reader = FileReader('D:/myprj/model/sample.txt')`
-    """
-    path = '/'.join(map(str, path_nodes))
-    return path if wrapper is None else wrapper(path)
-
-
-LKDB = prettify_dir(os.environ.get('LKDB', CURRDIR))  # dbpath
-
-
-def lkdb(*subpath):
-    """ Get path starswith os.environ['LKDB'].
-    
-    Note: you should have set Windows environment path:
-        Key: LKDB
-        Value (e.g.): D:\\database
-    Only works in Pycharm & Windows system.
-    
-    Tricks:
-        # use '{PRJ}' as project name
-        path = lkdb('{PRJ}', 'downloads')  # -> 'D:/database/myprj/downloads'
-    """
-    if subpath:
-        return '{}/{}'.format(
-            LKDB, '/'.join(map(str, subpath))
-        ).replace(
-            '{PRJ}', get_dirname(PRJDIR)
-        )
-    else:
-        return LKDB
+#   assert CURRDIR == PRJDIR or CURRDIR.startswith(PRJDIR)
 
 
 # ------------------------------------------------------------------------------
-# Path Finders (File Finders)
+# Listing Paths
 
-def _find_paths(adir: str, path_type: str, fmt: str,
-                suffix: Hint.Suffix = '', recursive=False,
-                custom_filter=None) -> Hint.FinderReturn:
+def _find_paths(rootdir: str, path_type: str, suffix: Hint.Suffix, fmt: str,
+                recursive=False, custom_filter=None) -> Hint.FinderReturn:
     """ Basic find.
     
     Args:
-        adir: target path to find in.
-        path_type: 'file'/'dir'.
-        fmt: decides the which structure of data returned. options below:
-            'filepath'/'dirpath'/'path'
-            'filename'/'dirname'/'name'
-            'zip'
-            'dict'
-            'dlist'/'list'
-        suffix: assign a filter to which file types we want to fetch.
-            NOTICE:
-                1. Each suffix name must start with a dot ('.jpg', '.txt', etc.)
-                2. Case sensitive
-                3. Param type is str or tuple, cannot be list
+        rootdir: directory entrance
+        path_type: 'file'|'dir'.
+        suffix: str|tuple. assign a filter to which file types we want to fetch.
+            注意:
+                1. each suffix name must start with a dot ('.jpg', '.txt', etc.)
+                2. case sensitive
+                3. type cannot be list
+                4. 如果不需要限定后缀, 则传入空字符串或 None
+        fmt: 定义要返回的数据格式. 可选值见 `docstring:Returns` 中的说明
         recursive: whether to find descendant folders.
-        custom_filter: if you want a more powerful filter than `suffix`
-            param, set it here. The `custom_filter` works after `suffix` filter.
-            Usecase: see `find_subdirs()`, `findall_subdirs()`.
+        custom_filter: function. 传入您自定义的过滤器. 
+            示例: 参考 `find_dirs`, `findall_dirs`.
     
     Returns:
-        fmt: 'filepath'/'dirpath'/'path' -> return [filepath, ...]
-        fmt: 'filename'/'dirname'/'name' -> return [filename, ...]
-        fmt: 'zip' -> return zip([filepath, ...], [filename, ...])
-        fmt: 'dict' -> return {filepath: filename, ...}
-        fmt: 'dlist'/'list' -> return ([filepath, ...], [filename, ...])
+        取决于 args:fmt 的值:
+            | args:fmt                          | return                       |
+            | --------------------------------- | ---------------------------- |
+            | 'filepath' or 'dirpath' or 'path' | [filepath, ...]              |
+            | 'filename' or 'dirname' or 'name' | [filename, ...]              |
+            | 'zip'                    | zip([filepath, ...], [filename, ...]) |
+            | 'dict'                   | {filepath: filename, ...}             |
+            | 'dlist' or 'list'        | ([filepath, ...], [filename, ...])    |
     """
-    adir = prettify_dir(adir)
+    rootdir = prettify_dir(rootdir)
     
-    # recursive
+    # 1. args:recursive
     if recursive is False:
-        names = os.listdir(adir)
-        paths = (f'{adir}/{f}' for f in names)
+        names = os.listdir(rootdir)
+        paths = (f'{rootdir}/{f}' for f in names)
         out = zip(paths, names)
         if path_type == 'file':
-            out = filter(lambda x: os.path.isfile(x[0]), out)
+            out = filter(lambda x: ospath.isfile(x[0]), out)
         else:
-            out = filter(lambda x: os.path.isdir(x[0]), out)
+            out = filter(lambda x: ospath.isdir(x[0]), out)
     else:
         names = []
         paths = []
-        for root, dirnames, filenames in os.walk(adir):
+        for root, dirnames, filenames in os.walk(rootdir):
             root = prettify_dir(root)
             if path_type == 'file':
                 names.extend(filenames)
@@ -240,19 +187,16 @@ def _find_paths(adir: str, path_type: str, fmt: str,
                 paths.extend((f'{root}/{d}' for d in dirnames))
         out = zip(paths, names)
     
-    _not_empty = bool(names)
-    #   True: not empty; False: empty (no paths found)
-    
-    if _not_empty:
-        # suffix
+    if len(names) > 0:
+        # 2. args:suffix
         if suffix:
             out = filter(lambda x: x[1].endswith(suffix), out)
         
-        # custom_filter
-        if custom_filter:
+        # 3. args:custom_filter
+        if custom_filter is not None:
             out = filter(custom_filter, out)
     
-    # fmt
+    # 4. args:fmt
     if fmt in ('filepath', 'dirpath', 'path'):
         return [fp for (fp, fn) in out]
     elif fmt in ('filename', 'dirname', 'name'):
@@ -261,74 +205,71 @@ def _find_paths(adir: str, path_type: str, fmt: str,
         return out
     elif fmt == 'dict':
         return dict(out)
-    elif fmt in ('dlist', 'list'):
-        return zip(*out) if _not_empty else (None, None)
+    elif fmt in ('double_list', 'dlist', 'list'):
+        return zip(*out) if len(names) > 0 else ([], [])
     else:
-        raise ValueError('Unknown format', fmt)
+        raise ValueError('Unknown return format', fmt)
 
 
-def find_files(adir, fmt='filepath', suffix=''):
-    return _find_paths(adir, 'file', fmt, suffix, False)
+def find_files(idir, suffix='', fmt='filepath'):
+    return _find_paths(idir, path_type='file', suffix=suffix, 
+                       fmt=fmt, recursive=False)
 
 
-def find_filenames(adir, suffix=''):
-    return _find_paths(adir, 'file', 'filename', suffix, False)
+def find_filenames(idir, suffix=''):
+    return _find_paths(idir, path_type='file', suffix=suffix,
+                       fmt='filename', recursive=False)
 
 
-def findall_files(adir, fmt='filepath', suffix=''):
-    return _find_paths(adir, 'file', fmt, suffix, True)
+def findall_files(idir, suffix='', fmt='filepath'):
+    return _find_paths(idir, path_type='file', suffix=suffix,
+                       fmt=fmt, recursive=True)
 
 
-def find_subdirs(adir, fmt='dirpath', suffix='',
-                 exclude_protected_folder=True):
+def find_dirs(idir, suffix='', fmt='dirpath',
+              exclude_protected_folders=True):
     """
     Args:
-        adir
-        fmt
+        idir
         suffix
-        exclude_protected_folder: exclude folders which startswith "." or "__".
+        fmt
+        exclude_protected_folders: exclude folders which startswith "." or "__".
             Example:
-                ".git", ".idea", "__pycache__", etc.
+                ".git", "__pycache__", "~temp", "$system", etc.
     """
     
     def _filter(x):
-        return not bool(x[1].startswith(('.', '__')))
+        return not bool(x[1].startswith(('.', '__', '$', '~')))
         #   x[1] indicates to 'filename'
     
     return _find_paths(
-        adir, 'dir', fmt, suffix, False,
-        _filter if exclude_protected_folder else None
+        idir, path_type='dir', suffix=suffix, fmt=fmt, recursive=False,
+        custom_filter=_filter if exclude_protected_folders else None
     )
 
 
-def findall_subdirs(adir, fmt='dirpath', suffix='',
-                    exclude_protected_folder=True):
+def findall_dirs(idir, fmt='dirpath', suffix='',
+                 exclude_protected_folders=True):
     """
-    Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
+    References: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
     
     def _filter(x):
-        return not bool(x[1].startswith(('.', '__')))
+        return not bool(x[1].startswith(('.', '__', '$', '~')))
         #   x[1] indicates to 'filename'
     
     return _find_paths(
-        adir, 'dir', fmt, suffix, True,
-        _filter if exclude_protected_folder else None
+        idir, path_type='dir', suffix=suffix, fmt=fmt, recursive=True,
+        custom_filter=_filter if exclude_protected_folders else None
     )
-
-
-find_dirs = find_subdirs  # alias
-findall_dirs = findall_subdirs  # alias
 
 
 # ------------------------------------------------------------------------------
-# Path Checks
+# Path Checking
 
-def isfile(filepath: str) -> bool:
-    """ Unsafe method judging path-like string.
-    
-    TLDR: If `filepath` looks like a filepath, will return True; otherwise
-        return False.
+def is_file_like(path: str) -> bool:
+    """ If `filepath` looks like a filepath, will return True; otherwise return 
+        False.
     
     Judgement based:
         - Does it end with '/'? -> False
@@ -344,22 +285,20 @@ def isfile(filepath: str) -> bool:
         print(isfile('D:/myprj/.idea'))  # -> True (it should be False)
         print(isfile('D:/!@#$%^&*/README.md'))  # -> True (it should be False)
     """
-    if filepath == '':
+    if path == '':
         return False
-    if filepath.endswith('/'):
+    if path.endswith('/'):
         return False
-    if os.path.isfile(filepath):
+    if ospath.isfile(path):
         return True
-    if '.' in filepath.rsplit('/', 1)[-1]:
+    if '.' in path.rsplit('/', 1)[-1]:
         return True
     else:
         return False
 
 
-def isdir(dirpath: str) -> bool:
-    """ Unsafe method judging dirpath-like string.
-    
-    TLDR: If `dirpath` looks like a dirpath, will return True; otherwise return
+def is_dir_like(path: str) -> bool:
+    """ If `dirpath` looks like a dirpath, will return True; otherwise return
         False.
     
     Judgement based:
@@ -367,11 +306,11 @@ def isdir(dirpath: str) -> bool:
         - Does it really exist on system? -> True
         - Does it end with '/'? -> False
     """
-    if dirpath == '':
+    if path == '':
         return False
-    if dirpath in ('.', './', '/'):
+    if path in ('.', './', '/'):
         return True
-    if os.path.isdir(dirpath):
+    if ospath.isdir(path):
         return True
     else:
         return False
@@ -383,9 +322,9 @@ def isdir(dirpath: str) -> bool:
 def _calc_path(base: str, offset: str) -> str:
     """ Calculate path by relative offset.
     
-    The typical case is:
+    Examples:
         base = 'D:/myprj', offset = 'model/sample.txt'
-         -> return 'D:/myprj/model/sample.txt' (`return f'{base}/{offset}'`)
+         -> return f'{base}/{offset}' -> i.e. 'D:/myprj/model/sample.txt'
          
     Args:
         base: absolute path
@@ -410,40 +349,39 @@ def path_on_prj(offset: str) -> str:
     return _calc_path(PRJDIR, offset)
 
 
-def relpath(file: str, curr_file='') -> str:
+def relpath(file: str, caller='') -> str:
     """ Consider relative path always based on caller's.
     
-    References: https://blog.csdn.net/Likianta/article/details/89299937
-    
     Args:
-        file: This param name makes a trick that when we call the function in
-            Pycharm, Pycharm will consider the first argument as a file-like
-            param (bacause of the param name), thus Pycharm gives us path hint
-            when we type into strings.
-        curr_file ([__file__|'']): Recommended passing `__file__` as argument. It
+        file: the target path. 
+            注意这个参数的名字不要变更. 这是因为 Pycharm 会把 'file' 识别为一个 "文
+            件相关的参数", 并提供给我们智能提示; 使用其他参数名不会有此特性.
+        caller: __file__|''. Recommended passing `__file__` as argument. It
             will be faster than passing an empty string.
+    
+    References: https://blog.csdn.net/Likianta/article/details/89299937
     """
-    if curr_file == '':
+    # 1. target_path
+    target_path = file
+    # 2. caller_dir
+    if caller == '':
         # noinspection PyProtectedMember, PyUnresolvedReferences
         frame = sys._getframe(1)
-        curr_file = frame.f_code.co_filename
-    curr_file = Path(curr_file)
-    curr_dir = curr_file.parent
-    return prettify_file(str(curr_dir.joinpath(file).resolve()))
-
-
-getpath = get_path = path_on_prj  # alias
+        caller = frame.f_code.co_filename
+    caller_dir = ospath.abspath(f'{caller}/../')
+    # 3. get relative path of target_path started from caller_dir
+    return prettify_path(ospath.relpath(target_path, caller_dir))
 
 
 # ------------------------------------------------------------------------------
 # Other
 
-def dialog(adir: str, suffix, prompt='请选择您所需文件的对应序号') -> str:
+def dialog(idir: str, suffix, prompt='请选择您所需文件的对应序号') -> str:
     """ File select dialog (Chinese). """
-    print(f'当前目录为: {adir}')
+    print(f'当前目录为: {idir}')
     
-    # fp: filepaths, fn: filenames
-    fp, fn = find_files(adir, suffix, 'list')
+    # fp: 'filepaths', fn: 'filenames'
+    fp, fn = find_files(idir, suffix=suffix, fmt='dlist')
     
     if not fn:
         raise FileNotFoundError(f'当前目录没有找到目标类型 ({suffix}) 的文件')
@@ -464,8 +402,9 @@ def dialog(adir: str, suffix, prompt='请选择您所需文件的对应序号') 
 
 
 def force_create_dirpath(path: str):
+    path = prettify_path(path)
     dirpath = (nodes := path.split('/'))[0]
     for node in nodes[1:]:
         dirpath += '/' + node
-        if not os.path.exists(dirpath):
+        if not ospath.exists(dirpath):
             os.mkdir(dirpath)

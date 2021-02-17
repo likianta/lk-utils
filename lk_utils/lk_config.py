@@ -384,7 +384,7 @@ def validate_path(collected_paths: list, sorting_file_and_dir=True, ask=True):
         dir_collector = []
         
         for p in collected_paths:
-            if filesniff.isdir(p):
+            if filesniff.is_dir_like(p):
                 dir_collector.append(p)
             else:
                 dir_collector.append(os.path.dirname(p))

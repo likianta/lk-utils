@@ -18,6 +18,7 @@ current version: 1.8
 - [优化] read_json()
 - [修复] read_file_by_line() 错误的 strip 行为
 - [优化] loads(), dumps() 支持更多文件类型
+- [移除] get_num_of_lines()
 
 ## 1.7 | 2020-08-09
 

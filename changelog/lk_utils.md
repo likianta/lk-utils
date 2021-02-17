@@ -10,6 +10,8 @@ current version: 1.4.4
 
 - [修复] read_and_write.py 一系列错误
 - [修复] filesniff.py 一系列错误
+- [优化] filesniff.py 路径处理
+- [变更] 移除一些第三方依赖
 
 ### 1.4.3 | 2020-11-22
 

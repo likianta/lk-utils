@@ -2,12 +2,11 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2020-12-13
-@Version : 1.8.9
+@Updated : 2021-02-17
+@Version : 1.8.10
 @Desc    :
 """
 from contextlib import contextmanager
-from os.path import exists
 
 from ._typing import ReadAndWriteHint as Hint
 
@@ -23,9 +22,9 @@ def ropen(file: str, mode='r', encoding='utf-8') -> Hint.FileHandle:
     Returns:
         file_handle
     """
-    # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使
-    # 用的是它, 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函
-    # 数只是为了简化此书写步骤.
+    # 由于大多数国内 Windows 系统默认编码为 GBK, Python 内置的 open() 函数默认使用
+    # 的是它, 但在开发中经常会遇到编码问题; 所以我们明确指定编码为 UTF-8, 本函数只是
+    # 为了简化此书写步骤.
     handle = open(file, mode=mode, encoding=encoding)
     try:
         yield handle
@@ -54,16 +53,6 @@ def wopen(file: str, mode='w', encoding='utf-8') -> Hint.FileHandle:
         handle.close()
 
 
-def get_num_of_lines(file: str) -> int:
-    """ 该方法可以高效地读取文件一共有多少行, 支持大文件的读取.
-    
-    References:
-        https://blog.csdn.net/qq_29422251/article/details/77713741
-    """
-    with ropen(file) as f:
-        return len(['' for _ in f])
-
-
 def is_file_has_content(file: str) -> bool:
     """
     References:
@@ -73,7 +62,7 @@ def is_file_has_content(file: str) -> bool:
         True: file has content
         False: file is empty
     """
-    from os.path import getsize
+    from os.path import exists, getsize
     return bool(exists(file) and getsize(file))
 
 
@@ -90,11 +79,11 @@ def read_file(file: str) -> str:
 
 def read_file_by_line(file: str, offset=0) -> list:
     """
-    IN: file (str): e.g. 'test.txt'
-        offset (int):
+    IN: file:
+        offset:
             0: 表示返回完整的列表
-            n: 传一个大于 0 的数字, 表示返回 list[n:]. (ps: 如果该数字大于列表的
-               长度, python 会返回一个空列表, 不会报错)
+            n: 传一个大于 0 的数字, 表示返回 list[n:]. (ps: 如果该数字大于列表的长
+               度, python 会返回一个空列表, 不会报错)
     OT: [str, ...]
     
     References:
@@ -160,7 +149,9 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
     Args:
         data
         file: Ends with '.json'.
-            Note: '.yaml' needs PyYaml to be installed.
+            Note: 暂不支持 '.yaml'
+                TODO: yaml.dumps(..., pretty_dump=True, indent=True,
+                                 allow_unicode=True, sort_keys=False)
         pretty_dump:
             True: Output json with pretty-printed format (4 spaces each level).
             False: The most compact representation.
@@ -179,8 +170,9 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
                        indent=None if pretty_dump is False else 4))
         #   ensure_ascii=False: Set to False to support Chinese characters:
         #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
-        #   default=str: When something is not serializble, try to use its
-        #       __str__() attribute, it is useful to resolve `pathlib.PosixPath`
+        #   default=str: When something is not serializble, try to call its
+        #       __str__() attribute, it is useful to resolve case of
+        #       `pathlib.PosixPath`
 
 
 # ------------------------------------------------------------------------------
@@ -223,8 +215,6 @@ def load_list(file: str, offset=0) -> list:
 def load_dict(file: str) -> Hint.StructData:
     if file.endswith(Hint.StructFileTypes):
         return read_json(file)
-    # elif file.endswith('.txt'):
-    #     return {lineno: line for (lineno, line) in enumerate(load_list(file))}
     else:
         raise Exception('Unsupported filetype!', file)
 
@@ -264,7 +254,7 @@ def write(file: str, data=None, **kwargs):
         
     Args:
         file: See `dumps`.
-        data (list|dict|set|str): If the data type is incorrect, an Assertion
+        data (list|dict|set): If the data type is not registered, an Assertion
             Error will be raised.
         kwargs: See `dumps`.
         
@@ -274,7 +264,7 @@ def write(file: str, data=None, **kwargs):
                 w.append(i)
         print('See "result.json:1"')
     """
-    assert isinstance(data, (list, dict, set, str))
+    assert isinstance(data, (list, dict, set))
     try:
         yield data
     finally:
