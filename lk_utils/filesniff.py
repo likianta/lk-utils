@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : filesniff.py
 @Created : 2018-00-00
-@Updated : 2021-02-17
-@Version : 1.9.3
+@Updated : 2021-02-19
+@Version : 1.9.4
 @Desc    : Obtain files more easily.
     
 Notes:
@@ -135,8 +135,11 @@ PRJDIR = __get_prj_dir()  # project's dirpath
 # ------------------------------------------------------------------------------
 # Listing Paths
 
-def _find_paths(rootdir: str, path_type: str, suffix: Hint.Suffix, fmt: str,
-                recursive=False, custom_filter=None) -> Hint.FinderReturn:
+def _find_paths(
+        rootdir: str, path_type: str,
+        suffix: Hint.Suffix, fmt: str, recursive=False,
+        exclude_protected_folders=True
+) -> Hint.FinderReturn:
     """ Basic find.
     
     Args:
@@ -150,8 +153,7 @@ def _find_paths(rootdir: str, path_type: str, suffix: Hint.Suffix, fmt: str,
                 4. 如果不需要限定后缀, 则传入空字符串或 None
         fmt: 定义要返回的数据格式. 可选值见 `docstring:Returns` 中的说明
         recursive: whether to find descendant folders.
-        custom_filter: function. 传入您自定义的过滤器. 
-            示例: 参考 `find_dirs`, `findall_dirs`.
+        exclude_protected_folders: see `_is_protected_folder`
     
     Returns:
         取决于 args:fmt 的值:
@@ -165,102 +167,115 @@ def _find_paths(rootdir: str, path_type: str, suffix: Hint.Suffix, fmt: str,
     """
     rootdir = prettify_dir(rootdir)
     
-    # 1. args:recursive
+    _protected_folders = []
+
+    def _is_protected_folder(path: str):
+        """ 从该文件夹名称判断是否符合 "受保护的文件夹" 特征.
+        
+        Examples:
+            ".git", "__pycache__", "~srctemp", "$RECYCLEBIN", etc.
+            
+        Notes:
+            非严谨的判断
+        """
+        nonlocal rootdir, _protected_folders
+        
+        if path.startswith(tuple(_protected_folders)):
+            _protected_folders.append(path)
+            return True
+        
+        path = path.replace(rootdir, '', 1)
+        if any(f'/{x}' in path for x in ('.', '__', '$', '~')):
+            _protected_folders.append(path)
+            return True
+        
+        return False
+
     if recursive is False:
         names = os.listdir(rootdir)
-        paths = (f'{rootdir}/{f}' for f in names)
-        out = zip(paths, names)
+        paths = (f'{rootdir}/{n}' for n in names)
+        zipped = zip(paths, names)
         if path_type == 'file':
-            out = filter(lambda x: ospath.isfile(x[0]), out)
+            zipped = filter(lambda x: ospath.isfile(x[0]), zipped)
         else:
-            out = filter(lambda x: ospath.isdir(x[0]), out)
+            zipped = filter(lambda x: ospath.isdir(x[0]), zipped)
     else:
         names = []
         paths = []
         for root, dirnames, filenames in os.walk(rootdir):
             root = prettify_dir(root)
+            if _is_protected_folder(root):
+                continue
             if path_type == 'file':
                 names.extend(filenames)
-                paths.extend((f'{root}/{f}' for f in filenames))
+                paths.extend((f'{root}/{n}' for n in filenames))
             else:
                 names.extend(dirnames)
-                paths.extend((f'{root}/{d}' for d in dirnames))
-        out = zip(paths, names)
+                paths.extend((f'{root}/{n}' for n in dirnames))
+        zipped = zip(paths, names)
     
     if len(names) > 0:
-        # 2. args:suffix
-        if suffix:
-            out = filter(lambda x: x[1].endswith(suffix), out)
+        if exclude_protected_folders:
+            zipped = filter(lambda x: not _is_protected_folder(x[0]), zipped)
         
-        # 3. args:custom_filter
-        if custom_filter is not None:
-            out = filter(custom_filter, out)
+        if suffix:
+            zipped = filter(lambda x: x[1].endswith(suffix), zipped)
     
-    # 4. args:fmt
     if fmt in ('filepath', 'dirpath', 'path'):
-        return [fp for (fp, fn) in out]
+        return [fp for (fp, fn) in zipped]
     elif fmt in ('filename', 'dirname', 'name'):
-        return [fn for (fp, fn) in out]
+        return [fn for (fp, fn) in zipped]
     elif fmt == 'zip':
-        return out
+        return zipped
     elif fmt == 'dict':
-        return dict(out)
+        return dict(zipped)
     elif fmt in ('double_list', 'dlist', 'list'):
-        return zip(*out) if len(names) > 0 else ([], [])
+        return zip(*zipped) if len(names) > 0 else ([], [])
     else:
         raise ValueError('Unknown return format', fmt)
 
 
 def find_files(idir, suffix='', fmt='filepath'):
-    return _find_paths(idir, path_type='file', suffix=suffix, 
-                       fmt=fmt, recursive=False)
+    return _find_paths(
+        idir, path_type='file',
+        suffix=suffix, fmt=fmt, recursive=False
+    )
 
 
 def find_filenames(idir, suffix=''):
-    return _find_paths(idir, path_type='file', suffix=suffix,
-                       fmt='filename', recursive=False)
+    return _find_paths(
+        idir, path_type='file',
+        suffix=suffix, fmt='filename', recursive=False
+    )
 
 
 def findall_files(idir, suffix='', fmt='filepath'):
-    return _find_paths(idir, path_type='file', suffix=suffix,
-                       fmt=fmt, recursive=True)
+    return _find_paths(
+        idir, path_type='file',
+        suffix=suffix, fmt=fmt, recursive=True,
+    )
 
 
-def find_dirs(idir, suffix='', fmt='dirpath',
-              exclude_protected_folders=True):
+def find_dirs(idir, suffix='', fmt='dirpath'):
     """
     Args:
         idir
         suffix
         fmt
-        exclude_protected_folders: exclude folders which startswith "." or "__".
-            Example:
-                ".git", "__pycache__", "~temp", "$system", etc.
     """
-    
-    def _filter(x):
-        return not bool(x[1].startswith(('.', '__', '$', '~')))
-        #   x[1] indicates to 'filename'
-    
     return _find_paths(
-        idir, path_type='dir', suffix=suffix, fmt=fmt, recursive=False,
-        custom_filter=_filter if exclude_protected_folders else None
+        idir, path_type='dir',
+        suffix=suffix, fmt=fmt, recursive=False
     )
 
 
-def findall_dirs(idir, fmt='dirpath', suffix='',
-                 exclude_protected_folders=True):
+def findall_dirs(idir, fmt='dirpath', suffix=''):
     """
     References: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
-    
-    def _filter(x):
-        return not bool(x[1].startswith(('.', '__', '$', '~')))
-        #   x[1] indicates to 'filename'
-    
     return _find_paths(
-        idir, path_type='dir', suffix=suffix, fmt=fmt, recursive=True,
-        custom_filter=_filter if exclude_protected_folders else None
+        idir, path_type='dir',
+        suffix=suffix, fmt=fmt, recursive=True
     )
 
 

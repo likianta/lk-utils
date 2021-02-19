@@ -11,6 +11,7 @@ current version: 1.9
 - [优化] 调整 _find_paths:args:fmt='dlist' 在无结果时的返回值
 - [变更] 调整 suffix 和 fmt 的参数顺序
 - [更新] 扩展 find_dirs:_filter, findall_dirs:_filter 对受保护文件的判断
+- [变更] 判断受保护的文件仅由 _find_paths 实现
 
 ## 1.8 | 2020-09-05
 

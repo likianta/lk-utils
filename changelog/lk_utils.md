@@ -6,12 +6,18 @@ current version: 1.4.4
 
 ## 1.4 | 2020-09-06
 
+### 1.4.5 | 2021-02-19
+
+- [变更] filesniff.py:_find_paths 对受保护文件夹的过滤
+
 ### 1.4.4 | 2020-11-27
 
 - [修复] read_and_write.py 一系列错误
 - [修复] filesniff.py 一系列错误
 - [优化] filesniff.py 路径处理
 - [变更] 移除一些第三方依赖
+- [变更] 移除废弃的模块
+- [更新] read_and_write.py 功能强化
 
 ### 1.4.3 | 2020-11-22
 
