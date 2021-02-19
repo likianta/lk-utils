@@ -2,8 +2,8 @@
 @Author  : Likianta <likianta@foxmail.com>
 @Module  : read_and_write.py
 @Created : 2018-08-00
-@Updated : 2021-02-17
-@Version : 1.8.10
+@Updated : 2021-02-19
+@Version : 1.8.11
 @Desc    :
 """
 from contextlib import contextmanager
@@ -131,7 +131,7 @@ def read_json(file: str) -> Hint.StructData:
     if file.endswith('.json'):
         from json import loads as _loads
         # 注意: 如果文件内容不符合 json 格式, _loads() 会报 JSONDecodeError.
-    elif file.endswith('.yaml'):
+    elif file.endswith(('.yaml', '.yml')):
         # pip install pyyaml
         # noinspection PyUnresolvedReferences
         from yaml import safe_load as _loads
@@ -148,10 +148,7 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
     """
     Args:
         data
-        file: Ends with '.json'.
-            Note: 暂不支持 '.yaml'
-                TODO: yaml.dumps(..., pretty_dump=True, indent=True,
-                                 allow_unicode=True, sort_keys=False)
+        file: str ends with '.json', '.yaml' or '.yml'.
         pretty_dump:
             True: Output json with pretty-printed format (4 spaces each level).
             False: The most compact representation.
@@ -160,19 +157,35 @@ def write_json(data: Hint.DumpableData, file: str, pretty_dump=False):
         Convert `set` as `list` to make it serializable.
         Convert `pathlib.PosixPath` as `str` to make it serializable.
     """
-    from json import dumps as _dumps
     
     if isinstance(data, set):
         data = list(data)
-    
+        
+    if file.endswith('.json'):
+        from json import dumps
+        dump_func = lambda f: f.write(dumps(
+            data, ensure_ascii=False, default=str,
+            indent=4 if pretty_dump else None
+        ))
+        #   ensure_ascii=False: 使中文正常输出: https://www.cnblogs.com/zdz8207/p
+        #       /python_learn_note_26.html
+        #   default=str: 当遇到非字符串对象时, 尝试调用它的 __str__ 方法处理. 该选
+        #       项有利于处理 `pathlib.PosixPath` 类型的对象
+    elif file.endswith(('.yaml', '.yml')):
+        from yaml import dump
+        dump_func = lambda f: f.write(dump(
+            data, allow_unicode=True,
+            line_break=True if pretty_dump else False,
+            encoding='utf-8', sort_keys=False
+        ))
+    else:
+        raise Exception(
+            'Unknown file type! Please pass a file ends with '
+            '".json" or ".yaml".'
+        )
+        
     with wopen(file) as f:
-        f.write(_dumps(data, ensure_ascii=False, default=str,
-                       indent=None if pretty_dump is False else 4))
-        #   ensure_ascii=False: Set to False to support Chinese characters:
-        #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
-        #   default=str: When something is not serializble, try to call its
-        #       __str__() attribute, it is useful to resolve case of
-        #       `pathlib.PosixPath`
+        dump_func(f)
 
 
 # ------------------------------------------------------------------------------
