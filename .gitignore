@@ -1,6 +1,7 @@
 # Project exclude paths
 /.idea/
+/depreciated/
 /dist/
 /dust/
-/tests/
 /test/
+/tests/
