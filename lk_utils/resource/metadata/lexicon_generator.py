@@ -235,7 +235,7 @@ def generate_plain_file(*ifiles, ofile, check_duplicate=False):
     
     data_sum = []
     for f in ifiles:
-        data = read_and_write.read_file_by_line(f)
+        data = read_and_write.read_lines(f)
         for d in data:
             if d in data_sum:
                 if check_duplicate:
@@ -252,12 +252,12 @@ trie = Trie()
 
 def generate_trie_file(*ifiles, ofile, check_duplicate=False):
     if len(ifiles) == 1:
-        words = read_and_write.read_file_by_line(ifiles[0])
+        words = read_and_write.read_lines(ifiles[0])
         trie.add_list(words)
     else:
         words_sum = []
         for f in ifiles:
-            words = read_and_write.read_file_by_line(f)
+            words = read_and_write.read_lines(f)
             for w in words:
                 if w in words_sum:
                     if check_duplicate:
@@ -273,13 +273,13 @@ def generate_trie_file(*ifiles, ofile, check_duplicate=False):
 
 def generate_postrie_file(*ifiles, ofile, check_duplicate=False):
     if len(ifiles) == 1:
-        words = read_and_write.read_file_by_line(ifiles[0])
+        words = read_and_write.read_lines(ifiles[0])
         nwords = [x[::-1] for x in words]  # 反转字符串. 'ABC' -> 'CBA'
         trie.add_list(nwords)
     else:
         words_sum = []
         for f in ifiles:
-            words = read_and_write.read_file_by_line(f)
+            words = read_and_write.read_lines(f)
             for w in words:
                 w = w[::-1]
                 if w in words_sum:

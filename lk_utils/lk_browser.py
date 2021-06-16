@@ -1,18 +1,10 @@
-"""
-@Author  : Likianta <likianta@foxmail.com>
-@Module  : lk_browser.py
-@Created : 2018-00-00
-@Updated : 2020-09-06
-@Version : 1.7.1
-@Desc    :
-"""
 from os.path import exists
 from random import randint
 from time import sleep
 
 from requests import Response, Session
 
-from .read_and_write import loads as loads_file
+from .read_and_write import loads
 
 
 def _analyse_plain_form(form: str, sep='\n', assign=': ') -> dict:
@@ -98,10 +90,10 @@ class LKBrowser:
         if isinstance(header, str):
             if header.endswith('.txt'):
                 header = _analyse_plain_form(
-                    loads_file(header, -1), '\n', ': '
+                    loads(header), '\n', ': '
                 )
             elif header.endswith('.json'):
-                header = loads_file(header)
+                header = loads(header)
             else:
                 raise AttributeError
             # NOTE: 去除错误的头部信息, 常见的有 Content-Length
@@ -130,10 +122,10 @@ class LKBrowser:
         if isinstance(cookies, str):
             if cookies.endswith('.txt'):
                 cookies = _analyse_plain_form(
-                    loads_file(cookies, -1), '; ', '='
+                    loads(cookies), '; ', '='
                 )
             elif cookies.endswith('.json'):
-                cookies = loads_file(cookies)
+                cookies = loads(cookies)
             else:
                 raise AttributeError
         elif not isinstance(cookies, dict):

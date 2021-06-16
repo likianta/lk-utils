@@ -251,7 +251,7 @@ class ElementTrie(Trie):
 
 
 def simple_lexicon_generate(i='../temp/in.txt', o='../temp/out.json'):
-    words = read_and_write.read_file_by_line(i)
+    words = read_and_write.read_lines(i)
     trie = Trie()
     for w in words:
         trie.add(w)

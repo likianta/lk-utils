@@ -1,21 +1,23 @@
-name = 'lk_utils'
+# noinspection PyUnresolvedReferences
+from lk_logger import lk
 
-__version__ = '1.4.3'
+from . import (
+    char_converter,
+    chinese_name_processor,
+    concurrency,
+    easy_launcher,
+    filesniff,
+    lk_browser,
+    name_formatter,
+    read_and_write,
+    time_utils,
+    tree_and_trie
+)
+from .concurrency import new_thread, run_new_thread, send_cmd
+from .easy_launcher import safe_launch
+from .excel_reader import ExcelReader
+from .excel_writer import ExcelWriter
+from .read_and_write import dumps, loads
+from .time_utils import simple_timestamp
 
-__all__ = [
-    "char_converter",
-    "chinese_name_processor",
-    "easy_launcher",
-    "excel_reader",
-    "excel_writer",
-    "file_combinator",
-    "filesniff",
-    "lk_browser",
-    "lk_config",
-    "lk_logger",
-    "name_formatter",
-    "read_and_write",
-    "time_utils",
-    "toolbox",
-    "tree_and_trie",
-]
+__version__ = '2.0.0'

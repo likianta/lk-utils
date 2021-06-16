@@ -1,14 +1,7 @@
-"""
-@Author  : Likianta <likianta@foxmail.com>
-@Module  : excel_writer.py
-@Created : 2018-00-00
-@Updated : 2020-11-22
-@Version : 2.3.13
-@Desc    : ExcelWriter is a post-packing implementation based on XlsxWriter.
-"""
+from collections import defaultdict
 from warnings import filterwarnings
 
-from ._typing import ExcelWriterHint as Hint
+from .typehint.excel_writer import *
 
 # shield Python 3.8 SyntaxWarning from XlsxWriter.
 filterwarnings('ignore', category=SyntaxWarning)
@@ -25,17 +18,18 @@ class ExcelWriter:
     __h: str
     
     _is_constant_memory: bool
-    _merge_format: Hint.CellFormat
-    _sheet_mgr: Hint.SheetManager
+    _merge_format: TCellFormat
+    # _sheet_names: TSheetNames
+    _sheet_mgr: TSheetManager
     
-    book: Hint.WorkBook
+    book: TWorkBook
     filepath: str
     rowx: int  # auto increasing row index, see self.writeln, self.writelnx.
-    sheet: Hint.WorkSheet
+    sheet: TWorkSheet
     sheetx: int
     
-    def __init__(self, filepath: str, sheet_name: Hint.SheetName = '',
-                 **options):
+    def __init__(self, filepath: str, sheet_name: TSheetName = '',
+                 options=None):
         """
         :param filepath: a filepath ends with '.xlsx' ('.xls' is not supported).
         :param sheet_name: Union[str, None].
@@ -46,16 +40,21 @@ class ExcelWriter:
         :param options: workbook format.
         """
         if not filepath.endswith('.xlsx'):
-            raise ValueError('ExcelWriter only supports .xlsx file type.',
-                             filepath)
+            raise Exception(
+                'ExcelWriter only supports .xlsx file type.', filepath
+            )
         
         self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
         #   `self.__exit__` and `self.save`.
         
         self._is_constant_memory = options.get('constant_memory', False)
-        self._sheet_mgr = {'sheets': [], 0: {}}
-        #   注: xlsxwriter.Workbook 已提供 sheet_names 的访问, 所以 self._sheet_mgr
-        #   ['sheets'] 其实是没有必要的. 我会在未来调整 (简化) self._sheet_mgr.
+        # self._sheet_names = {}
+        self._sheet_mgr = defaultdict(lambda: {
+            'sheet_name': '',
+            'sheetx'    : -1,
+            'rowx'      : -1,
+            'header'    : None,
+        })
         
         self.sheetx = 0
         self.rowx = 0
@@ -66,7 +65,7 @@ class ExcelWriter:
         import xlsxwriter
         self.book = xlsxwriter.Workbook(
             filename=filepath,
-            options={  # the default options
+            options=options or {  # the default options
                 'strings_to_numbers'       : True,
                 'strings_to_urls'          : False,
                 'constant_memory'          : False,
@@ -78,8 +77,7 @@ class ExcelWriter:
                     # 'align': 'left',  # cell's horizontal alignment
                     # 'valign': 'vcenter',  # cell's vertical alignment
                     # 'text_wrap': False,  # auto line wrap (default False)
-                },
-                **options
+                }
             }
         )
         
@@ -95,10 +93,10 @@ class ExcelWriter:
         })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
     
     def add_new_sheet(self, sheet_name=''):
-        # Save current sheet info
+        # save old sheet info
         self._sheet_mgr[self.sheetx].update({
             'sheetx': self.sheetx,
-            'rowx': self.rowx,
+            'rowx'  : self.rowx,
         })
         
         self.sheetx += 1
@@ -107,23 +105,26 @@ class ExcelWriter:
             sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
         self.sheet = self.book.add_worksheet(sheet_name)
         
-        # Add new sheet info
-        self._sheet_mgr['sheets'].append(sheet_name)
-        self._sheet_mgr[self.sheetx] = {
+        # add new sheet info
+        self._sheet_mgr[self.sheetx].update({
             'sheet_name': sheet_name,
             'sheetx'    : self.sheetx,
             'rowx'      : self.rowx,
-        }
-        
-    def activate_sheet(self, sheetx: Hint.Sheetx):
+        })
+    
+    def activate_sheet(self, sheetx: TSheetx):
         if isinstance(sheetx, int):
-            self.sheetx = sheetx
-            sheet_name = self._sheet_mgr['sheets'][sheetx]
+            sheet_name = self._sheet_mgr[self.sheetx]['sheet_name']
         else:
-            self.sheetx = self._sheet_mgr['sheets'].index(sheetx)
             sheet_name = sheetx
         self.sheet = self.book.get_worksheet_by_name(sheet_name)
+        self.sheetx = self.sheet.index
         self.rowx = self._sheet_mgr[sheetx]['rowx']
+        # TEST
+        if isinstance(sheetx, int):
+            assert self.sheetx == sheetx
+        else:
+            assert self._sheet_mgr[self.sheetx]['sheet_name'] == sheet_name
     
     def __enter__(self):
         """ Return self to use with `with` statement.
@@ -139,7 +140,7 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def write(self, rowx: Hint.Rowx, colx: Hint.Colx, data: Hint.CellValue,
+    def write(self, rowx: TRowx, colx: TColx, data: TCellValue,
               fmt=None):
         """ Write data to cell.
         
@@ -150,7 +151,7 @@ class ExcelWriter:
         """
         self.sheet.write(rowx, colx, data, fmt)
     
-    def writeln(self, *row: Hint.CellValue, auto_index=False,
+    def writeln(self, *row: TCellValue, auto_index=False,
                 purify_values=False, fmt=None):
         """ Write line of data to cells (with auto line breaks). """
         if purify_values:
@@ -162,17 +163,17 @@ class ExcelWriter:
             self.sheet.write_row(self.rowx, 1, row, fmt)
         self.rowx += 1
     
-    def writelnx(self, *row: Hint.CellValue, fmt=None):
+    def writelnx(self, *row: TCellValue, fmt=None):
         self.writeln(*row, auto_index=True, fmt=fmt)
     
-    def writerow(self, rowx: int, data: Hint.RowValues, offset=0,
+    def writerow(self, rowx: int, data: TRowValues, offset=0,
                  purify_values=False, fmt=None):
         """ Write row of data to cells. """
         if purify_values:
             data = self.purify_values(data)
         self.sheet.write_row(rowx, offset, data, fmt)
     
-    def writecol(self, colx: int, data: Hint.ColValues, offset=0,
+    def writecol(self, colx: int, data: TColValues, offset=0,
                  purify_values=False, fmt=None):
         """ Write column of data to cells. """
         if purify_values:
@@ -180,7 +181,7 @@ class ExcelWriter:
         self.sheet.write_column(offset, colx, data, fmt)
     
     @staticmethod
-    def purify_values(row: Hint.RowValues):
+    def purify_values(row: TRowValues):
         """
         Callers: self.writeln, self.writerow, self.writecol.
         """
@@ -194,7 +195,7 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def merging_visual(self, rows: Hint.RowValues, to_left='<', to_up='^',
+    def merging_visual(self, rows: TRowValues, to_left='<', to_up='^',
                        offset=(0, 0), fmt=None):
         """ Merge cells in "visual" mode.
         Symbol: '<' means merged to the left cell, '^' merged to the upper cell.
@@ -270,8 +271,8 @@ class ExcelWriter:
                     cell, cell_format=fmt or self._merge_format
                 )
     
-    def merging_logical(self, p: Hint.Cell, q: Hint.Cell,
-                        value: Hint.CellValue, fmt=None):
+    def merging_logical(self, p: TCell, q: TCell,
+                        value: TCellValue, fmt=None):
         """ Merge cells in "logical" mode.
         
         NOTE:
@@ -286,9 +287,9 @@ class ExcelWriter:
             p[0], p[1], q[0], q[1],
             value, cell_format=fmt or self._merge_format
         )
-
+    
     # --------------------------------------------------------------------------
-
+    
     def save(self, alt=False, open_after_saved=False):
         from xlsxwriter.exceptions import FileCreateError
         try:
@@ -314,11 +315,11 @@ class ExcelWriter:
             import os
             os.startfile(os.path.abspath(self.filepath))
         else:
-            from .lk_logger import lk
+            from lk_logger import lk
             lk.logt(
                 '[ExcelWriter][D1139]',
                 f'\n\tExcel saved to "{self.filepath}:0"',
                 h=self.__h
             )
-
+    
     close = save

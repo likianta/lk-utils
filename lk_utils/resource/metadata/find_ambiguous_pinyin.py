@@ -5,14 +5,14 @@ def main():
     """
     通过大量的样本来预测可能的 "模棱两可" 的拼音的特征.
     """
-    ifile = 'train_in.txt'
-    ofile = 'train_out.txt'
+    i_file = 'train_in.txt'
+    o_file = 'train_out.txt'
     
     aoe = ("a", "ai", "an", "ang", "ao",
            "o", "ou",
            "e", "ei", "en", "eng", "er")
     
-    r = read_and_write.read_file_by_line(ifile)
+    r = read_and_write.read_lines(i_file)
     w = []
     
     for i in r:
@@ -21,7 +21,7 @@ def main():
                 w.append(f'{i}\t{i[:-1 * len(j)]}\t{j}')
                 break
     
-    read_and_write.write_file(w, ofile)
+    read_and_write.write_file(w, o_file)
 
 
 if __name__ == '__main__':

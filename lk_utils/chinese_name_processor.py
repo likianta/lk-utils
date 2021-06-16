@@ -1,15 +1,7 @@
-"""
-@Author  : Likianta <likianta@foxmail.com>
-@Module  : chinese_name_processor.py
-@Created : 2018-00-00
-@Updated : 2020-09-10
-@Version : 1.4.18
-@Desc    :
-"""
 import re
-from typing import *
+from typing import Union, List
 
-from .read_and_write import read_file_by_line, read_json
+from .read_and_write import read_json, read_lines
 from .tree_and_trie import Trie
 
 
@@ -132,7 +124,7 @@ class PinyinCutter:
             ifile1 = lexicon.get('pinyin', 'standard', 'plain')
             ifile2 = lexicon.get('pinyin', 'standard', trie_mode)
         
-        self.pinyin_list = read_file_by_line(ifile1)  # type: list
+        self.pinyin_list = read_lines(ifile1)  # type: list
         self.root = read_json(ifile2)  # type: dict
         
         self.reg = re.compile(r'\w+')
@@ -325,25 +317,25 @@ class PinyinProcessor:
         self.word_pattern = re.compile(r'\w+')
         
         self.pinyin_patterns = {
-            'pinyin'     : read_file_by_line(
+            'pinyin'     : read_lines(
                 lexicon.get('pinyin', 'extend', 'plain')
             ),
-            'wade'       : read_file_by_line(
+            'wade'       : read_lines(
                 lexicon.get('wade', 'extend', 'plain')
             ),
-            'pinyin+wade': read_file_by_line(
+            'pinyin+wade': read_lines(
                 lexicon.get('pinyin+wade', 'ee', 'plain')
             )
         }
         
         self.pinyin_patterns_4_name = {
-            'single'    : read_file_by_line(
+            'single'    : read_lines(
                 lexicon.get('chinese_name', 'pinyin', 'single')
             ),  # -> 中国姓氏_拼音_单姓.txt
-            'double'    : read_file_by_line(
+            'double'    : read_lines(
                 lexicon.get('chinese_name', 'pinyin', 'double')
             ),  # -> 中国姓氏_拼音_复姓.txt
-            'wade'      : read_file_by_line(
+            'wade'      : read_lines(
                 lexicon.get('chinese_name', 'pinyin', 'wade')
             ),  # -> 中国姓氏_拼音_韦氏.txt
             'exceptions': (
@@ -506,10 +498,10 @@ class PinyinProcessor:
 class HanzProcessor:
     
     def __init__(self):
-        self.lastname_single = read_file_by_line(
+        self.lastname_single = read_lines(
             lexicon.get('chinese_name', 'hanz', 'single')
         )  # -> 中国姓氏_汉字_单姓.txt
-        self.lastname_double = read_file_by_line(
+        self.lastname_double = read_lines(
             lexicon.get('chinese_name', 'hanz', 'double')
         )  # -> 中国姓氏_汉字_复姓.txt
         self.is_letter = re.compile('[a-zA-Z]')
