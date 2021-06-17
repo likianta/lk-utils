@@ -23,7 +23,7 @@ def show_err_on_msgbox(msg: str):
     messagebox.showerror(title='Runtime Error', message=msg)
 
 
-def launch(func):
+def safe_launch(func):
     """ 此模块旨在发生报错时, 使窗口不要立即关闭, 留给用户查看错误信息的时间.
         当错误发生时, 按下任意键可结束程序.
         
@@ -43,7 +43,7 @@ def launch(func):
     """
 
     @wraps(func)
-    def decorated(*args, **kwargs):
+    def decorate(*args, **kwargs):
         try:
             func(*args, **kwargs)
         except:
@@ -55,7 +55,7 @@ def launch(func):
             show_err_on_msgbox(msg)
             #   show_err_on_console(msg)
 
-    return decorated
+    return decorate
 
 
 def run(func, *args, **kwargs):

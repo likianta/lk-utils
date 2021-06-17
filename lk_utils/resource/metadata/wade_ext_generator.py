@@ -12,16 +12,9 @@ def main():
             之后不建议再通过本脚本生成. 以后的维护工作全部转到 "非标准韦氏拼音表
             .txt" 本身由人工维护.
     """
-    initials = read_and_write.read_file_by_line(
-        'more/韦氏拼音表_声母.txt'
-    )
-    finals = read_and_write.read_file_by_line(
-        'more/韦氏拼音表_韵母.txt'
-    )
-    
-    aoe = read_and_write.read_file_by_line(
-        'more/韦氏拼音表_零声母.txt'
-    )
+    initials = read_and_write.read_lines('more/韦氏拼音表_声母.txt')
+    finals = read_and_write.read_lines('more/韦氏拼音表_韵母.txt')
+    aoe = read_and_write.read_lines('more/韦氏拼音表_零声母.txt')
     
     combo = []
     for i in initials:
@@ -35,11 +28,9 @@ def main():
     combo.extend([
         'xean'
     ])
-
+    
     combo.sort()
-    read_and_write.write_file(
-        combo, '非标准韦氏拼音表.txt'
-    )
+    read_and_write.write_file(combo, '非标准韦氏拼音表.txt')
 
 
 if __name__ == '__main__':
