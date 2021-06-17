@@ -15,12 +15,6 @@ class ExcelWriter:
     Refer: https://www.jianshu.com/p/187e6b86e1d9
     Palette: `xlsxwriter.format.Format._get_color`
     """
-    __h: str
-    
-    _is_constant_memory: bool
-    _merge_format: TCellFormat
-    # _sheet_names: TSheetNames
-    _sheet_mgr: TSheetManager
     
     book: TWorkBook
     filepath: str
@@ -28,16 +22,22 @@ class ExcelWriter:
     sheet: TWorkSheet
     sheetx: int
     
-    def __init__(self, filepath: str, sheet_name: TSheetName = '',
-                 options=None):
+    _is_constant_memory: bool
+    _merge_format: TCellFormat
+    _sheet_mgr: TSheetManager
+    
+    __h: str
+    
+    def __init__(self, filepath: str, sheet_name: TSheetName = '', **options):
         """
-        :param filepath: a filepath ends with '.xlsx' ('.xls' is not supported).
-        :param sheet_name: Union[str, None].
-            str: If string is empty, will create a sheet with default name --
-                'sheet 1'.
-            None: `None` is a special token, it tells ExcelWriter NOT to create
-                sheet in `__init__` stage.
-        :param options: workbook format.
+        Args:
+            filepath: a filepath ends with '.xlsx' ('.xls' is not supported)
+            sheet_name: Union[str, None]
+                str: If string is empty, will create a sheet with default name: 
+                    'sheet 1'.
+                None: `None` is a special token, it tells ExcelWriter NOT to 
+                    create sheet in `__init__` stage.
+            **options: workbook format.
         """
         if not filepath.endswith('.xlsx'):
             raise Exception(
@@ -86,11 +86,21 @@ class ExcelWriter:
             self.add_new_sheet(sheet_name)
         
         # the format for merge range
-        self._merge_format = self.book.add_format({
+        self._merge_format = self.add_format({
             'align' : 'center',
             'valign': 'vcenter',
             # 'text_wrap': False,  # auto line wrap (default False)
         })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
+    
+    def add_format(self, fmt: TCellFormat) -> TCellFormat:
+        if fmt is None or fmt is {}:
+            return None
+        elif isinstance(fmt, dict):
+            return self.book.add_format(fmt)
+        else:
+            return fmt
+    
+    _convert_format = add_format
     
     def add_new_sheet(self, sheet_name=''):
         # save old sheet info
@@ -141,7 +151,7 @@ class ExcelWriter:
     # --------------------------------------------------------------------------
     
     def write(self, rowx: TRowx, colx: TColx, data: TCellValue,
-              fmt=None):
+              fmt: TCellFormat = None):
         """ Write data to cell.
         
         :param rowx: int. Row number, starts from 0.
@@ -149,36 +159,36 @@ class ExcelWriter:
         :param data: Union[str, int, float, bool, None]
         :param fmt: Union[None, Dict]
         """
-        self.sheet.write(rowx, colx, data, fmt)
+        self.sheet.write(rowx, colx, data, self._convert_format(fmt))
     
     def writeln(self, *row: TCellValue, auto_index=False,
-                purify_values=False, fmt=None):
+                purify_values=False, fmt: TCellFormat = None):
         """ Write line of data to cells (with auto line breaks). """
         if purify_values:
             row = self.purify_values(row)
         if self.rowx == 0 or not auto_index:
-            self.sheet.write_row(self.rowx, 0, row, fmt)
+            self.sheet.write_row(self.rowx, 0, row, self._convert_format(fmt))
         else:
-            self.sheet.write(self.rowx, 0, self.rowx, fmt)
-            self.sheet.write_row(self.rowx, 1, row, fmt)
+            self.sheet.write(self.rowx, 0, self.rowx, self._convert_format(fmt))
+            self.sheet.write_row(self.rowx, 1, row, self._convert_format(fmt))
         self.rowx += 1
     
-    def writelnx(self, *row: TCellValue, fmt=None):
-        self.writeln(*row, auto_index=True, fmt=fmt)
+    def writelnx(self, *row: TCellValue, fmt: TCellFormat = None):
+        self.writeln(*row, auto_index=True, fmt=self._convert_format(fmt))
     
     def writerow(self, rowx: int, data: TRowValues, offset=0,
-                 purify_values=False, fmt=None):
+                 purify_values=False, fmt: TCellFormat = None):
         """ Write row of data to cells. """
         if purify_values:
             data = self.purify_values(data)
-        self.sheet.write_row(rowx, offset, data, fmt)
+        self.sheet.write_row(rowx, offset, data, self._convert_format(fmt))
     
     def writecol(self, colx: int, data: TColValues, offset=0,
-                 purify_values=False, fmt=None):
+                 purify_values=False, fmt: TCellFormat = None):
         """ Write column of data to cells. """
         if purify_values:
             data = self.purify_values(data)
-        self.sheet.write_column(offset, colx, data, fmt)
+        self.sheet.write_column(offset, colx, data, self._convert_format(fmt))
     
     @staticmethod
     def purify_values(row: TRowValues):
@@ -196,7 +206,7 @@ class ExcelWriter:
     # --------------------------------------------------------------------------
     
     def merging_visual(self, rows: TRowValues, to_left='<', to_up='^',
-                       offset=(0, 0), fmt=None):
+                       offset=(0, 0), fmt: TCellFormat = None):
         """ Merge cells in "visual" mode.
         Symbol: '<' means merged to the left cell, '^' merged to the upper cell.
         E.g.
@@ -262,17 +272,18 @@ class ExcelWriter:
             if len(pos) == 1:
                 self.sheet.write(
                     offset[0] + pos[0][0], offset[1] + pos[0][1], cell,
-                    fmt or self._merge_format
+                    self._convert_format(fmt) or self._merge_format
                 )
             else:
                 self.sheet.merge_range(
                     offset[0] + pos[0][0], offset[1] + pos[0][1],
                     offset[0] + pos[-1][0], offset[1] + pos[-1][1],
-                    cell, cell_format=fmt or self._merge_format
+                    cell, cell_format=self._convert_format(fmt) or
+                                      self._merge_format
                 )
     
-    def merging_logical(self, p: TCell, q: TCell,
-                        value: TCellValue, fmt=None):
+    def merging_logical(self, p: TCell, q: TCell, value: TCellValue,
+                        fmt: TCellFormat = None):
         """ Merge cells in "logical" mode.
         
         NOTE:
@@ -285,7 +296,7 @@ class ExcelWriter:
             return
         self.sheet.merge_range(
             p[0], p[1], q[0], q[1],
-            value, cell_format=fmt or self._merge_format
+            value, cell_format=self._convert_format(fmt) or self._merge_format
         )
     
     # --------------------------------------------------------------------------

@@ -18,6 +18,8 @@ _TFileDict = Dict[TFilePath, TFileName]
 _TFileZip = Iterable[Tuple[TFilePath, TFileName]]
 _TFileDualList = Tuple[List[TFilePath], List[TFileName]]
 
+TFileZip = _TFileZip
+
 TFinderReturn = Union[
     List[TFilePath], List[TFileName],
     _TFileDict, _TFileZip, _TFileDualList

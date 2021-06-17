@@ -90,9 +90,10 @@ def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
                 2. Case sensitive
                 3. Param type is str or tuple, cannot be list
         recursive: whether to find descendant folders.
-        custom_filter: if you want a more powerful filter than `suffix`
-            param, set it here. The `custom_filter` works after `suffix` filter.
-            Usages see `find_subdirs()`, `findall_subdirs()`.
+        custom_filter:
+            自定义一个过滤函数. 您需确保该函数只有一个参数, 类型为
+            `_TFileZip`. 其返回结果必须同样为 `_TFileZip`.
+            Usages see `find_dirs`, `findall_dirs`.
     
     Returns:
         fmt: 'filepath'|'dirpath'|'path'    ->  return [filepath, ...]
@@ -135,7 +136,7 @@ def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
         
         # custom_filter
         if custom_filter:
-            out = filter(custom_filter, out)
+            out = custom_filter(out)
     
     # fmt
     if fmt in ('filepath', 'dirpath', 'path'):
@@ -147,7 +148,7 @@ def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
     elif fmt == 'dict':
         return dict(out)
     elif fmt in ('dlist', 'list'):
-        return zip(*out) if _not_empty else (None, None)
+        return zip(*out) if _not_empty else ([], [])
     else:
         raise ValueError('Unknown format', fmt)
 
@@ -167,34 +168,43 @@ def findall_files(dir_: TPath, *, fmt: TPathFormat = 'filepath',
 
 
 def find_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
-              suffix: TSuffix = '', exclude_protected_folder=True):
+              suffix: TSuffix = '', exclude_protected_folders=True):
     return _find_paths(
         dir_, 'dir', fmt, suffix, False,
-        lambda x: __exclude_protected_folders(x, normpath(dir_))
-        if exclude_protected_folder else None
+        custom_filter=__exclude_protected_folders
+        if exclude_protected_folders else None
     )
 
 
 def findall_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
-                 suffix: TSuffix = '', exclude_protected_folder=True):
+                 suffix: TSuffix = '', exclude_protected_folders=True):
     """
     Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
     return _find_paths(
         dir_, 'dir', fmt, suffix, True,
-        lambda x: __exclude_protected_folders(x, normpath(dir_))
-        if exclude_protected_folder else None
+        custom_filter=__exclude_protected_folders
+        if exclude_protected_folders else None
     )
 
 
-def __exclude_protected_folders(path_and_name, root=''):
-    filepath, filename = path_and_name  # type: str
-    if filename.startswith(('.', '__')):
-        return False
-    if any(part.startswith(('.', '__'))
-           for part in filepath.replace(root, '', 1).split('/')):
-        return False
-    return True
+def __exclude_protected_folders(path_zip: TFileZip) -> TFileZip:
+    """
+    see `func:_find_paths:params:custom_filter:docstring`.
+    """
+    discard_paths = set()
+    out = []
+    
+    for filepath, filename in path_zip:
+        if filepath.startswith(tuple(discard_paths)):
+            discard_paths.add(filepath + '/')
+        elif filename.startswith(('.', '__')):
+            discard_paths.add(filepath + '/')
+        else:
+            out.append((filepath, filename))
+    
+    del discard_paths
+    return out
 
 
 # alias
