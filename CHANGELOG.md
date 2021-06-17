@@ -18,6 +18,7 @@
 - 变更: 格式化路径函数整合为 `normpath`
 - 移除: lkdb 相关方法
 - 修复: `find(all)_dirs` 对要排除的路径的漏判
+- 变更: `find*` 相关函数的 `fmt`, `suffix` 参数仅限关键字形参传入
 
 **excel_writer.py**
 

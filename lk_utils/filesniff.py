@@ -152,22 +152,22 @@ def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
         raise ValueError('Unknown format', fmt)
 
 
-def find_files(dir_: TPath, fmt: TPathFormat = 'filepath',
+def find_files(dir_: TPath, *, fmt: TPathFormat = 'filepath',
                suffix: TSuffix = ''):
     return _find_paths(dir_, 'file', fmt, suffix, False)
 
 
-def find_filenames(dir_: TPath, suffix: TSuffix = ''):
+def find_filenames(dir_: TPath, *, suffix: TSuffix = ''):
     return _find_paths(dir_, 'file', 'filename', suffix, False)
 
 
-def findall_files(dir_: TPath, fmt: TPathFormat = 'filepath',
+def findall_files(dir_: TPath, *, fmt: TPathFormat = 'filepath',
                   suffix: TSuffix = ''):
     return _find_paths(dir_, 'file', fmt, suffix, True)
 
 
-def find_dirs(dir_: TPath, fmt: TPathFormat = 'dirpath', suffix: TSuffix = '',
-              exclude_protected_folder=True):
+def find_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
+              suffix: TSuffix = '', exclude_protected_folder=True):
     return _find_paths(
         dir_, 'dir', fmt, suffix, False,
         lambda x: __exclude_protected_folders(x, normpath(dir_))
@@ -175,8 +175,8 @@ def find_dirs(dir_: TPath, fmt: TPathFormat = 'dirpath', suffix: TSuffix = '',
     )
 
 
-def findall_dirs(dir_, fmt: TPathFormat = 'dirpath', suffix: TSuffix = '',
-                 exclude_protected_folder=True):
+def findall_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
+                 suffix: TSuffix = '', exclude_protected_folder=True):
     """
     Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
