@@ -1,14 +1,6 @@
-"""
-@Author  : Likianta <likianta@foxmail.com>
-@Module  : excel_reader.py
-@Created : 2019-00-00
-@Updated : 2020-11-28
-@Version : 1.2.18
-@Desc    :
-"""
 import xlrd
 
-from ._typing import ExcelReaderHint as Hint
+from .typehint.excel_rw import *
 
 """
 假设表格为:
@@ -160,7 +152,7 @@ class ExcelReader(ColIndexLocator):
     def get_num_of_sheets(self) -> int:
         return self.book.nsheets
     
-    def get_name_of_sheets(self) -> Hint.SheetNames:
+    def get_name_of_sheets(self) -> List[TSheetName]:
         return self.book.sheet_names()
     
     def get_num_of_rows(self) -> int:
@@ -191,7 +183,7 @@ class ExcelReader(ColIndexLocator):
     
     # noinspection PyUnboundLocalVariable
     @staticmethod
-    def _betterint(v: Hint.CellValue) -> Hint.CellValue:
+    def _betterint(v: TCellValue) -> TCellValue:
         """
         在 excel 中, 所有数字皆以浮点储存. 但考虑到个人需求, 我需要将一些整数在
         python 中以 int 表示. 我将它上升为一个重要的决策. 尽管它可能带来一些负面
@@ -202,20 +194,20 @@ class ExcelReader(ColIndexLocator):
         else:
             return v
     
-    def cell_value(self, x, y) -> Hint.CellValue:
+    def cell_value(self, x, y) -> TCellValue:
         v = self.sheet.cell(x, y).value
         return self._betterint(v)
     
-    def row_values(self, rowx: int) -> Hint.RowValues:
+    def row_values(self, rowx: int) -> TRowValues:
         return [
             self._betterint(x)
             for x in self.sheet.row_values(rowx)
         ]
     
-    def row_dict(self, rowx: int) -> Hint.RowDict:
+    def row_dict(self, rowx: int) -> Dict[TCellValue, TRowValues]:
         return dict(zip(self.header, self.row_values(rowx)))
     
-    def col_values(self, query, offset=0) -> Hint.ColValues:
+    def col_values(self, query, offset=0) -> Optional[TColValues]:
         if not isinstance(query, int):
             # str, list, tuple
             if isinstance(query, (str, bool, float)):

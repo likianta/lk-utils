@@ -1,7 +1,7 @@
 from shutil import copyfile
 
+from lk_utils import lk
 from lk_utils import read_and_write
-from lk_utils.lk_logger import lk
 from lk_utils.tree_and_trie import Trie
 
 

@@ -11,7 +11,7 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
 default = true
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8"
 lk-logger = "*"
 requests = "*"
 xlrd = "1.2"
@@ -25,5 +25,5 @@ xlsxwriter = "*"
 # pyyaml = "*"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0"]
 build-backend = "poetry.masonry.api"

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from warnings import filterwarnings
 
-from .typehint.excel_writer import *
+from .typehint.excel_rw import *
 
 # shield Python 3.8 SyntaxWarning from XlsxWriter.
 filterwarnings('ignore', category=SyntaxWarning)
