@@ -24,3 +24,4 @@
 
 - 优化: 简化 `ExcelWriter.__init__:params:options` 的传值方式
 - 新增: 单元格格式添加
+- 修复: `ExcelWriter.activate_sheet`

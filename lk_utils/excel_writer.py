@@ -128,13 +128,9 @@ class ExcelWriter:
         else:
             sheet_name = sheetx
         self.sheet = self.book.get_worksheet_by_name(sheet_name)
-        self.sheetx = self.sheet.index
+        self.sheetx = self.sheet.index - 1
+        #   `self.sheet.index` starts from 1, while `self.sheetx` starts from 0
         self.rowx = self._sheet_mgr[sheetx]['rowx']
-        # TEST
-        if isinstance(sheetx, int):
-            assert self.sheetx == sheetx
-        else:
-            assert self._sheet_mgr[self.sheetx]['sheet_name'] == sheet_name
     
     def __enter__(self):
         """ Return self to use with `with` statement.

@@ -7,7 +7,6 @@
 @Desc    :
 """
 import re
-import unicodedata
 
 
 class DiacriticalMarksCleaner:
@@ -75,6 +74,7 @@ class DiacriticalMarksCleaner:
         REF: https://stackoverflow.com/questions/4512590/latin-to-english
             -alphabet-hashing
         """
+        import unicodedata
         # if 'ü' in text:  # for Chinese
         #     text = text.replace('ü', 'v')
         return ''.join(

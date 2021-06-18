@@ -18,7 +18,7 @@ from .easy_launcher import safe_launch
 from .excel_reader import ExcelReader
 from .excel_writer import ExcelWriter
 from .filesniff import find_dirs, find_files, findall_dirs, findall_files
-from .read_and_write import dumps, loads
+from .read_and_write import dumps, loads, ropen, wopen
 from .time_utils import simple_timestamp
 
 __version__ = '2.0.0'
