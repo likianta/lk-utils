@@ -36,18 +36,14 @@ TColsValues = List[TColValues]
 
 TWorkBook = _Workbook
 TWorkSheet = _Worksheet
-TSheetx = Union[int, str]
-TSheetName = Optional[str]
+TSheetx = int
+TSheetName = str
 
 
-# TSheetNames = Dict[TSheetx, TSheetName]
-
-
-class _TSheetManagerValues(TypedDict):
+class TSheetInfo(TypedDict):
     sheet_name: TSheetName
     sheetx: TSheetx
     rowx: TRowx
-    header: THeader
 
 
-TSheetManager = Dict[Union[TSheetx, TSheetName], _TSheetManagerValues]
+TSheetManager = Dict[TSheetx, TSheetInfo]

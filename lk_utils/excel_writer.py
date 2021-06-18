@@ -1,10 +1,14 @@
 from collections import defaultdict
-from warnings import filterwarnings
 
 from .typehint.excel_rw import *
 
-# shield Python 3.8 SyntaxWarning from XlsxWriter.
-filterwarnings('ignore', category=SyntaxWarning)
+try:
+    # shield Python 3.8 SyntaxWarning from XlsxWriter.
+    from warnings import filterwarnings
+    
+    filterwarnings('ignore', category=SyntaxWarning)
+finally:
+    import xlsxwriter
 
 
 class ExcelWriter:
@@ -18,13 +22,12 @@ class ExcelWriter:
     
     book: TWorkBook
     filepath: str
-    rowx: int  # auto increasing row index, see self.writeln, self.writelnx.
+    rowx: TRowx  # auto increasing row index, see self.writeln, self.writelnx.
     sheet: TWorkSheet
-    sheetx: int
     
     _is_constant_memory: bool
     _merge_format: TCellFormat
-    _sheet_mgr: TSheetManager
+    _sheet_mgr: '_SheetManager'
     
     __h: str
     
@@ -43,28 +46,12 @@ class ExcelWriter:
             raise Exception(
                 'ExcelWriter only supports .xlsx file type.', filepath
             )
-        
-        self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
-        #   `self.__exit__` and `self.save`.
-        
-        self._is_constant_memory = options.get('constant_memory', False)
-        # self._sheet_names = {}
-        self._sheet_mgr = defaultdict(lambda: {
-            'sheet_name': '',
-            'sheetx'    : -1,
-            'rowx'      : -1,
-            'header'    : None,
-        })
-        
-        self.sheetx = 0
-        self.rowx = 0
-        
         self.filepath = filepath
         
         # create workbook
-        import xlsxwriter
+        self._is_constant_memory = options.pop('constant_memory', False)
         self.book = xlsxwriter.Workbook(
-            filename=filepath,
+            filename=self.filepath,
             options=options or {  # the default options
                 'strings_to_numbers'       : True,
                 'strings_to_urls'          : False,
@@ -81,16 +68,36 @@ class ExcelWriter:
             }
         )
         
+        self._sheet_mgr = _SheetManager()
         # create sheet (if `sheet_name` is not None)
         if sheet_name is not None:
             self.add_new_sheet(sheet_name)
+        
+        self.rowx = 0  # see `self.writeln:docs:notes`
         
         # the format for merge range
         self._merge_format = self.add_format({
             'align' : 'center',
             'valign': 'vcenter',
             # 'text_wrap': False,  # auto line wrap (default False)
-        })  # REF: https://blog.csdn.net/lockey23/article/details/81004249
+        })  # ref: https://blog.csdn.net/lockey23/article/details/81004249
+        
+        self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
+        #   `self.__exit__` and `self.save`.
+    
+    def __enter__(self):
+        """ Return self to use with `with` statement.
+        Use case: `with ExcelWriter(filepath) as writer: pass`.
+        """
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """ Save and close when leave `with` statement. """
+        self.__h = 'grand_parent'  # prompt
+        self.save()
+        self.__h = 'parent'  # reset
+    
+    # --------------------------------------------------------------------------
     
     def add_format(self, fmt: TCellFormat) -> TCellFormat:
         if fmt is None or fmt is {}:
@@ -104,45 +111,50 @@ class ExcelWriter:
     
     def add_new_sheet(self, sheet_name=''):
         # save old sheet info
-        self._sheet_mgr[self.sheetx].update({
-            'sheetx': self.sheetx,
-            'rowx'  : self.rowx,
+        self._sheet_mgr.update_info(self.sheetx, {
+            'sheet_name': self.sheet_name,
+            'sheetx'    : self.sheetx,
+            'rowx'      : self.rowx,
         })
         
-        self.sheetx += 1
-        self.rowx = 0
-        if not sheet_name:  # auto create sheet name
-            sheet_name = f'sheet {self.sheetx}'  # -> 'sheet 1', 'sheet 2', ...
+        new_sheetx = self._sheet_mgr.add_new_sheet()
+        if sheet_name:
+            assert sheet_name not in self._sheet_mgr.sheet_by_name
+        else:
+            sheet_name = f'sheet {new_sheetx + 1}'
+            #   'sheet 1', 'sheet 2', ...
+        self._sheet_mgr.activate(new_sheetx)
+        
         self.sheet = self.book.add_worksheet(sheet_name)
         
+        self.rowx = 0
+        
         # add new sheet info
-        self._sheet_mgr[self.sheetx].update({
-            'sheet_name': sheet_name,
+        self._sheet_mgr.update_info(self.sheetx, {
+            'sheet_name': self.sheet_name,
             'sheetx'    : self.sheetx,
             'rowx'      : self.rowx,
         })
     
-    def activate_sheet(self, sheetx: TSheetx):
-        if isinstance(sheetx, int):
-            sheet_name = self._sheet_mgr[self.sheetx]['sheet_name']
+    def activate_sheet(self, x: Union[TSheetx, TSheetName]):
+        if isinstance(x, int):
+            sheetx = x
+            sheet_name = self._sheet_mgr.sheet_by_index[x]
         else:
-            sheet_name = sheetx
+            sheet_name = x
+            sheetx = self._sheet_mgr.sheet_by_name[sheet_name]
+        
+        self._sheet_mgr.activate(sheetx)
         self.sheet = self.book.get_worksheet_by_name(sheet_name)
-        self.sheetx = self.sheet.index - 1
-        #   `self.sheet.index` starts from 1, while `self.sheetx` starts from 0
-        self.rowx = self._sheet_mgr[sheetx]['rowx']
+        self.rowx = self._sheet_mgr.sheet_info[sheetx]['rowx']
     
-    def __enter__(self):
-        """ Return self to use with `with` statement.
-        Use case: `with ExcelWriter(filepath) as writer: pass`.
-        """
-        return self
+    @property
+    def sheetx(self) -> TSheetx:
+        return self._sheet_mgr.current_index
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Save and close when leave `with` statement. """
-        self.__h = 'grand_parent'  # prompt
-        self.save()
-        self.__h = 'parent'  # reset
+    @property
+    def sheet_name(self) -> TSheetName:
+        return self._sheet_mgr.current_name
     
     # --------------------------------------------------------------------------
     
@@ -159,7 +171,12 @@ class ExcelWriter:
     
     def writeln(self, *row: TCellValue, auto_index=False,
                 purify_values=False, fmt: TCellFormat = None):
-        """ Write line of data to cells (with auto line breaks). """
+        """ Write line of data to cells (with auto line breaks).
+        
+        Notes:
+            `self.rowx` 须保证在调用本方法之前, 处于空行的开始位置; 调用本方法之
+            后, 更新到下一空行的开始位置.
+        """
         if purify_values:
             row = self.purify_values(row)
         if self.rowx == 0 or not auto_index:
@@ -330,3 +347,42 @@ class ExcelWriter:
             )
     
     close = save
+
+
+class _SheetManager:
+    
+    def __init__(self):
+        self.current_index = -1
+        
+        self.sheet_by_index = {}  # type: Dict[TSheetx, TSheetName]
+        self.sheet_by_name = {}  # type: Dict[TSheetName, TSheetx]
+        
+        self.sheet_info = defaultdict(  # type: TSheetManager
+            lambda: {
+                'sheet_name': '',
+                'sheetx'    : -1,
+                'rowx'      : -1,
+            }
+        )
+    
+    def activate(self, sheetx):
+        self.current_index = sheetx
+    
+    def update_info(self, sheetx: TSheetx, info: TSheetInfo):
+        if sheetx == -1:
+            return
+        self.sheet_by_index[sheetx] = info['sheet_name']
+        self.sheet_by_name[info['sheet_name']] = sheetx
+        # noinspection PyTypeChecker
+        self.sheet_info[sheetx].update(info)
+    
+    def add_new_sheet(self):
+        new_sheetx = len(self.sheet_by_index)
+        return new_sheetx
+    
+    @property
+    def current_name(self) -> Optional[TSheetName]:
+        if self.current_index == -1:
+            return None
+        else:
+            return self.sheet_by_index[self.current_index]
