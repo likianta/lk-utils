@@ -5,11 +5,17 @@ from os import path as ospath
 from .typehint.filesniff import *
 
 
-def normpath(path: TPath, ex=False) -> TNormPath:
-    if ex:  # ex: 'enhance mode'. e.g. 'a/b/c/..' -> 'a/b'
-        return ospath.abspath(path).replace('\\', '/').rstrip('/')
-    else:
-        return path.replace('\\', '/').rstrip('/')
+def normpath(path: TPath) -> TNormPath:
+    """
+    
+    Examples:
+        from            to
+        -------------------
+        ./              .
+        ./a/b/          a/b
+        ./a/b/c/../     a/b
+    """
+    return ospath.normpath(path).replace('\\', '/')
 
 
 # ------------------------------------------------------------------------------
@@ -285,7 +291,7 @@ def relpath(path: TPath, caller_file='') -> TNormPath:
         frame = sys._getframe(1)
         caller_file = frame.f_code.co_filename
     caller_dir = ospath.dirname(caller_file)
-    return normpath(f'{caller_dir}/{path}', ex=True)
+    return normpath(f'{caller_dir}/{path}')
 
 
 # ------------------------------------------------------------------------------
