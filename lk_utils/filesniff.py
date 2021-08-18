@@ -279,12 +279,9 @@ def relpath(path: TPath, caller_file='') -> TNormPath:
     References: https://blog.csdn.net/Likianta/article/details/89299937
     
     Args:
-        path: This param name makes a trick that when we call the function in
-            Pycharm, Pycharm will consider the first argument as a file-like
-            param (bacause of the param name), thus Pycharm gives us path hint
-            when we type into strings.
-        caller_file: Literal[__file__, '']. Recommended passing `__file__` as
-            argument. It will be faster than passing an empty string.
+        path: The target path.
+        caller_file: Literal[__file__, '']. Recommended passing `__file__`, it
+            will be faster than passing an empty string.
     """
     if caller_file == '':
         # noinspection PyProtectedMember, PyUnresolvedReferences

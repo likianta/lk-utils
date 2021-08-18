@@ -13,7 +13,6 @@ default = true
 [tool.poetry.dependencies]
 python = ">=3.8"
 lk-logger = "*"
-requests = "*"
 xlrd = "1.2"
 xlsxwriter = "*"
 
@@ -23,6 +22,7 @@ xlsxwriter = "*"
 # lxml = "^4.5"
 # pypinyin = "*"
 # pyyaml = "*"
+# requests = "*"
 
 [build-system]
 requires = ["poetry>=1.0"]

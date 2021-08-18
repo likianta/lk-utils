@@ -37,7 +37,7 @@ TColsValues = List[TColValues]
 TWorkBook = _Workbook
 TWorkSheet = _Worksheet
 TSheetx = int
-TSheetName = str
+TSheetName = Optional[str]
 
 
 class TSheetInfo(TypedDict):

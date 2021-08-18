@@ -1,14 +1,8 @@
 from collections import defaultdict
 
-from .typehint.excel_rw import *
+import xlsxwriter
 
-try:
-    # shield Python 3.8 SyntaxWarning from XlsxWriter.
-    from warnings import filterwarnings
-    
-    filterwarnings('ignore', category=SyntaxWarning)
-finally:
-    import xlsxwriter
+from .typehint.excel_rw import *
 
 
 class ExcelWriter:
@@ -16,10 +10,10 @@ class ExcelWriter:
         designed to provide more flexible and ease of use excel writing
         experience.
     
-    Refer: https://www.jianshu.com/p/187e6b86e1d9
-    Palette: `xlsxwriter.format.Format._get_color`
+    References:
+        https://www.jianshu.com/p/187e6b86e1d9
+        Palette: `xlsxwriter.format.Format._get_color`
     """
-    
     book: TWorkBook
     filepath: str
     rowx: TRowx  # auto increasing row index, see self.writeln, self.writelnx.
@@ -31,13 +25,13 @@ class ExcelWriter:
     
     __h: str
     
-    def __init__(self, filepath: str, sheet_name: TSheetName = '', **options):
+    def __init__(self, filepath: str, sheet_name: TSheetName = 'sheet 1',
+                 **options):
         """
         Args:
-            filepath: a filepath ends with '.xlsx' ('.xls' is not supported)
-            sheet_name: Union[str, None]
-                str: If string is empty, will create a sheet with default name: 
-                    'sheet 1'.
+            filepath: a filepath ends with '.xlsx' ('.xls' is not allowed)
+            sheet_name:
+                str:
                 None: `None` is a special token, it tells ExcelWriter NOT to 
                     create sheet in `__init__` stage.
             **options: workbook format.
@@ -49,7 +43,7 @@ class ExcelWriter:
         self.filepath = filepath
         
         # create workbook
-        self._is_constant_memory = options.pop('constant_memory', False)
+        self._is_constant_memory = options.get('constant_memory', False)
         self.book = xlsxwriter.Workbook(
             filename=self.filepath,
             options=options or {  # the default options
@@ -119,7 +113,9 @@ class ExcelWriter:
         
         new_sheetx = self._sheet_mgr.add_new_sheet()
         if sheet_name:
-            assert sheet_name not in self._sheet_mgr.sheet_by_name
+            assert sheet_name not in self._sheet_mgr.sheet_by_name, (
+                f'The sheet ("{sheet_name}") has already existed'
+            )
         else:
             sheet_name = f'sheet {new_sheetx + 1}'
             #   'sheet 1', 'sheet 2', ...
@@ -131,7 +127,7 @@ class ExcelWriter:
         
         # add new sheet info
         self._sheet_mgr.update_info(self.sheetx, {
-            'sheet_name': self.sheet_name,
+            'sheet_name': sheet_name,
             'sheetx'    : self.sheetx,
             'rowx'      : self.rowx,
         })
@@ -291,8 +287,8 @@ class ExcelWriter:
                 self.sheet.merge_range(
                     offset[0] + pos[0][0], offset[1] + pos[0][1],
                     offset[0] + pos[-1][0], offset[1] + pos[-1][1],
-                    cell, cell_format=self._convert_format(fmt) or
-                                      self._merge_format
+                    cell, cell_format=(self._convert_format(fmt) or
+                                       self._merge_format)
                 )
     
     def merging_logical(self, p: TCell, q: TCell, value: TCellValue,
