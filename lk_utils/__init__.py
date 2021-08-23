@@ -7,7 +7,7 @@ from . import (
     concurrency,
     easy_launcher,
     filesniff,
-    lk_browser,
+    # lk_browser,
     name_formatter,
     read_and_write,
     time_utils,

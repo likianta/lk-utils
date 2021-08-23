@@ -1,5 +1,6 @@
 import subprocess
 from functools import wraps
+from textwrap import dedent
 from threading import Thread
 
 
@@ -17,13 +18,21 @@ def run_new_thread(func, *args, **kwargs) -> Thread:
     return t
 
 
-def send_cmd(cmd: str, ignore_errors=False) -> bool:
+def send_cmd(cmd: str, ignore_errors=False) -> str:
+    if '\n' in cmd:
+        # https://stackoverflow.com/questions/20042205/calling-multiple-commands
+        #   -using-os-system-in-python
+        cmd = dedent(cmd).replace('\n', '&')
+        #   replaced with '&' for windows
+        #   replaced with ';' for linux (not implemented yet)
+    
     try:
-        subprocess.run(cmd, shell=True, check=True, capture_output=True)
+        ret = subprocess.run(
+            cmd, shell=True, check=True, capture_output=True
+        )
+        out = ret.stdout.decode(encoding='utf-8').replace('\r\n', '\n')
     except subprocess.CalledProcessError as e:
-        if ignore_errors:
-            return False
-        else:
-            raise Exception(e.stderr.decode(encoding='utf-8'))
-    else:
-        return True
+        out = e.stderr.decode(encoding='utf-8')
+        if not ignore_errors:
+            raise Exception(out)
+    return out
