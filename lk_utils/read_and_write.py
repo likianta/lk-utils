@@ -14,7 +14,10 @@ def ropen(file: TFile, mode: TFileMode = 'r', encoding='utf-8') -> TFileHandle:
         mode: ('r'|'rb')
         encoding: ('utf-8'|'utf-8-sig')
     """
-    handle = open(file, mode=mode, encoding=encoding)
+    if 'b' in mode:
+        handle = open(file, mode=mode)
+    else:
+        handle = open(file, mode=mode, encoding=encoding)
     try:
         yield handle
     finally:
@@ -32,7 +35,10 @@ def wopen(file: TFile, mode: TFileMode = 'w', encoding='utf-8') -> TFileHandle:
             wb: 以二进制字节流写入
         encoding ('utf-8'|'utf-8-sig'):
     """
-    handle = open(file, mode=mode, encoding=encoding)
+    if 'b' in mode:
+        handle = open(file, mode=mode)
+    else:
+        handle = open(file, mode=mode, encoding=encoding)
     try:
         yield handle
     finally:
@@ -182,11 +188,11 @@ def dumps(data: TDumpableData, file: TFile, **kwargs):
     if file.endswith(('.yaml', '.yml')):  # pip install pyyaml
         # noinspection PyUnresolvedReferences
         from yaml import dump as _ydump
-        with ropen(file) as f:
+        with wopen(file) as f:
             return _ydump(data, f, **kwargs)
     
     if file.endswith(('.pkl',)):
-        with ropen(file, 'rb') as f:
+        with wopen(file, 'wb') as f:
             return _pdump(data, f, **kwargs)
     
     # unregistered file types, like: .js, .css, .py, etc.
