@@ -2,7 +2,8 @@ from os.path import exists
 from random import randint
 from time import sleep
 
-from requests import Response, Session
+from requests import Response
+from requests import Session
 
 from .read_and_write import loads
 

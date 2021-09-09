@@ -163,7 +163,8 @@ class ExcelReader(ColIndexLocator):
     
     # --------------------------------------------------------------------------
     
-    def get_header(self) -> list:
+    def get_header(self) -> Optional[list]:
+        # noinspection PyTypeChecker
         return self.header
     
     def get_sheet(self, sheetx=None):

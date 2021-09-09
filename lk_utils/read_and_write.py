@@ -1,7 +1,9 @@
 from contextlib import contextmanager
-from json import dump as _jdump, load as _jload
+from json import dump as _jdump
+from json import load as _jload
 from os.path import exists
-from pickle import dump as _pdump, load as _pload
+from pickle import dump as _pdump
+from pickle import load as _pload
 
 from .typehint.read_and_write import *
 

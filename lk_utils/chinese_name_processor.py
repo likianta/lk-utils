@@ -1,7 +1,9 @@
 import re
-from typing import Union, List
+from typing import List
+from typing import Union
 
-from .read_and_write import read_json, read_lines
+from .read_and_write import read_json
+from .read_and_write import read_lines
 from .tree_and_trie import Trie
 
 
