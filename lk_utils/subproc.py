@@ -57,14 +57,16 @@ def run_cmd_shell(cmd: str, multi_lines=False, ignore_errors=False):
         ret = subprocess.run(
             cmd, shell=True, check=True, capture_output=True
         )
-        out = ret.stdout.decode(encoding='utf-8').strip()
+        ret = ret.stdout.decode(encoding='utf-8').strip()
     except subprocess.CalledProcessError as e:
-        out = e.stderr.decode(encoding='utf-8').strip()
+        ret = e.stderr.decode(encoding='utf-8').strip()
         if not ignore_errors:
-            from lk_logger import lk
-            lk.logp(cmd, out)
-            raise e
-    return out
+            raise Exception(dedent(f'''
+                Command shell error happend:
+                    cmd: {cmd}
+                    err: {ret}
+            '''))
+    return ret
 
 
 def run_cmd_args(*args, ignore_errors=False):
