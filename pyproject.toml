@@ -12,7 +12,7 @@ default = true
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-lk-logger = ">=4.0.0"
+lk-logger = "*"
 xlrd = "1.2"
 xlsxwriter = "*"
 
