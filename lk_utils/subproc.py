@@ -57,9 +57,9 @@ def run_cmd_shell(cmd: str, multi_lines=False, ignore_errors=False):
         ret = subprocess.run(
             cmd, shell=True, check=True, capture_output=True
         )
-        ret = ret.stdout.decode(encoding='utf-8').strip()
+        ret = ret.stdout.decode(encoding='utf-8', errors='replace').strip()
     except subprocess.CalledProcessError as e:
-        ret = e.stderr.decode(encoding='utf-8').strip()
+        ret = e.stderr.decode(encoding='utf-8', errors='replace').strip()
         if not ignore_errors:
             raise Exception(dedent(f'''
                 Command shell error happend:
