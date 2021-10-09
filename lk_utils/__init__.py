@@ -28,4 +28,4 @@ from .subproc import run_cmd_shell
 from .subproc import run_cmd_shell as send_cmd
 from .time_utils import simple_timestamp
 
-__version__ = '2.0.0b1'
+__version__ = '2.0.0'
