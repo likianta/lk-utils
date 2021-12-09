@@ -48,7 +48,7 @@ def get_filename(path: TPath, suffix=True, strict=False) -> TNormPath:
     """
     if strict and isdir(path):
         raise Exception('Cannot get filename from a directory!')
-    name = ospath.split(normpath(path))[-1]
+    name = ospath.basename(path)
     if suffix:
         return name
     else:
