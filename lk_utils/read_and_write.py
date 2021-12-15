@@ -120,8 +120,10 @@ def write_file(content: T.Union[iter, list, str, tuple],
     """
     if not isinstance(content, str):
         content = adhesion.join(map(str, content))
+    if not content.endswith('\n'):  # add line feed
+        content += '\n'
     with wopen(file, mode) as f:
-        f.write(content + '\n')
+        f.write(content)
 
 
 def read_json(file: T.File) -> T.Union[dict, list]:
