@@ -1,8 +1,55 @@
+import typing as _t
 from collections import defaultdict
 
 import xlsxwriter
 
-from .typehint.excel_rw import *
+
+class T:
+    from xlsxwriter.workbook import Workbook as _Workbook
+    from xlsxwriter.workbook import Worksheet as _Worksheet
+    
+    Dict = _t.Dict
+    Optional = _t.Optional
+    Union = _t.Union
+    
+    Rowx = int
+    Colx = int
+    Cell = _t.Tuple[Rowx, Colx]
+    
+    class _CellFormat(_t.TypedDict):
+        """
+        References:
+            xlsxwriter.format.Format
+            https://xlsxwriter.readthedocs.io/format.html
+        """
+        # xlsxwriter.format.Format
+        align: _t.Literal['left', 'right', 'center']
+        valign: _t.Literal['top', 'bottom', 'vcenter']
+        textwrap: bool
+        num_percent: str
+        # TODO: more...
+    
+    CellFormat = _t.Union[None, _t.Dict[str, str], _CellFormat]
+    
+    CellValue = _t.Union[None, bool, float, int, str]
+    RowValues = _t.Iterable[CellValue]
+    ColValues = _t.Iterable[CellValue]
+    Header = _t.List[CellValue]
+    
+    RowsValues = _t.List[RowValues]
+    ColsValues = _t.List[ColValues]
+    
+    WorkBook = _Workbook
+    WorkSheet = _Worksheet
+    Sheetx = int
+    SheetName = _t.Optional[str]
+    
+    class SheetInfo(_t.TypedDict):
+        sheet_name: _t.Optional[str]
+        sheetx: int
+        rowx: int
+    
+    SheetManager = _t.Dict[Sheetx, SheetInfo]
 
 
 class ExcelWriter:
@@ -14,18 +61,18 @@ class ExcelWriter:
         https://www.jianshu.com/p/187e6b86e1d9
         Palette: `xlsxwriter.format.Format._get_color`
     """
-    book: TWorkBook
+    book: T.WorkBook
     filepath: str
-    rowx: TRowx  # auto increasing row index, see self.writeln, self.writelnx.
-    sheet: TWorkSheet
+    rowx: T.Rowx  # auto increasing row index, see self.writeln, self.writelnx.
+    sheet: T.WorkSheet
     
     _is_constant_memory: bool
-    _merge_format: TCellFormat
+    _merge_format: T.CellFormat
     _sheet_mgr: '_SheetManager'
     
     __h: str
     
-    def __init__(self, filepath: str, sheet_name: TSheetName = 'sheet 1',
+    def __init__(self, filepath: str, sheet_name: T.SheetName = 'sheet 1',
                  **options):
         """
         Args:
@@ -93,7 +140,7 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def add_format(self, fmt: TCellFormat) -> TCellFormat:
+    def add_format(self, fmt: T.CellFormat) -> T.CellFormat:
         if fmt is None or fmt is {}:
             return None
         elif isinstance(fmt, dict):
@@ -132,7 +179,7 @@ class ExcelWriter:
             'rowx'      : self.rowx,
         })
     
-    def activate_sheet(self, x: Union[TSheetx, TSheetName]):
+    def activate_sheet(self, x: T.Union[T.Sheetx, T.SheetName]):
         if isinstance(x, int):
             sheetx = x
             sheet_name = self._sheet_mgr.sheet_by_index[x]
@@ -145,17 +192,17 @@ class ExcelWriter:
         self.rowx = self._sheet_mgr.sheet_info[sheetx]['rowx']
     
     @property
-    def sheetx(self) -> TSheetx:
+    def sheetx(self) -> T.Sheetx:
         return self._sheet_mgr.current_index
     
     @property
-    def sheet_name(self) -> TSheetName:
+    def sheet_name(self) -> T.SheetName:
         return self._sheet_mgr.current_name
     
     # --------------------------------------------------------------------------
     
-    def write(self, rowx: TRowx, colx: TColx, data: TCellValue,
-              fmt: TCellFormat = None):
+    def write(self, rowx: T.Rowx, colx: T.Colx, data: T.CellValue,
+              fmt: T.CellFormat = None):
         """ Write data to cell.
         
         :param rowx: int. Row number, starts from 0.
@@ -165,8 +212,8 @@ class ExcelWriter:
         """
         self.sheet.write(rowx, colx, data, self._convert_format(fmt))
     
-    def writeln(self, *row: TCellValue, auto_index=False,
-                purify_values=False, fmt: TCellFormat = None):
+    def writeln(self, *row: T.CellValue, auto_index=False,
+                purify_values=False, fmt: T.CellFormat = None):
         """ Write line of data to cells (with auto line breaks).
         
         Notes:
@@ -182,25 +229,25 @@ class ExcelWriter:
             self.sheet.write_row(self.rowx, 1, row, self._convert_format(fmt))
         self.rowx += 1
     
-    def writelnx(self, *row: TCellValue, fmt: TCellFormat = None):
+    def writelnx(self, *row: T.CellValue, fmt: T.CellFormat = None):
         self.writeln(*row, auto_index=True, fmt=self._convert_format(fmt))
     
-    def writerow(self, rowx: int, data: TRowValues, offset=0,
-                 purify_values=False, fmt: TCellFormat = None):
+    def writerow(self, rowx: int, data: T.RowValues, offset=0,
+                 purify_values=False, fmt: T.CellFormat = None):
         """ Write row of data to cells. """
         if purify_values:
             data = self.purify_values(data)
         self.sheet.write_row(rowx, offset, data, self._convert_format(fmt))
     
-    def writecol(self, colx: int, data: TColValues, offset=0,
-                 purify_values=False, fmt: TCellFormat = None):
+    def writecol(self, colx: int, data: T.ColValues, offset=0,
+                 purify_values=False, fmt: T.CellFormat = None):
         """ Write column of data to cells. """
         if purify_values:
             data = self.purify_values(data)
         self.sheet.write_column(offset, colx, data, self._convert_format(fmt))
     
     @staticmethod
-    def purify_values(row: TRowValues):
+    def purify_values(row: T.RowValues):
         """
         Callers: self.writeln, self.writerow, self.writecol.
         """
@@ -214,8 +261,8 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def merging_visual(self, rows: TRowValues, to_left='<', to_up='^',
-                       offset=(0, 0), fmt: TCellFormat = None):
+    def merging_visual(self, rows: T.RowValues, to_left='<', to_up='^',
+                       offset=(0, 0), fmt: T.CellFormat = None):
         """ Merge cells in "visual" mode.
         Symbol: '<' means merged to the left cell, '^' merged to the upper cell.
         E.g.
@@ -291,8 +338,8 @@ class ExcelWriter:
                                        self._merge_format)
                 )
     
-    def merging_logical(self, p: TCell, q: TCell, value: TCellValue,
-                        fmt: TCellFormat = None):
+    def merging_logical(self, p: T.Cell, q: T.Cell, value: T.CellValue,
+                        fmt: T.CellFormat = None):
         """ Merge cells in "logical" mode.
         
         NOTE:
@@ -350,10 +397,10 @@ class _SheetManager:
     def __init__(self):
         self.current_index = -1
         
-        self.sheet_by_index = {}  # type: Dict[TSheetx, TSheetName]
-        self.sheet_by_name = {}  # type: Dict[TSheetName, TSheetx]
+        self.sheet_by_index = {}  # type: T.Dict[T.Sheetx, T.SheetName]
+        self.sheet_by_name = {}  # type: T.Dict[T.SheetName, T.Sheetx]
         
-        self.sheet_info = defaultdict(  # type: TSheetManager
+        self.sheet_info = defaultdict(  # type: T.SheetManager
             lambda: {
                 'sheet_name': '',
                 'sheetx'    : -1,
@@ -364,7 +411,7 @@ class _SheetManager:
     def activate(self, sheetx):
         self.current_index = sheetx
     
-    def update_info(self, sheetx: TSheetx, info: TSheetInfo):
+    def update_info(self, sheetx: T.Sheetx, info: T.SheetInfo):
         if sheetx == -1:
             return
         self.sheet_by_index[sheetx] = info['sheet_name']
@@ -377,7 +424,7 @@ class _SheetManager:
         return new_sheetx
     
     @property
-    def current_name(self) -> Optional[TSheetName]:
+    def current_name(self) -> T.Optional[T.SheetName]:
         if self.current_index == -1:
             return None
         else:

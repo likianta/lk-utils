@@ -1,3 +1,6 @@
+"""
+DELETE: This module is going to be removed from lk-utils package.
+"""
 from os.path import exists
 from random import randint
 from time import sleep

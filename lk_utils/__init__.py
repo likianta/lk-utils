@@ -5,16 +5,15 @@ from . import char_converter
 from . import chinese_name_processor
 from . import easy_launcher
 from . import filesniff
-# from . import lk_browser
 from . import name_formatter
 from . import read_and_write
 from . import subproc
-from . import subproc
 from . import time_utils
 from . import tree_and_trie
-from .easy_launcher import safe_launch
 from .excel_reader import ExcelReader
 from .excel_writer import ExcelWriter
+# from .filesniff import currdir
+# from .filesniff import relpath
 from .filesniff import find_dirs
 from .filesniff import find_files
 from .filesniff import findall_dirs
@@ -26,6 +25,6 @@ from .read_and_write import wopen
 from .subproc import run_cmd_args
 from .subproc import run_cmd_shell
 from .subproc import run_cmd_shell as send_cmd
-from .time_utils import simple_timestamp
+from .time_utils import timestamp
 
-__version__ = '2.0.0'
+__version__ = '2.1.0'

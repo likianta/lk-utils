@@ -1,11 +1,41 @@
 import os
-import sys
+from inspect import currentframe
 from os import path as ospath
 
-from .typehint.filesniff import *
+
+class T:
+    import typing as _t
+    
+    File = str
+    Dir = str
+    
+    Path = str  # file path or dir path
+    NormPath = str  # normalized path, use only '/', and rstrip '/' in tail
+    
+    PathType = _t.Literal['file', 'dir']
+    PathFormat = _t.Literal[
+        'filepath', 'dirpath', 'path', 'filename', 'dirname', 'name', 'zip',
+        'dict', 'list', 'dlist'
+    ]
+    
+    FileName = str
+    FilePath = NormPath
+    
+    _FileDict = _t.Dict[FilePath, FileName]
+    _FileZip = _t.Iterable[_t.Tuple[FilePath, FileName]]
+    _FileDualList = _t.Tuple[_t.List[FilePath], _t.List[FileName]]
+    
+    FileZip = _FileZip
+    
+    FinderReturn = _t.Union[
+        _t.List[FilePath], _t.List[FileName],
+        _FileDict, _FileZip, _FileDualList
+    ]
+    
+    Suffix = _t.Union[str, tuple]
 
 
-def normpath(path: TPath) -> TNormPath:
+def normpath(path: T.Path) -> T.NormPath:
     """
     
     Examples:
@@ -20,21 +50,20 @@ def normpath(path: TPath) -> TNormPath:
 
 # ------------------------------------------------------------------------------
 
-def get_dirname(path: TPath) -> str:
+def get_dirname(path: T.Path) -> str:
     """ Return the directory name of path.
     
     Examples:
         path = 'a/b/c/d.txt' -> 'c'
         path = 'a/b/c' -> 'c'
     """
-    nodes = path.split('/')
-    if isfile(path):
-        return nodes[-2]
+    if ospath.isfile(path):
+        return ospath.basename(ospath.dirname(path))
     else:
-        return nodes[-1]
+        return ospath.basename(path)
 
 
-def get_filename(path: TPath, suffix=True, strict=False) -> TNormPath:
+def get_filename(path: T.Path, suffix=True, strict=False) -> T.NormPath:
     """ Return the file name from path.
     
     Examples:
@@ -55,35 +84,36 @@ def get_filename(path: TPath, suffix=True, strict=False) -> TNormPath:
         return ospath.splitext(name)[0]
 
 
-def __get_launch_path() -> TNormPath:
+def __get_launch_path() -> T.NormPath:
     """ Get launcher's filepath.
     
     Example:
         sys.argv: ['D:/myprj/src/main.py', ...] -> 'D:/myprj/src/main.py'
     """
-    path = ospath.abspath(sys.argv[0])
+    from sys import argv
+    path = ospath.abspath(argv[0])
     if ospath.isfile(path):
         return normpath(path)
     else:
-        raise Exception(sys.argv)
+        raise Exception
 
 
-def __get_launch_dir() -> TNormPath:
+def __get_launch_dir() -> T.NormPath:
     return ospath.dirname(__get_launch_path())
 
 
 try:
-    MAINDIR = __get_launch_dir()  # launcher's dirpath
+    LAUNCH_DIR = __get_launch_dir()  # launcher's dirpath
 except:
-    MAINDIR = normpath(os.getcwd())
+    LAUNCH_DIR = normpath(os.getcwd())
 
 
 # ------------------------------------------------------------------------------
 # Path Finders (File Finders)
 
-def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
-                suffix: TSuffix = '', recursive=False,
-                custom_filter=None) -> TFinderReturn:
+def _find_paths(dir_: T.Path, path_type: T.PathType, fmt: T.PathFormat,
+                suffix: T.Suffix = '', recursive=False,
+                custom_filter=None) -> T.FinderReturn:
     """ Basic find.
     
     Args:
@@ -159,22 +189,22 @@ def _find_paths(dir_: TPath, path_type: TPathType, fmt: TPathFormat,
         raise ValueError('Unknown format', fmt)
 
 
-def find_files(dir_: TPath, *, fmt: TPathFormat = 'filepath',
-               suffix: TSuffix = ''):
+def find_files(dir_: T.Path, *, fmt: T.PathFormat = 'filepath',
+               suffix: T.Suffix = ''):
     return _find_paths(dir_, 'file', fmt, suffix, False)
 
 
-def find_filenames(dir_: TPath, *, suffix: TSuffix = ''):
+def find_filenames(dir_: T.Path, *, suffix: T.Suffix = ''):
     return _find_paths(dir_, 'file', 'filename', suffix, False)
 
 
-def findall_files(dir_: TPath, *, fmt: TPathFormat = 'filepath',
-                  suffix: TSuffix = ''):
+def findall_files(dir_: T.Path, *, fmt: T.PathFormat = 'filepath',
+                  suffix: T.Suffix = ''):
     return _find_paths(dir_, 'file', fmt, suffix, True)
 
 
-def find_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
-              suffix: TSuffix = '', exclude_protected_folders=True):
+def find_dirs(dir_: T.Path, *, fmt: T.PathFormat = 'dirpath',
+              suffix: T.Suffix = '', exclude_protected_folders=True):
     return _find_paths(
         dir_, 'dir', fmt, suffix, False,
         custom_filter=__exclude_protected_folders
@@ -182,8 +212,8 @@ def find_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
     )
 
 
-def findall_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
-                 suffix: TSuffix = '', exclude_protected_folders=True):
+def findall_dirs(dir_: T.Path, *, fmt: T.PathFormat = 'dirpath',
+                 suffix: T.Suffix = '', exclude_protected_folders=True):
     """
     Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
     """
@@ -194,7 +224,7 @@ def findall_dirs(dir_: TPath, *, fmt: TPathFormat = 'dirpath',
     )
 
 
-def __exclude_protected_folders(path_zip: TFileZip) -> TFileZip:
+def __exclude_protected_folders(path_zip: T.FileZip) -> T.FileZip:
     """
     see `func:_find_paths:params:custom_filter:docstring`.
     """
@@ -220,7 +250,7 @@ findall_subdirs = findall_dirs
 
 # ------------------------------------------------------------------------------
 
-def isfile(filepath: TPath) -> bool:
+def isfile(filepath: T.Path) -> bool:
     """ Unsafe method judging path-like string.
     
     TLDR: If `filepath` looks like a filepath, will return True; otherwise
@@ -252,7 +282,7 @@ def isfile(filepath: TPath) -> bool:
         return False
 
 
-def isdir(dirpath: TPath) -> bool:
+def isdir(dirpath: T.Path) -> bool:
     """ Unsafe method judging dirpath-like string.
     
     TLDR: If `dirpath` looks like a dirpath, will return True; otherwise return
@@ -273,57 +303,28 @@ def isdir(dirpath: TPath) -> bool:
         return False
 
 
-def relpath(path: TPath, caller_file='') -> TNormPath:
+def currdir() -> T.NormPath:
+    caller_frame = currentframe().f_back
+    caller_file = caller_frame.f_code.co_filename
+    caller_dir = ospath.dirname(caller_file)
+    return normpath(caller_dir)
+
+
+def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
     """ Consider relative path always based on caller's.
     
     References: https://blog.csdn.net/Likianta/article/details/89299937
-    
-    Args:
-        path: The target path.
-        caller_file: Literal[__file__, '']. Recommended passing `__file__`, it
-            will be faster than passing an empty string.
     """
-    if caller_file == '':
-        # noinspection PyProtectedMember, PyUnresolvedReferences
-        frame = sys._getframe(1)
-        caller_file = frame.f_code.co_filename
+    caller_frame = currentframe().f_back
+    caller_file = caller_frame.f_code.co_filename
     caller_dir = ospath.dirname(caller_file)
-    return normpath(f'{caller_dir}/{path}')
-
-
-# ------------------------------------------------------------------------------
-# Other
-
-def dialog(dir_: TPath, suffix,
-           prompt='请选择您所需文件的对应序号') -> TNormPath:
-    """ File select dialog (Chinese). """
-    print(f'当前目录为: {dir_}')
     
-    # fp: filepaths, fn: filenames
-    fp, fn = find_files(dir_, fmt='list', suffix=suffix)
-    
-    if not fn:
-        raise FileNotFoundError(f'当前目录没有找到目标类型 ({suffix}) 的文件')
-    
-    elif len(fn) == 1:
-        print(f'当前目录找到了一个目标类型的文件: {fn[0]}')
-        return fp[0]
-    
+    if path in ('', '.', './'):
+        out = caller_dir
     else:
-        x = ['{} | {}'.format(i, j) for i, j in enumerate(fn)]
-        print('当前目录找到了多个目标类型的文件:'
-              '\n\t{}'.format('\n\t'.join(x)))
-        
-        if not prompt.endswith(': '):
-            prompt += ': '
-        index = input(prompt)
-        return fp[int(index)]
-
-
-def mkdirs(path: TPath, exist_ok=True):  # DELETE
-    os.makedirs(path, exist_ok=exist_ok)
-    # # dirpath = (nodes := path.split('/'))[0]
-    # # for node in nodes[1:]:
-    # #     dirpath += '/' + node
-    # #     if not ospath.exists(dirpath):
-    # #         os.mkdir(dirpath)
+        out = ospath.abspath(ospath.join(caller_dir, path))
+    
+    if ret_abspath:
+        return normpath(out)
+    else:
+        return normpath(ospath.relpath(out, LAUNCH_DIR))

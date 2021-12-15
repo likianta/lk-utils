@@ -5,11 +5,27 @@ from os.path import exists
 from pickle import dump as _pdump
 from pickle import load as _pload
 
-from .typehint.read_and_write import *
+
+class T:
+    import typing as _t
+    from io import TextIOWrapper as _TextIOWrapper
+    
+    File = str
+    FileMode = _t.Literal['a', 'r', 'rb', 'w', 'wb']
+    FileHandle = _TextIOWrapper
+    
+    List = _t.List
+    Union = _t.Union
+    
+    PlainFileTypes = _t.Literal['.txt', '.html', '.md', '.rst', '.htm', '.ini']
+    StructFileTypes = _t.Literal['.json', '.json5', '.yaml']
+    BinaryFileTypes = _t.Literal['.xlsx', '.xls', '.pdf']
+    
+    DumpableData = _t.Union[None, dict, list, set, str, tuple]
 
 
 @contextmanager
-def ropen(file: TFile, mode: TFileMode = 'r', encoding='utf-8') -> TFileHandle:
+def ropen(file: T.File, mode: T.FileMode = 'r', encoding='utf-8') -> T.FileHandle:
     """
     Args:
         file
@@ -27,7 +43,7 @@ def ropen(file: TFile, mode: TFileMode = 'r', encoding='utf-8') -> TFileHandle:
 
 
 @contextmanager
-def wopen(file: TFile, mode: TFileMode = 'w', encoding='utf-8') -> TFileHandle:
+def wopen(file: T.File, mode: T.FileMode = 'w', encoding='utf-8') -> T.FileHandle:
     """
     Args:
         file:
@@ -47,7 +63,7 @@ def wopen(file: TFile, mode: TFileMode = 'w', encoding='utf-8') -> TFileHandle:
         handle.close()
 
 
-def not_empty(file: TFile) -> bool:
+def not_empty(file: T.File) -> bool:
     """
     References:
         https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
@@ -60,7 +76,7 @@ def not_empty(file: TFile) -> bool:
     return bool(exists(file) and getsize(file))
 
 
-def read_file(file: TFile) -> str:
+def read_file(file: T.File) -> str:
     with ropen(file) as f:
         content = f.read()
         # https://blog.csdn.net/liu_xzhen/article/details/79563782
@@ -70,7 +86,7 @@ def read_file(file: TFile) -> str:
     return content
 
 
-def read_lines(file: TFile, offset=0) -> List[str]:
+def read_lines(file: T.File, offset=0) -> T.List[str]:
     """
     References:
         https://blog.csdn.net/qq_40925239/article/details/81486637
@@ -80,8 +96,8 @@ def read_lines(file: TFile, offset=0) -> List[str]:
     return out[offset:]
 
 
-def write_file(content: Union[iter, list, str, tuple],
-               file: TFile, mode: TFileMode = 'w', adhesion='\n'):
+def write_file(content: T.Union[iter, list, str, tuple],
+               file: T.File, mode: T.FileMode = 'w', adhesion='\n'):
     """ 写入文件, 传入内容可以是字符串, 也可以是数组.
 
     Args:
@@ -108,12 +124,12 @@ def write_file(content: Union[iter, list, str, tuple],
         f.write(content + '\n')
 
 
-def read_json(file: TFile) -> Union[dict, list]:
+def read_json(file: T.File) -> T.Union[dict, list]:
     with ropen(file) as f:
         return _jload(f)
 
 
-def write_json(data: TDumpableData, file: TFile, pretty_dump=False):
+def write_json(data: T.DumpableData, file: T.File, pretty_dump=False):
     if isinstance(data, set):
         data = list(data)
     
@@ -129,7 +145,7 @@ def write_json(data: TDumpableData, file: TFile, pretty_dump=False):
 
 # ------------------------------------------------------------------------------
 
-def loads(file: TFile, **kwargs) -> Union[dict, list, str]:
+def loads(file: T.File, **kwargs) -> T.Union[dict, list, str]:
     """
     Args:
         file:
@@ -156,21 +172,21 @@ def loads(file: TFile, **kwargs) -> Union[dict, list, str]:
     
     if file.endswith(('.pkl',)):
         with ropen(file, 'rb') as f:
-            return _pload(f)
+            return _pload(f)  # noqa
     
     # unregistered file types, like: .js, .css, .py, etc.
     return read_file(file)
 
 
-def load_list(file: TFile, offset=0) -> List[str]:
+def load_list(file: T.File, offset=0) -> T.List[str]:
     return read_lines(file, offset)
 
 
-def load_dict(file: TFile) -> Union[dict, list]:
+def load_dict(file: T.File) -> T.Union[dict, list]:
     return read_json(file)
 
 
-def dumps(data: TDumpableData, file: TFile, **kwargs):
+def dumps(data: T.DumpableData, file: T.File, **kwargs):
     """
     Args:
         data
@@ -195,7 +211,7 @@ def dumps(data: TDumpableData, file: TFile, **kwargs):
     
     if file.endswith(('.pkl',)):
         with wopen(file, 'wb') as f:
-            return _pdump(data, f, **kwargs)
+            return _pdump(data, f, **kwargs)  # noqa
     
     # unregistered file types, like: .js, .css, .py, etc.
     return write_file(data, file, **kwargs)
@@ -204,7 +220,7 @@ def dumps(data: TDumpableData, file: TFile, **kwargs):
 # ------------------------------------------------------------------------------
 
 @contextmanager
-def read(file: TFile, **kwargs) -> Union[dict, list, str]:
+def read(file: T.File, **kwargs) -> T.Union[dict, list, str]:
     """ Open file as a read handle.
     
     Usage:
@@ -219,7 +235,7 @@ def read(file: TFile, **kwargs) -> Union[dict, list, str]:
 
 
 @contextmanager
-def write(file: TFile, data: Union[dict, list, set] = None, **kwargs):
+def write(file: T.File, data: T.Union[dict, list, set] = None, **kwargs):
     """ Create a write handle, file will be generated after the `with` block
         closed.
         

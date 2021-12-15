@@ -10,7 +10,7 @@ import time
 from os import stat
 
 
-def simple_timestamp(style='y-m-d h:n:s', ctime=0.0) -> str:
+def timestamp(style='y-m-d h:n:s', ctime=0.0) -> str:
     """ 生成时间戳.
     
     转换关系:
@@ -48,7 +48,7 @@ def get_file_modified_time(filepath, style=''):
     """
     time_float = stat(filepath).st_mtime
     if style:
-        return simple_timestamp(style, time_float)
+        return timestamp(style, time_float)
     else:
         return time_float
 
@@ -59,6 +59,6 @@ def get_file_created_time(filepath, style=''):
     """
     time_float = stat(filepath).st_ctime
     if style:
-        return simple_timestamp(style, time_float)
+        return timestamp(style, time_float)
     else:
         return time_float

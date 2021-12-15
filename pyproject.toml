@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.0.0"
+version = "2.1.0"
 description = "LK Utils is made for data processing."
 authors = ["Likianta <likianta@foxmail.com>"]
 license = "MIT"
@@ -12,9 +12,9 @@ default = true
 
 [tool.poetry.dependencies]
 python = "^3.8"
-lk-logger = "*"
+lk-logger = ""
 xlrd = "1.2"
-xlsxwriter = "*"
+xlsxwriter = ""
 
 [tool.poetry.dev-dependencies]
 # bs4 = "*"

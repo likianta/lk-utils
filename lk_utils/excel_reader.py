@@ -1,7 +1,5 @@
 import xlrd
 
-from .typehint.excel_rw import *
-
 """
 假设表格为:
     in.xlsx
@@ -74,6 +72,19 @@ from .typehint.excel_rw import *
     # 注意: 如果要切换到的 sheet 不存在, 会报错.
     
 """
+
+
+class T:
+    import typing as _t
+    
+    Dict = _t.Dict
+    List = _t.List
+    Optional = _t.Optional
+    
+    CellValue = _t.Union[None, bool, float, int, str]
+    RowValues = _t.Iterable[CellValue]
+    ColValues = _t.Iterable[CellValue]
+    SheetName = _t.Optional[str]
 
 
 class ColIndexLocator:
@@ -152,7 +163,7 @@ class ExcelReader(ColIndexLocator):
     def get_num_of_sheets(self) -> int:
         return self.book.nsheets
     
-    def get_name_of_sheets(self) -> List[TSheetName]:
+    def get_name_of_sheets(self) -> T.List[T.SheetName]:
         return self.book.sheet_names()
     
     def get_num_of_rows(self) -> int:
@@ -163,7 +174,7 @@ class ExcelReader(ColIndexLocator):
     
     # --------------------------------------------------------------------------
     
-    def get_header(self) -> Optional[list]:
+    def get_header(self) -> T.Optional[list]:
         # noinspection PyTypeChecker
         return self.header
     
@@ -184,7 +195,7 @@ class ExcelReader(ColIndexLocator):
     
     # noinspection PyUnboundLocalVariable
     @staticmethod
-    def _betterint(v: TCellValue) -> TCellValue:
+    def _betterint(v: T.CellValue) -> T.CellValue:
         """
         在 excel 中, 所有数字皆以浮点储存. 但考虑到个人需求, 我需要将一些整数在
         python 中以 int 表示. 我将它上升为一个重要的决策. 尽管它可能带来一些负面
@@ -195,20 +206,20 @@ class ExcelReader(ColIndexLocator):
         else:
             return v
     
-    def cell_value(self, x, y) -> TCellValue:
+    def cell_value(self, x, y) -> T.CellValue:
         v = self.sheet.cell(x, y).value
         return self._betterint(v)
     
-    def row_values(self, rowx: int) -> TRowValues:
+    def row_values(self, rowx: int) -> T.RowValues:
         return [
             self._betterint(x)
             for x in self.sheet.row_values(rowx)
         ]
     
-    def row_dict(self, rowx: int) -> Dict[TCellValue, TRowValues]:
+    def row_dict(self, rowx: int) -> T.Dict[T.CellValue, T.RowValues]:
         return dict(zip(self.header, self.row_values(rowx)))
     
-    def col_values(self, query, offset=0) -> Optional[TColValues]:
+    def col_values(self, query, offset=0) -> T.Optional[T.ColValues]:
         if not isinstance(query, int):
             # str, list, tuple
             if isinstance(query, (str, bool, float)):
