@@ -305,9 +305,7 @@ def isdir(dirpath: T.Path) -> bool:
 
 def currdir() -> T.NormPath:
     caller_frame = currentframe().f_back
-    caller_file = caller_frame.f_code.co_filename
-    caller_dir = ospath.dirname(caller_file)
-    return normpath(caller_dir)
+    return _get_dir_info_from_caller(caller_frame)
 
 
 def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
@@ -316,8 +314,7 @@ def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
     References: https://blog.csdn.net/Likianta/article/details/89299937
     """
     caller_frame = currentframe().f_back
-    caller_file = caller_frame.f_code.co_filename
-    caller_dir = ospath.dirname(caller_file)
+    caller_dir = _get_dir_info_from_caller(caller_frame)
     
     if path in ('', '.', './'):
         out = caller_dir
@@ -327,4 +324,14 @@ def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
     if ret_abspath:
         return normpath(out)
     else:
-        return normpath(ospath.relpath(out, LAUNCH_DIR))
+        return normpath(ospath.relpath(out, os.getcwd()))
+
+
+def _get_dir_info_from_caller(frame) -> T.NormPath:
+    file = frame.f_globals.get('__file__') \
+           or frame.f_code.co_filename
+    if file.startswith('<') and file.endswith('>'):
+        print('[lk-utils.filesniff][warning] cannot get current dir of caller!')
+        return '.'
+    else:
+        return normpath(ospath.dirname(file))

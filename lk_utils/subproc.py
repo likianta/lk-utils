@@ -88,7 +88,11 @@ def format_cmd(*args, **kwargs):
         else:
             return False
     
-    for i in filter(None, map(str, args)):
+    for i in args:
+        if i is None:
+            continue
+        if (i := str(i).strip()) == '':
+            continue
         if _is_unwrapped(i):
             i = f'"{i}"'
         out.append(i)
@@ -99,7 +103,8 @@ def format_cmd(*args, **kwargs):
             # if k.startswith('_'):
             #     prefix = re.match(r'^_+', k).group()
             #     k = prefix.replace('_', '-') + k
-            k = k.replace('_', '-')
+            k = k.strip().replace('_', '-')
+            v = v.strip()
             if v:
                 if _is_unwrapped(v):
                     v = f'"{v}"'
