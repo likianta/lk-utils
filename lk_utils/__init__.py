@@ -27,4 +27,4 @@ from .subproc import run_cmd_shell
 from .subproc import run_cmd_shell as send_cmd
 from .time_utils import timestamp
 
-__version__ = '2.1.2'
+__version__ = '2.1.3'

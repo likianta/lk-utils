@@ -5,21 +5,28 @@ from textwrap import dedent
 from threading import Thread
 
 
-def new_thread(func):
+def new_thread(daemon=True):
     """ New thread decorator. """
     
-    @wraps(func)
-    def decorate(*args, **kwargs) -> Thread:
-        return run_new_thread(func, *args, **kwargs)
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Thread:
+            thread = Thread(target=func, args=args, kwargs=kwargs)
+            thread.daemon = daemon
+            thread.start()
+            return thread
+        
+        return wrapper
     
-    return decorate
+    return decorator
 
 
-def run_new_thread(func, *args, **kwargs) -> Thread:
+def run_new_thread(func, *args, daemon=True, **kwargs) -> Thread:
     """ Run function in a new thread at once. """
-    t = Thread(target=func, args=args, kwargs=kwargs)
-    t.start()
-    return t
+    thread = Thread(target=func, args=args, kwargs=kwargs)
+    thread.daemon = daemon
+    thread.start()
+    return thread
 
 
 # ------------------------------------------------------------------------------

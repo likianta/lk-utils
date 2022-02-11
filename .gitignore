@@ -4,4 +4,5 @@
 /dist/
 /dust/
 /test/
+/tests/*.log
 __pycache__/
