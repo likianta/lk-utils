@@ -17,14 +17,16 @@ from .filesniff import find_dirs
 from .filesniff import find_files
 from .filesniff import findall_dirs
 from .filesniff import findall_files
-# from .filesniff import relpath
+from .filesniff import relpath
 from .read_and_write import dumps
 from .read_and_write import loads
 from .read_and_write import ropen
 from .read_and_write import wopen
+from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_shell
 from .subproc import run_cmd_shell as send_cmd
+from .subproc import run_new_thread
 from .time_utils import timestamp
 
-__version__ = '2.1.3'
+__version__ = '2.1.4'

@@ -5,13 +5,22 @@ from textwrap import dedent
 from threading import Thread
 
 
-def new_thread(daemon=True):
+__thread_pool = {}  # dict[hashable func_id, Thread]
+
+
+def new_thread(daemon=True, singleton=False):
     """ New thread decorator. """
     
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs) -> Thread:
-            thread = Thread(target=func, args=args, kwargs=kwargs)
+            if singleton:
+                if t := __thread_pool.get(id(func)):
+                    if t.is_alive():
+                        return t
+            thread = __thread_pool[id(func)] = Thread(
+                target=func, args=args, kwargs=kwargs
+            )
             thread.daemon = daemon
             thread.start()
             return thread
@@ -21,9 +30,9 @@ def new_thread(daemon=True):
     return decorator
 
 
-def run_new_thread(func, *args, daemon=True, **kwargs) -> Thread:
+def run_new_thread(target, args=None, kwargs=None, daemon=True) -> Thread:
     """ Run function in a new thread at once. """
-    thread = Thread(target=func, args=args, kwargs=kwargs)
+    thread = Thread(target=target, args=args or (), kwargs=kwargs or {})
     thread.daemon = daemon
     thread.start()
     return thread
