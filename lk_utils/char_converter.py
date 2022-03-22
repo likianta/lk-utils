@@ -100,10 +100,7 @@ class DiacriticalMarksCleaner:
         if self._strict_mode:
             if x := self._reg3.findall(word):
                 # uniq: unique; unreg: unregisted
-                from lk_logger import lk
-                lk.logt('[DiacriticalMarksCleaner][W2557]',
-                        'found uniq and unreg symbol', word, x,
-                        h='parent')
+                print(':v3p', 'found uniq and unreg symbol', word, x)
                 word = re.sub(self._reg3, '', word)
         
         word = re.sub(self._reg2, ' ', word)

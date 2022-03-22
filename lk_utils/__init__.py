@@ -1,5 +1,8 @@
-# noinspection PyUnresolvedReferences
-from lk_logger import lk
+try:
+    import lk_logger
+    lk_logger.setup(silent=True)
+except Exception:
+    pass
 
 from . import char_converter
 from . import chinese_name_processor
@@ -29,4 +32,4 @@ from .subproc import run_cmd_shell as send_cmd
 from .subproc import run_new_thread
 from .time_utils import timestamp
 
-__version__ = '2.1.4'
+__version__ = '2.2.0'

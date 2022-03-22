@@ -331,7 +331,8 @@ def _get_dir_info_from_caller(frame) -> T.NormPath:
     file = frame.f_globals.get('__file__') \
            or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):
-        print('[lk-utils.filesniff][warning] cannot get current dir of caller!')
-        return '.'
+        print(':v4', 'Unable to get dir info from caller frame! Fallback to '
+                     'use current working directory.')
+        return normpath(os.getcwd())
     else:
         return normpath(ospath.dirname(file))

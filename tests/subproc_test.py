@@ -1,19 +1,17 @@
-from lk_logger import lk
-
 from lk_utils import subproc
 
 
 def show_python_version():
-    lk.loga(subproc.run_cmd_shell('python -V'))
-    lk.loga(subproc.run_cmd_args('python', '-V'))
+    print(subproc.run_cmd_shell('python -V'))
+    print(subproc.run_cmd_args('python', '-V'))
 
 
 def show_pip_version():
-    lk.loga(subproc.run_cmd_args('python', '-m', 'pip', '-V'))
+    print(subproc.run_cmd_args('python', '-m', 'pip', '-V'))
 
 
 def raise_an_error():
-    lk.loga(subproc.run_cmd_args('depsland', '-V'))
+    print(subproc.run_cmd_args('depsland', '-V'))
 
 
 def is_still_running_when_main_thread_crashed():

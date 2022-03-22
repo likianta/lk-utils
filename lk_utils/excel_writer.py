@@ -70,7 +70,7 @@ class ExcelWriter:
     _merge_format: T.CellFormat
     _sheet_mgr: '_SheetManager'
     
-    __h: str
+    __h: int  # 1 for parent frame, 2 for grand parent frame.
     
     def __init__(self, filepath: str, sheet_name: T.SheetName = 'sheet 1',
                  **options):
@@ -123,7 +123,7 @@ class ExcelWriter:
             # 'text_wrap': False,  # auto line wrap (default False)
         })  # ref: https://blog.csdn.net/lockey23/article/details/81004249
         
-        self.__h = 'parent'  # just for adjusting lk_logger's hierarchy in
+        self.__h = 1  # just for adjusting lk_logger's hierarchy in
         #   `self.__exit__` and `self.save`.
     
     def __enter__(self):
@@ -134,9 +134,9 @@ class ExcelWriter:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """ Save and close when leave `with` statement. """
-        self.__h = 'grand_parent'  # prompt
+        self.__h = 2  # prompt
         self.save()
-        self.__h = 'parent'  # reset
+        self.__h = 1  # reset
     
     # --------------------------------------------------------------------------
     
@@ -382,11 +382,9 @@ class ExcelWriter:
             import os
             os.startfile(os.path.abspath(self.filepath))
         else:
-            from lk_logger import lk
-            lk.logt(
-                '[ExcelWriter][D1139]',
+            print(
                 f'\n\tExcel saved to "{self.filepath}:0"',
-                h=self.__h
+                f':v2p{self.__h}'
             )
     
     close = save
