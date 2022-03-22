@@ -13,8 +13,6 @@ from . import read_and_write
 from . import subproc
 from . import time_utils
 from . import tree_and_trie
-from .excel_reader import ExcelReader
-from .excel_writer import ExcelWriter
 from .filesniff import currdir
 from .filesniff import find_dirs
 from .filesniff import find_files

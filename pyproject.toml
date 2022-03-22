@@ -13,8 +13,6 @@ default = true
 [tool.poetry.dependencies]
 python = "^3.8"
 lk-logger = "^5.0.0"
-xlrd = "1.2"
-xlsxwriter = ""
 
 [tool.poetry.dev-dependencies]
 # bs4 = "*"
@@ -23,6 +21,8 @@ xlsxwriter = ""
 # pypinyin = "*"
 # pyyaml = "*"
 # requests = "*"
+# xlrd = "1.2"
+# xlsxwriter = ""
 
 [build-system]
 requires = ["poetry>=1.0"]
