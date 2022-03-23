@@ -159,8 +159,9 @@ class ExcelWriter:
         
         new_sheetx = self._sheet_mgr.add_new_sheet()
         if sheet_name:
+            assert len(sheet_name) <= 31, 'Sheet name is too long!'
             assert sheet_name not in self._sheet_mgr.sheet_by_name, (
-                f'The sheet ("{sheet_name}") has already existed'
+                f'The sheet ("{sheet_name}") already exists!'
             )
         else:
             sheet_name = f'sheet {new_sheetx + 1}'

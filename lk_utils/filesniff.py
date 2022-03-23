@@ -6,20 +6,17 @@ from os import path as ospath
 class T:
     import typing as _t
     
-    File = str
-    Dir = str
+    List = _t.List
     
-    Path = str  # file path or dir path
-    NormPath = str  # normalized path, use only '/', and rstrip '/' in tail
+    Path = DirPath = FilePath = str
+    Name = DirName = FileName = str
+    Paths = DirPaths = FilePaths = List[Path]
+    Names = DirNames = FileNames = List[Name]
     
-    PathType = _t.Literal['file', 'dir']
     PathFormat = _t.Literal[
         'filepath', 'dirpath', 'path', 'filename', 'dirname', 'name', 'zip',
         'dict', 'list', 'dlist'
     ]
-    
-    FileName = str
-    FilePath = NormPath
     
     _FileDict = _t.Dict[FilePath, FileName]
     _FileZip = _t.Iterable[_t.Tuple[FilePath, FileName]]
@@ -27,15 +24,13 @@ class T:
     
     FileZip = _FileZip
     
-    FinderReturn = _t.Union[
-        _t.List[FilePath], _t.List[FileName],
-        _FileDict, _FileZip, _FileDualList
-    ]
+    FinderReturn = _t.Iterator[FilePath, FileName]
     
-    Suffix = _t.Union[str, tuple]
+    Suffix = _t.Union[None, str, _t.Tuple[str, ...]]
+    Prefix = Suffix
 
 
-def normpath(path: T.Path) -> T.NormPath:
+def normpath(path: T.Path) -> T.Path:
     """
     
     Examples:
@@ -63,7 +58,7 @@ def get_dirname(path: T.Path) -> str:
         return ospath.basename(path)
 
 
-def get_filename(path: T.Path, suffix=True, strict=False) -> T.NormPath:
+def get_filename(path: T.Path, suffix=True, strict=False) -> T.Path:
     """ Return the file name from path.
     
     Examples:
@@ -84,7 +79,7 @@ def get_filename(path: T.Path, suffix=True, strict=False) -> T.NormPath:
         return ospath.splitext(name)[0]
 
 
-def __get_launch_path() -> T.NormPath:
+def __get_launch_path() -> T.Path:
     """ Get launcher's filepath.
     
     Example:
@@ -98,7 +93,7 @@ def __get_launch_path() -> T.NormPath:
         raise Exception
 
 
-def __get_launch_dir() -> T.NormPath:
+def __get_launch_dir() -> T.Path:
     return ospath.dirname(__get_launch_path())
 
 
@@ -111,141 +106,180 @@ except:
 # ------------------------------------------------------------------------------
 # Path Finders (File Finders)
 
-def _find_paths(dir_: T.Path, path_type: T.PathType, fmt: T.PathFormat,
-                suffix: T.Suffix = '', recursive=False,
-                custom_filter=None) -> T.FinderReturn:
-    """ Basic find.
+def _find_paths(
+        dirpath: T.Path, path_type: int, recursive=False,
+        prefix: T.Prefix = None, suffix: T.Suffix = None, filter_=None
+) -> T.FinderReturn:
+    """ General files/dirs finder.
     
     Args:
-        dir_: target path to find in.
-        path_type: 'file'|'dir'.
-        fmt:
-        suffix: assign a filter to which file types we want to fetch.
-            NOTICE:
-                1. Each suffix name must start with a dot ('.jpg', '.txt', etc.)
-                2. Case sensitive
-                3. Param type is str or tuple, cannot be list
-        recursive: whether to find descendant folders.
-        custom_filter:
-            自定义一个过滤函数. 您需确保该函数只有一个参数, 类型为
-            `_TFileZip`. 其返回结果必须同样为 `_TFileZip`.
-            Usages see `find_dirs`, `findall_dirs`.
+        dirpath:
+        path_type: int[0, 1]. 0: file, 1: dir.
+        suffix:
+            1. each item must be string start with '.' ('.jpg', '.txt', etc.)
+            2. case insensitive.
+            3. param type is str or tuple[str], cannot be list[str].
+        recursive:
+        filter_: optional[function]
+            None: no filter (everything pass through)
+            function:
+                def some_filter(filepath: str, filename: str) -> bool: ...
+                returns True to accept the file, False to reject.
     
-    Returns:
-        fmt: 'filepath'|'dirpath'|'path'    ->  return [filepath, ...]
-        fmt: 'filename'|'dirname'|'name'    ->  return [filename, ...]
-        fmt: 'zip'          ->  return zip([filepath, ...], [filename, ...])
-        fmt: 'dict'         ->  return {filepath: filename, ...}
-        fmt: 'dlist'|'list' ->  return ([filepath, ...], [filename, ...])
+    Yields:
+        tuple[str filepath, str filename]
     """
-    dir_ = normpath(dir_)
-    
-    # recursive
-    if recursive is False:
-        names = os.listdir(dir_)
-        paths = (f'{dir_}/{f}' for f in names)
-        out = zip(paths, names)
-        if path_type == 'file':
-            out = filter(lambda x: ospath.isfile(x[0]), out)
-        else:
-            out = filter(lambda x: ospath.isdir(x[0]), out)
-    else:
-        names = []
-        paths = []
-        for root, dirnames, filenames in os.walk(dir_):
-            root = normpath(root)
-            if path_type == 'file':
-                names.extend(filenames)
-                paths.extend((f'{root}/{f}' for f in filenames))
-            else:
-                names.extend(dirnames)
-                paths.extend((f'{root}/{d}' for d in dirnames))
-        out = zip(paths, names)
-    
-    _not_empty = bool(names)
-    #   True: not empty; False: empty (no paths found)
-    
-    if _not_empty:
-        # suffix
-        if suffix:
-            out = filter(lambda x: x[1].endswith(suffix), out)
+    for root, dirs, files in os.walk(dirpath):
+        root = normpath(root)
         
-        # custom_filter
-        if custom_filter:
-            out = custom_filter(out)
-    
-    # fmt
-    if fmt in ('filepath', 'dirpath', 'path'):
-        return [fp for (fp, fn) in out]
-    elif fmt in ('filename', 'dirname', 'name'):
-        return [fn for (fp, fn) in out]
-    elif fmt == 'zip':
-        return out
-    elif fmt == 'dict':
-        return dict(out)
-    elif fmt in ('dlist', 'list'):
-        return zip(*out) if _not_empty else ([], [])
-    else:
-        raise ValueError('Unknown format', fmt)
-
-
-def find_files(dir_: T.Path, *, fmt: T.PathFormat = 'filepath',
-               suffix: T.Suffix = ''):
-    return _find_paths(dir_, 'file', fmt, suffix, False)
-
-
-def find_filenames(dir_: T.Path, *, suffix: T.Suffix = ''):
-    return _find_paths(dir_, 'file', 'filename', suffix, False)
-
-
-def findall_files(dir_: T.Path, *, fmt: T.PathFormat = 'filepath',
-                  suffix: T.Suffix = ''):
-    return _find_paths(dir_, 'file', fmt, suffix, True)
-
-
-def find_dirs(dir_: T.Path, *, fmt: T.PathFormat = 'dirpath',
-              suffix: T.Suffix = '', exclude_protected_folders=True):
-    return _find_paths(
-        dir_, 'dir', fmt, suffix, False,
-        custom_filter=__exclude_protected_folders
-        if exclude_protected_folders else None
-    )
-
-
-def findall_dirs(dir_: T.Path, *, fmt: T.PathFormat = 'dirpath',
-                 suffix: T.Suffix = '', exclude_protected_folders=True):
-    """
-    Refer: https://www.cnblogs.com/bigtreei/p/9316369.html
-    """
-    return _find_paths(
-        dir_, 'dir', fmt, suffix, True,
-        custom_filter=__exclude_protected_folders
-        if exclude_protected_folders else None
-    )
-
-
-def __exclude_protected_folders(path_zip: T.FileZip) -> T.FileZip:
-    """
-    see `func:_find_paths:params:custom_filter:docstring`.
-    """
-    discard_paths = set()
-    out = []
-    
-    for filepath, filename in path_zip:
-        if filepath.startswith(tuple(discard_paths)):
-            discard_paths.add(filepath + '/')
-        elif filename.startswith(('.', '__')):
-            discard_paths.add(filepath + '/')
+        if path_type == 'file':
+            names = files
         else:
-            out.append((filepath, filename))
+            names = dirs
+        
+        for n in names:
+            p = f'{root}/{n}'
+            if filter_ is not None and not filter_(p, n):
+                continue
+            if prefix and not n.startswith(prefix):
+                continue
+            if suffix and not n.endswith(suffix):
+                continue
+            yield p, n
+        
+        if not recursive:
+            break
+
+
+def find_files(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.FinderReturn:
+    return _find_paths(
+        dirpath, path_type=0, recursive=False, suffix=suffix, filter_=filter_
+    )
+
+
+def find_filepaths(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.Paths:
+    return [m for m, _ in _find_paths(
+        dirpath, path_type=0, recursive=False, suffix=suffix, filter_=filter_
+    )]
+
+
+def find_filenames(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.Names:
+    return [n for _, n in _find_paths(
+        dirpath, path_type=0, recursive=False, suffix=suffix, filter_=filter_
+    )]
+
+
+def findall_files(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.FinderReturn:
+    return _find_paths(
+        dirpath, path_type=0, recursive=True, suffix=suffix, filter_=filter_
+    )
+
+
+def findall_filepaths(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.Paths:
+    return [m for m, _ in _find_paths(
+        dirpath, path_type=0, recursive=True, suffix=suffix, filter_=filter_
+    )]
+
+
+def findall_filenames(
+        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+) -> T.Names:
+    return [n for _, n in _find_paths(
+        dirpath, path_type=0, recursive=True, suffix=suffix, filter_=filter_
+    )]
+
+
+def find_dirs(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.FinderReturn:
+    return _find_paths(
+        dirpath, path_type=1, recursive=False, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )
+
+
+def find_dirpaths(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.Paths:
+    return [m for m, _ in _find_paths(
+        dirpath, path_type=1, recursive=False, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )]
+
+
+def find_dirnames(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.Paths:
+    return [n for _, n in _find_paths(
+        dirpath, path_type=1, recursive=False, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )]
+
+
+def findall_dirs(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.FinderReturn:
+    return _find_paths(
+        dirpath, path_type=1, recursive=True, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )
+
+
+def findall_dirpaths(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.Paths:
+    return [m for m, _ in _find_paths(
+        dirpath, path_type=1, recursive=True, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )]
+
+
+def findall_dirnames(
+        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+) -> T.Paths:
+    return [n for _, n in _find_paths(
+        dirpath, path_type=1, recursive=True, prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None
+    )]
+
+
+class ProtectedDirsFilter:
     
-    del discard_paths
-    return out
+    def __init__(self):
+        self._whitelist = set()
+        self._blacklist = set()
+    
+    def reset(self):
+        self._whitelist.clear()
+        self._blacklist.clear()
+    
+    def __call__(self, path: T.Path, name: T.Name) -> bool:
+        if path.startswith(tuple(self._whitelist)):
+            self._whitelist.add(path + '/')
+            return True
+        elif path.startswith(tuple(self._blacklist)):
+            self._blacklist.add(path + '/')
+            return False
+        
+        if name.startswith(('.', '__', '~')):
+            self._blacklist.add(path + '/')
+            return False
+        else:
+            self._whitelist.add(path + '/')
+            return True
 
 
-# alias
-find_subdirs = find_dirs
-findall_subdirs = findall_dirs
+_default_dirs_filter = ProtectedDirsFilter()
 
 
 # ------------------------------------------------------------------------------
@@ -303,12 +337,12 @@ def isdir(dirpath: T.Path) -> bool:
         return False
 
 
-def currdir() -> T.NormPath:
+def currdir() -> T.Path:
     caller_frame = currentframe().f_back
     return _get_dir_info_from_caller(caller_frame)
 
 
-def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
+def relpath(path: T.Path, ret_abspath=True) -> T.Path:
     """ Consider relative path always based on caller's.
     
     References: https://blog.csdn.net/Likianta/article/details/89299937
@@ -327,7 +361,7 @@ def relpath(path: T.Path, ret_abspath=True) -> T.NormPath:
         return normpath(ospath.relpath(out, os.getcwd()))
 
 
-def _get_dir_info_from_caller(frame) -> T.NormPath:
+def _get_dir_info_from_caller(frame) -> T.Path:
     file = frame.f_globals.get('__file__') \
            or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):
