@@ -1,3 +1,4 @@
+import os
 import typing as _t
 from collections import defaultdict
 
@@ -11,6 +12,8 @@ class T:
     Dict = _t.Dict
     Optional = _t.Optional
     Union = _t.Union
+    
+    FileExistsScheme = _t.Literal['new_file', 'overwrite']
     
     Rowx = int
     Colx = int
@@ -70,8 +73,6 @@ class ExcelWriter:
     _merge_format: T.CellFormat
     _sheet_mgr: '_SheetManager'
     
-    __h: int  # 1 for parent frame, 2 for grand parent frame.
-    
     def __init__(self, filepath: str, sheet_name: T.SheetName = 'sheet 1',
                  **options):
         """
@@ -93,7 +94,7 @@ class ExcelWriter:
         self._is_constant_memory = options.get('constant_memory', False)
         self.book = xlsxwriter.Workbook(
             filename=self.filepath,
-            options=options or {  # the default options
+            options={  # the default options
                 'strings_to_numbers'       : True,
                 'strings_to_urls'          : False,
                 'constant_memory'          : False,
@@ -105,7 +106,8 @@ class ExcelWriter:
                     # 'align': 'left',  # cell's horizontal alignment
                     # 'valign': 'vcenter',  # cell's vertical alignment
                     # 'text_wrap': False,  # auto line wrap (default False)
-                }
+                },
+                **options
             }
         )
         
@@ -122,21 +124,18 @@ class ExcelWriter:
             'valign': 'vcenter',
             # 'text_wrap': False,  # auto line wrap (default False)
         })  # ref: https://blog.csdn.net/lockey23/article/details/81004249
-        
-        self.__h = 1  # just for adjusting lk_logger's hierarchy in
-        #   `self.__exit__` and `self.save`.
     
     def __enter__(self):
         """ Return self to use with `with` statement.
         Use case: `with ExcelWriter(filepath) as writer: pass`.
         """
+        if os.path.exists(self.filepath):
+            raise FileExistsError(self.filepath)
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """ Save and close when leave `with` statement. """
-        self.__h = 2  # prompt
-        self.save()
-        self.__h = 1  # reset
+        self._save()
     
     # --------------------------------------------------------------------------
     
@@ -357,37 +356,37 @@ class ExcelWriter:
     
     # --------------------------------------------------------------------------
     
-    def save(self, alt=False, open_after_saved=False):
+    def save(self, open_after_save=False,
+             exists_scheme: T.FileExistsScheme = 'new_file'):
+        self._save(exists_scheme)
+        if open_after_save:
+            os.startfile(os.path.abspath(self.filepath))
+    
+    close = save
+    
+    def _save(self, exists_scheme='new_file'):
+        """
+        Args:
+            exists_scheme: Literal['new_file', 'overwrite']
+        """
+        from time import strftime
         from xlsxwriter.exceptions import FileCreateError
+        
+        if exists_scheme == 'overwrite' and os.path.exists(self.filepath):
+            os.remove(self.filepath)
+        
         try:
             self.book.close()
-        except FileCreateError as e:  # 注意: 此错误在 macOS 平台无法捕获!
-            if alt:  # 尝试对文件改名后保存
-                from time import strftime
+        except FileCreateError as e:  # FIXME: this is uncaught in macOS!
+            if exists_scheme == 'new_file':
                 self.book.filename = self.filepath = self.filepath.replace(
                     '.xlsx', strftime('_%Y%m%d_%H%M%S.xlsx')
                 )
                 self.book.close()
-            elif input(
-                    '\tPermission denied while saving excel: \n'
-                    '\t\t"{}:0"\n'
-                    '\tPlease close the opened file manually and input "Y" to '
-                    'retry to save.'.format(self.filepath)
-            ).lower() == 'y':
-                self.book.close()
             else:
                 raise e
         
-        if open_after_saved:
-            import os
-            os.startfile(os.path.abspath(self.filepath))
-        else:
-            print(
-                f'\n\tExcel saved to "{self.filepath}:0"',
-                f':v2p{self.__h}'
-            )
-    
-    close = save
+        print(f'\n\tExcel saved to "{self.filepath}:0"', ':v2p2')
 
 
 class _SheetManager:
