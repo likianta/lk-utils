@@ -4,17 +4,12 @@ try:
 except Exception:
     pass
 
-from . import char_converter
-from . import chinese_name_processor
-from . import easy_launcher
 from . import filesniff
 from . import filesniff as fs
-from . import name_formatter
 from . import read_and_write
 from . import read_and_write as rw
 from . import subproc
 from . import time_utils
-from . import tree_and_trie
 from .filesniff import currdir
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths

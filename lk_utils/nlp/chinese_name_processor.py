@@ -2,9 +2,9 @@ import re
 from typing import List
 from typing import Union
 
-from .read_and_write import read_json
-from .read_and_write import read_lines
 from .tree_and_trie import Trie
+from ..read_and_write import read_json
+from ..read_and_write import read_lines
 
 
 class Lexicon:

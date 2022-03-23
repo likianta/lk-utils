@@ -6,7 +6,7 @@
 @Version : 1.1.5
 @Desc    : 前缀树和后缀树.
 """
-from . import read_and_write
+from .. import read_and_write
 
 
 class Prototype:

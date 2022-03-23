@@ -141,7 +141,7 @@ class PunctuationConverter:
 
 
 def discover(ifile: str, ofile: str):
-    from .read_and_write import loads, dumps
+    from ..read_and_write import loads, dumps
     
     cleaner = DiacriticalMarksCleaner()
     cleaner._strict_mode = False
