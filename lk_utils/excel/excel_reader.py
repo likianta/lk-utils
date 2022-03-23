@@ -1,4 +1,8 @@
+import typing as t
+
 import xlrd
+
+from ..subproc import new_thread
 
 """
 假设表格为:
@@ -75,87 +79,145 @@ import xlrd
 
 
 class T:
-    import typing as _t
+    Dict = t.Dict
+    List = t.List
+    Optional = t.Optional
     
-    Dict = _t.Dict
-    List = _t.List
-    Optional = _t.Optional
+    WorkBook = t.Optional[xlrd.Book]
+    WorkSheet = t.Optional[xlrd.sheet.Sheet]
     
-    CellValue = _t.Union[None, bool, float, int, str]
-    RowValues = _t.Iterable[CellValue]
-    ColValues = _t.Iterable[CellValue]
-    SheetName = _t.Optional[str]
+    Header = t.List[str]
+    
+    CellValue = t.Union[None, bool, float, int, str]
+    RowValues = t.Sequence[CellValue]
+    ColValues = t.Sequence[CellValue]
+    SheetName = t.Optional[str]
 
 
-class ColIndexLocator:
-    _header = None
+class Header:
+    strict: bool
+    _header_a: T.RowValues
+    _header_b: T.List[str]
     
-    def __init__(self, header):
+    def __init__(self, header: T.RowValues, strict=True):
         """
         NOTE: 特别注意, 我们把 header_row 中的所有对象都转换成 str 类型了. 也就
             是如果参数 header 是 ['A', 2019, False], 则 self._header 是 ['A',
             '2019', 'False'].
             之所以这样做, 是有原因的, 见 self.find_colx() 注释.
         """
-        self._header = tuple(str(x).lower() for x in header)
+        self.strict = strict
+        self._header_a = header
+        self._header_b = [str(x).lower() for x in header]
+        if len(set(self._header_b)) != len(self._header_b):
+            print(':v3p', 'There are duplicate fields in your header, field '
+                          'index locator may work incorrectly!')
     
-    def find_colx(self, *query: str, ignore_error=False) -> int:
-        """
-        NOTE: query 仅限 [str] 元素. 这样做的目的是避免 int 元素的二义性.
-        """
-        for i in (str(x).lower() for x in query):
-            if i in self._header:
-                return self._header.index(i)
-            elif ignore_error:
-                return -1
-        raise ValueError('Query field not found in the header',
-                         f'query: {query}', f'header: {self._header}')
-
-
-class ExcelReader(ColIndexLocator):
-    filepath = ''
-    book = None
-    sheet = None
-    header = None
+    @property
+    def header(self) -> T.RowValues:
+        if self.strict:
+            return self._header_a
+        else:
+            return self._header_b
     
-    # noinspection PyMissingConstructor
-    def __init__(self, path: str, sheetx=0, formatting_info=False):
+    def find_colx(self, *query: str) -> t.Optional[int]:
         """
         Args:
-            path: 传入要读取的文件的路径.
-            sheetx: int. 选择要激活的 sheet. 默认读取第一个 sheet (sheetx=0),
-                最大不超过该 excel 的 sheet 总数. 您也可以通过
-                self.activate_sheet (sheetx) 来切换要读取的 sheet.
-            formatting_info: bool. 是否保留源表格样式. 例如单元格的批注, 背景
-                色, 前景色等.
-                注: 只有 ".xls" 支持保留源表格样式, 如果对".xlsx" 使用会直接报
-                错. 参考: http://www.bubuko.com/infodetail-2547924.html
+            query: accept multiple query words
         """
-        self.filepath = path
-        if '.xlsx' in path:
-            # 当要打开的文件为 ".xlsx" 格式时, 强制 formatting_info 参数为
-            # False. 参考: http://www.bubuko.com/infodetail-2547924.html
-            formatting_info = False
-        # NOTE: ExcelReader 的实例化方法只能够一次性读取 Excel 到内存中. 如果您
-        #   的表格非常大, 那么在此过程中会有明显卡顿.
-        self.book = xlrd.open_workbook(path, formatting_info=formatting_info)
-        self.activate_sheet(sheetx)
+        for i in query:
+            if i in self._header_a:
+                return self._header_a.index(i)
+        for i in (str(x).lower() for x in query):
+            if i in self._header_b:
+                return self._header_b.index(i)
+        return None
+
+
+class ExcelReader:
+    filepath: str
+    _book: T.WorkBook
+    _sheet: T.WorkSheet
+    _header: T.Optional[Header]
+    _background_thread = None
+    
+    def __init__(self, filepath: str, sheetx: t.Optional[int] = 0, **kwargs):
+        """
+        Args:
+            filepath: '.xls' or '.xlsx' file.
+            sheetx: int.
+                which sheet to activate once after workbook connected.
+                pass None to not initialize sheet at start.
+                this value cannot exceed the total sheet number, or it will
+                raise ValueError.
+                You can laterly use `activate_sheet(int sheetx)` to change it.
+            **kwargs:
+                formatting_info: bool[default False].
+                    whether to keep source table formats, e.g. note marks, bg
+                    colors, fg colors.
+                    be notice this only valid for '.xls' file type. see also
+                    http://www.bubuko.com/infodetail-2547924.html
+                strict: bool[default False]
+                    example True:
+                        a header would be ['A', 'b', 3, True, ...]
+                    example False:
+                        a header would be ['a', 'b', '3', 'true', ...]
+                    see also `Header > __init__ > (param) strict`.
+        """
+        self.filepath = filepath
+        self._background_thread = self._loading(
+            filepath,
+            formatting_info=False if filepath.endswith('.xlsx')
+            else kwargs.get('formatting_info', False),
+            sheetx=sheetx
+        )
+    
+    @new_thread()
+    def _loading(self, filepath: str, formatting_info=False,
+                 sheetx: T.Optional[int] = 0):
+        """
+        Notes:
+            if file is large, it consumes appreciable seconds of time. we'd
+            better put it in a new thread.
+        """
+        self._book = xlrd.open_workbook(
+            filepath, formatting_info=formatting_info
+        )
+        if sheetx is not None:
+            self._sheet = self._book.sheet_by_index(sheetx)
+        else:
+            self._sheet = None
+    
+    @property
+    def book(self) -> T.WorkBook:
+        if self._background_thread.is_alive():
+            self._background_thread.join()
+        return self._book
+    
+    @property
+    def sheet(self) -> T.Optional[T.WorkSheet]:
+        if self._background_thread.is_alive():
+            self._background_thread.join()
+        return self._sheet
     
     def __enter__(self):
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        del self.book, self.sheet
+        self._close()
+        
+    def _close(self):
+        self._background_thread.join()
+        self._book = None
+        self._sheet = None
     
     def activate_sheet(self, sheetx: int):
         """ Activate a sheet by sheetx. """
         assert sheetx < self.get_num_of_sheets()
-        self.sheet = self.book.sheet_by_index(sheetx)
+        self._sheet = self.book.sheet_by_index(sheetx)
         if self.get_num_of_rows() > 0:
-            self.header = self.row_values(0)
-            self._header = tuple(str(x).lower() for x in self.header)
+            self._header = Header(self.row_values(0), strict=False)
         else:
-            self.header = None
             self._header = None
     
     # --------------------------------------------------------------------------
@@ -174,9 +236,9 @@ class ExcelReader(ColIndexLocator):
     
     # --------------------------------------------------------------------------
     
-    def get_header(self) -> T.Optional[list]:
-        # noinspection PyTypeChecker
-        return self.header
+    @property
+    def header(self) -> T.RowValues:
+        return self._header or []
     
     def get_sheet(self, sheetx=None):
         """
@@ -224,7 +286,7 @@ class ExcelReader(ColIndexLocator):
             # str, list, tuple
             if isinstance(query, (str, bool, float)):
                 query = (query,)
-            if (colx := self.find_colx(*query)) == -1:
+            if (colx := self._header.find_colx(*query)) == -1:
                 return None
         else:
             colx = query
