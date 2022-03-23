@@ -18,19 +18,13 @@ class T:
         'dict', 'list', 'dlist'
     ]
     
-    _FileDict = _t.Dict[FilePath, FileName]
-    _FileZip = _t.Iterable[_t.Tuple[FilePath, FileName]]
-    _FileDualList = _t.Tuple[_t.List[FilePath], _t.List[FileName]]
-    
-    FileZip = _FileZip
-    
-    FinderReturn = _t.Iterator[FilePath, FileName]
+    FinderReturn = _t.Iterator[_t.Tuple[FilePath, FileName]]
     
     Suffix = _t.Union[None, str, _t.Tuple[str, ...]]
     Prefix = Suffix
 
 
-def normpath(path: T.Path) -> T.Path:
+def normpath(path: T.Path, force_abspath=False) -> T.Path:
     """
     
     Examples:
@@ -40,7 +34,10 @@ def normpath(path: T.Path) -> T.Path:
         ./a/b/          a/b
         ./a/b/c/../     a/b
     """
-    return ospath.normpath(path).replace('\\', '/')
+    if force_abspath:
+        return ospath.abspath(path).replace('\\', '/')
+    else:
+        return ospath.normpath(path).replace('\\', '/')
 
 
 # ------------------------------------------------------------------------------
@@ -129,10 +126,11 @@ def _find_paths(
     Yields:
         tuple[str filepath, str filename]
     """
+    dirpath = normpath(dirpath, force_abspath=True)
     for root, dirs, files in os.walk(dirpath):
         root = normpath(root)
         
-        if path_type == 'file':
+        if path_type == 0:
             names = files
         else:
             names = dirs
@@ -159,7 +157,12 @@ def find_files(
     )
 
 
-def find_filepaths(
+''' discuss: why use "find_file_paths/_names" not "find_filepaths/filenames"?
+    answer: for better code auto completion.
+'''
+
+
+def find_file_paths(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [m for m, _ in _find_paths(
@@ -167,7 +170,7 @@ def find_filepaths(
     )]
 
 
-def find_filenames(
+def find_file_names(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Names:
     return [n for _, n in _find_paths(
@@ -183,7 +186,7 @@ def findall_files(
     )
 
 
-def findall_filepaths(
+def findall_file_paths(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [m for m, _ in _find_paths(
@@ -191,7 +194,7 @@ def findall_filepaths(
     )]
 
 
-def findall_filenames(
+def findall_file_names(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Names:
     return [n for _, n in _find_paths(
@@ -208,7 +211,7 @@ def find_dirs(
     )
 
 
-def find_dirpaths(
+def find_dir_paths(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [m for m, _ in _find_paths(
@@ -217,7 +220,7 @@ def find_dirpaths(
     )]
 
 
-def find_dirnames(
+def find_dir_names(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [n for _, n in _find_paths(
@@ -235,7 +238,7 @@ def findall_dirs(
     )
 
 
-def findall_dirpaths(
+def findall_dir_paths(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [m for m, _ in _find_paths(
@@ -244,7 +247,7 @@ def findall_dirpaths(
     )]
 
 
-def findall_dirnames(
+def findall_dir_names(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [n for _, n in _find_paths(
