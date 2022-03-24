@@ -1,6 +1,6 @@
 try:
     import lk_logger
-    lk_logger.setup(silent=True)
+    lk_logger.setup(quiet=True)
 except Exception:
     pass
 
