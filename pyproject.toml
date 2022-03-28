@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.2.0"
+version = "2.2.1"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -18,11 +18,13 @@ xlrd = { version = "1.2.0", optional = true }
 xlsxwriter = { version = "", optional = true }
 pypinyin = { version = "", optional = true }
 pyyaml = { version = "", optional = true }
+toml = { version = "", optional = true }
 
 [tool.poetry.extras]
 exl = ["xlrd", "xlsxwriter"]
 nlp = ["pypinyin"]
-all = ["xlrd", "xlsxwriter", "pypinyin", "pyyaml"]
+ext = ["pyyaml", "toml"]
+all = ["xlrd", "xlsxwriter", "pypinyin", "pyyaml", "toml"]
 
 [build-system]
 requires = ["poetry>=1.0"]

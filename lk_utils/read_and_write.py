@@ -1,31 +1,25 @@
 from contextlib import contextmanager
-from json import dump as _jdump
-from json import load as _jload
-from os.path import exists
-from pickle import dump as _pdump
-from pickle import load as _pload
 
 
 class T:
-    import typing as _t
-    from io import TextIOWrapper as _TextIOWrapper
+    from typing import List, Literal, Union
+    from typing import BinaryIO, TextIO
     
     File = str
-    FileMode = _t.Literal['a', 'r', 'rb', 'w', 'wb']
-    FileHandle = _TextIOWrapper
+    FileMode = Literal['a', 'r', 'rb', 'w', 'wb']
+    FileHandle = Union[TextIO, BinaryIO]
     
-    List = _t.List
-    Union = _t.Union
+    PlainFileTypes = Literal['.txt', '.html', '.md', '.rst', '.htm', '.ini']
+    StructFileTypes = Literal['.json', '.json5', '.yaml']
+    BinaryFileTypes = Literal['.xlsx', '.xls', '.pdf']
     
-    PlainFileTypes = _t.Literal['.txt', '.html', '.md', '.rst', '.htm', '.ini']
-    StructFileTypes = _t.Literal['.json', '.json5', '.yaml']
-    BinaryFileTypes = _t.Literal['.xlsx', '.xls', '.pdf']
-    
-    DumpableData = _t.Union[None, dict, list, set, str, tuple]
+    DumpableData = Union[None, dict, list, set, str, tuple]
 
 
 @contextmanager
-def ropen(file: T.File, mode: T.FileMode = 'r', encoding='utf-8') -> T.FileHandle:
+def ropen(file: T.File,
+          mode: T.FileMode = 'r',
+          encoding='utf-8') -> T.FileHandle:
     """
     Args:
         file
@@ -43,7 +37,9 @@ def ropen(file: T.File, mode: T.FileMode = 'r', encoding='utf-8') -> T.FileHandl
 
 
 @contextmanager
-def wopen(file: T.File, mode: T.FileMode = 'w', encoding='utf-8') -> T.FileHandle:
+def wopen(file: T.File,
+          mode: T.FileMode = 'w',
+          encoding='utf-8') -> T.FileHandle:
     """
     Args:
         file:
@@ -61,19 +57,6 @@ def wopen(file: T.File, mode: T.FileMode = 'w', encoding='utf-8') -> T.FileHandl
         yield handle
     finally:
         handle.close()
-
-
-def not_empty(file: T.File) -> bool:
-    """
-    References:
-        https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
-    
-    Returns (bool):
-        True: file has content
-        False: file is empty
-    """
-    from os.path import getsize
-    return bool(exists(file) and getsize(file))
 
 
 def read_file(file: T.File) -> str:
@@ -126,25 +109,6 @@ def write_file(content: T.Union[iter, list, str, tuple],
         f.write(content)
 
 
-def read_json(file: T.File) -> T.Union[dict, list]:
-    with ropen(file) as f:
-        return _jload(f)
-
-
-def write_json(data: T.DumpableData, file: T.File, pretty_dump=False):
-    if isinstance(data, set):
-        data = list(data)
-    
-    with wopen(file) as f:
-        _jdump(data, f, ensure_ascii=False, default=str,
-               indent=None if pretty_dump is False else 4)
-        #   ensure_ascii=False
-        #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
-        #   default=str
-        #       When something is not serializble, callback `__str__`.
-        #       It is useful to resolve `pathlib.PosixPath`
-
-
 # ------------------------------------------------------------------------------
 
 def loads(file: T.File, **kwargs) -> T.Union[dict, list, str]:
@@ -164,31 +128,30 @@ def loads(file: T.File, **kwargs) -> T.Union[dict, list, str]:
         return read_file(file)
     
     if file.endswith(('.json', '.json5')):
-        return read_json(file)
+        from json import load as jload
+        with ropen(file) as f:
+            return jload(f)
     
     if file.endswith(('.yaml', '.yml')):  # pip install pyyaml
-        # noinspection PyUnresolvedReferences
-        from yaml import safe_load as _yload
+        from yaml import safe_load as yload  # noqa
         with ropen(file) as f:
-            return _yload(f)
+            return yload(f)
+    
+    if file.endswith(('.toml', '.tml')):  # pip install toml
+        from toml import load as tload  # noqa
+        with ropen(file) as f:
+            return tload(f)
     
     if file.endswith(('.pkl',)):
+        from pickle import load as pload
         with ropen(file, 'rb') as f:
-            return _pload(f)  # noqa
+            return pload(f)
     
     # unregistered file types, like: .js, .css, .py, etc.
     return read_file(file)
 
 
-def load_list(file: T.File, offset=0) -> T.List[str]:
-    return read_lines(file, offset)
-
-
-def load_dict(file: T.File) -> T.Union[dict, list]:
-    return read_json(file)
-
-
-def dumps(data: T.DumpableData, file: T.File, **kwargs):
+def dumps(data: T.DumpableData, file: T.File, **kwargs) -> None:
     """
     Args:
         data
@@ -200,20 +163,33 @@ def dumps(data: T.DumpableData, file: T.File, **kwargs):
             
     """
     if file.endswith(('.htm', '.html', '.md', '.rst', '.txt')):
-        return write_file(data, file, **kwargs)
+        write_file(data, file, **kwargs)
     
     if file.endswith(('.json', '.json5')):
-        return write_json(data, file, **kwargs)
+        from json import dump as jdump
+        with wopen(file) as f:
+            jdump(data, f, ensure_ascii=False, default=str,
+                  indent=4 if kwargs.get('pretty_dump', False) else None)
+            #   ensure_ascii=False
+            #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
+            #   default=str
+            #       when something is not serializble, callback `__str__`.
+            #       it is useful to resolve `pathlib.PosixPath`.
     
     if file.endswith(('.yaml', '.yml')):  # pip install pyyaml
-        # noinspection PyUnresolvedReferences
-        from yaml import dump as _ydump
+        from yaml import dump as ydump  # noqa
         with wopen(file) as f:
-            return _ydump(data, f, **kwargs)
+            return ydump(data, f, **kwargs)
+    
+    if file.endswith(('.toml', '.tml')):  # pip install toml
+        from toml import dump as tdump  # noqa
+        with wopen(file) as f:
+            return tdump(data, f, **kwargs)
     
     if file.endswith(('.pkl',)):
+        from pickle import dump as pdump
         with wopen(file, 'wb') as f:
-            return _pdump(data, f, **kwargs)  # noqa
+            return pdump(data, f, **kwargs)
     
     # unregistered file types, like: .js, .css, .py, etc.
     return write_file(data, file, **kwargs)

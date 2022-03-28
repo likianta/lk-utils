@@ -1,6 +1,6 @@
 import os
+import os.path
 from inspect import currentframe
-from os import path as ospath
 
 
 class T:
@@ -35,9 +35,9 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
         ./a/b/c/../     a/b
     """
     if force_abspath:
-        return ospath.abspath(path).replace('\\', '/')
+        return os.path.abspath(path).replace('\\', '/')
     else:
-        return ospath.normpath(path).replace('\\', '/')
+        return os.path.normpath(path).replace('\\', '/')
 
 
 # ------------------------------------------------------------------------------
@@ -49,10 +49,10 @@ def get_dirname(path: T.Path) -> str:
         path = 'a/b/c/d.txt' -> 'c'
         path = 'a/b/c' -> 'c'
     """
-    if ospath.isfile(path):
-        return ospath.basename(ospath.dirname(path))
+    if os.path.isfile(path):
+        return os.path.basename(os.path.dirname(path))
     else:
-        return ospath.basename(path)
+        return os.path.basename(path)
 
 
 def get_filename(path: T.Path, suffix=True, strict=False) -> T.Path:
@@ -69,11 +69,11 @@ def get_filename(path: T.Path, suffix=True, strict=False) -> T.Path:
     """
     if strict and isdir(path):
         raise Exception('Cannot get filename from a directory!')
-    name = ospath.basename(path)
+    name = os.path.basename(path)
     if suffix:
         return name
     else:
-        return ospath.splitext(name)[0]
+        return os.path.splitext(name)[0]
 
 
 def __get_launch_path() -> T.Path:
@@ -83,15 +83,15 @@ def __get_launch_path() -> T.Path:
         sys.argv: ['D:/myprj/src/main.py', ...] -> 'D:/myprj/src/main.py'
     """
     from sys import argv
-    path = ospath.abspath(argv[0])
-    if ospath.isfile(path):
+    path = os.path.abspath(argv[0])
+    if os.path.isfile(path):
         return normpath(path)
     else:
         raise Exception
 
 
 def __get_launch_dir() -> T.Path:
-    return ospath.dirname(__get_launch_path())
+    return os.path.dirname(__get_launch_path())
 
 
 try:
@@ -311,7 +311,7 @@ def isfile(filepath: T.Path) -> bool:
         return False
     if filepath.endswith('/'):
         return False
-    if ospath.isfile(filepath):
+    if os.path.isfile(filepath):
         return True
     if '.' in filepath.rsplit('/', 1)[-1]:
         return True
@@ -334,10 +334,18 @@ def isdir(dirpath: T.Path) -> bool:
         return False
     if dirpath in ('.', './', '/'):
         return True
-    if ospath.isdir(dirpath):
+    if os.path.isdir(dirpath):
         return True
     else:
         return False
+
+
+def not_empty(file: T.FilePath) -> bool:
+    """
+    References:
+        https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
+    """
+    return bool(os.path.exists(file) and os.path.getsize(file))
 
 
 def currdir() -> T.Path:
@@ -356,12 +364,12 @@ def relpath(path: T.Path, ret_abspath=True) -> T.Path:
     if path in ('', '.', './'):
         out = caller_dir
     else:
-        out = ospath.abspath(ospath.join(caller_dir, path))
+        out = os.path.abspath(os.path.join(caller_dir, path))
     
     if ret_abspath:
         return normpath(out)
     else:
-        return normpath(ospath.relpath(out, os.getcwd()))
+        return normpath(os.path.relpath(out, os.getcwd()))
 
 
 def _get_dir_info_from_caller(frame) -> T.Path:
@@ -372,4 +380,4 @@ def _get_dir_info_from_caller(frame) -> T.Path:
                      'use current working directory.')
         return normpath(os.getcwd())
     else:
-        return normpath(ospath.dirname(file))
+        return normpath(os.path.dirname(file))
