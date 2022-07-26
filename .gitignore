@@ -1,8 +1,7 @@
 # Project exclude paths
 /.idea/
-/depreciated/
+/deleted/
 /dist/
-/dust/
-/test/
 /tests/*.log
 __pycache__/
+.DS_Store
