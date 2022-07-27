@@ -3,70 +3,155 @@ from __future__ import annotations
 import os
 import subprocess
 import typing as t
+from collections import defaultdict
 from functools import wraps
 from textwrap import dedent
-from threading import Thread
+from threading import Thread as ThreadBase
 
 
-class T:
-    Id = t.Union[str, int]
-    Target = t.Callable
-    Thread = Thread
-    ThreadPool = t.Dict[Id, Thread]
-
-
-__thread_pool: T.ThreadPool = {}
-
-
-def new_thread(ident: T.Id = None, daemon=True, singleton=False):
-    """ a decorator wraps target function in a new thread. """
+class Thread(ThreadBase):
+    """
+    https://stackoverflow.com/questions/6893968/how-to-get-the-return-value
+        -from-a-thread-in-python
+    """
+    __result = None
     
-    def decorator(func: T.Target):
-        nonlocal ident
-        if ident is None:
-            ident = id(func)
-        
+    def __init__(
+            self, target: t.Callable,
+            args: tuple = None, kwargs: dict = None
+    ):
+        super().__init__(
+            target=self._decorator(target),
+            args=args or (),
+            kwargs=kwargs or {},
+        )
+    
+    def _decorator(self, func):
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Thread:
-            thread = _create_thread(
-                ident, func, args,
-                kwargs, daemon, singleton
-            )
-            thread.start()
-            return thread
+        def wrapper(*args, **kwargs):
+            self.__result = func(*args, **kwargs)
+            return self.__result
         
         return wrapper
     
-    return decorator
+    def join(self, timeout: float | None = None) -> t.Any:
+        super().join(timeout)
+        return self.__result
+    
+    @property
+    def result(self) -> t.Any:
+        return self.__result
 
 
-def run_new_thread(target: T.Target, args=None, kwargs=None,
-                   daemon=True) -> Thread:
-    """ run function in a new thread at once. """
-    # assert id(target) not in __thread_pool
-    thread = _create_thread(id(target), target, args, kwargs, daemon)
-    thread.start()
-    return thread
+class T:
+    Group = str  # the default group is 'default'
+    Id = t.Union[str, int]
+    Target = t.Callable
+    Thread = Thread
+    ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
 
 
-def retrieve_thread(ident: T.Id) -> t.Optional[Thread]:
-    # print(':l', __thread_pool, ident)
-    return __thread_pool.get(ident)
-
-
-def _create_thread(ident: T.Id, target: T.Target, args=None, kwargs=None,
-                   daemon=True, singleton=False) -> T.Thread:
-    if singleton:
-        if t := __thread_pool.get(ident):
-            if t.is_alive():
-                return t
+class ThreadManager:
+    thread_pool: T.ThreadPool
+    
+    def __init__(self):
+        self.thread_pool = defaultdict(dict)
+    
+    def new_thread(
+            self, ident: T.Id = None, group: T.Group = 'default',
+            daemon=True, singleton=False
+    ) -> t.Callable:
+        """ a decorator wraps target function in a new thread. """
+        
+        def decorator(func: T.Target):
+            nonlocal ident
+            if ident is None:
+                ident = id(func)
+            
+            @wraps(func)
+            def wrapper(*args, **kwargs) -> T.Thread:
+                thread = self._create_thread(
+                    group, ident, func, args,
+                    kwargs, daemon, singleton
+                )
+                thread.start()
+                return thread
+            
+            return wrapper
+        
+        return decorator
+    
+    def run_new_thread(
+            self, target: T.Target,
+            args=None, kwargs=None,
+            daemon=True
+    ) -> T.Thread:
+        """ run function in a new thread at once. """
+        # # assert id(target) not in __thread_pool  # should i check it?
+        thread = self._create_thread(
+            'default', id(target), target,
+            args, kwargs, daemon
+        )
+        thread.start()
+        return thread
+    
+    def _create_thread(
+            self, group: T.Group, ident: T.Id, target: T.Target,
+            args=None, kwargs=None,
+            daemon=True, singleton=False
+    ) -> T.Thread:
+        if singleton:
+            if t := self.thread_pool[group].get(ident):
+                if t.is_alive():
+                    return t
+                else:
+                    self.thread_pool.pop(ident)
+        thread = self.thread_pool[group][ident] = Thread(
+            target=target, args=args or (), kwargs=kwargs or {}
+        )
+        thread.daemon = daemon
+        return thread
+    
+    # -------------------------------------------------------------------------
+    
+    class _Delegate:
+        
+        def __init__(self, *threads: T.Thread):
+            self.threads = threads
+        
+        def __len__(self):
+            return len(self.threads)
+        
+        def fetch_one(self, index=0) -> t.Optional[T.Thread]:
+            if self.threads:
+                return self.threads[index]
             else:
-                __thread_pool.pop(ident)
-    thread = __thread_pool[ident] = Thread(
-        target=target, args=args or (), kwargs=kwargs or {}
-    )
-    thread.daemon = daemon
-    return thread
+                return None
+        
+        def all_join(self):
+            for t in self.threads:
+                t.join()
+    
+    def retrieve_thread(
+            self,
+            ident: T.Id = None,
+            group: T.Group = 'default'
+    ) -> 'ThreadManager._Delegate':
+        # print(':l', self.thread_pool, ident)
+        dict_ = self.thread_pool[group]
+        if ident is None:
+            return ThreadManager._Delegate(*dict_.values())
+        else:
+            if t := dict_.get(ident):
+                return ThreadManager._Delegate(t)
+            else:
+                return ThreadManager._Delegate()
+
+
+thread_manager = ThreadManager()
+new_thread = thread_manager.new_thread
+run_new_thread = thread_manager.run_new_thread
+retrieve_thread = thread_manager.retrieve_thread
 
 
 # ------------------------------------------------------------------------------
@@ -196,57 +281,75 @@ def mklinks(src_dir, dst_dir, names=None, exist_ok=False):
 
 # -----------------------------------------------------------------------------
 
-def defer(func, *args, **kwargs) -> 'Then':
+def defer(func, *args, **kwargs) -> 'Promise':
     """
+    args:
+        kwargs:
+            self used keys:
+                start_background_working_now: bool, default True.
+                __daemon__: bool, default True.
+            other keys will be passed to `func`.
+    
     usage:
         def add(a: int, b: int) -> int:
             return a + b
-        d = defer(add, 1, 2)
+        promise = defer(add, 1, 2).then(print)
         ...
-        result = await d.fetch()
-        print(result)  # -> 3
+        promise.fulfill()  # it prints '3'
     """
+    start_now = kwargs.pop('start_background_working_now', True)
     daemon = kwargs.pop('__daemon__', True)
     t = Thread(target=func, args=args, kwargs=kwargs)
     t.daemon = daemon
-    return Then(t)
-
-
-class Then:
-    thread: Thread
-    _promise: t.Optional['Promise']
-    
-    def __init__(self, thread: Thread):
-        self.thread = thread
-        self._promise = None
-    
-    def then(self, func, args: tuple = None, kwargs: dict = None):
-        from functools import partial
-        self._promise = Promise(
-            self.thread, partial(func, args or (), kwargs or {})
-        )
-        return self._promise
-    
-    async def fetch(self):
-        return self._promise.fetch()
+    return Promise(t, start_now)
 
 
 class Promise:
+    _is_start: bool
+    _is_done: bool
+    _thread: Thread
+    _then: t.Optional[t.Callable]
+    _result: t.Any
     
-    def __init__(self, thread: Thread, handle: t.Callable):
-        """
-        args:
-            handle: partial function with no parameters.
-        """
-        self.thread = thread
-        self._handle = handle
+    def __init__(self, thread: Thread, start_now=True):
+        self._is_start = False
+        self._is_done = False
+        self._thread = thread
+        self._then = None
+        self._result = None
+        if start_now:
+            self.start()
     
-    async def fetch(self):
-        from asyncio import sleep
-        self.thread.start()
-        while True:
-            if self.thread.is_alive():
-                await sleep(0.1)
-            else:
-                break
-        return self._handle()
+    def __call__(self) -> t.Any:
+        return self.fulfill()
+    
+    def start(self) -> None:
+        if self._is_start: return
+        self._is_start = True
+        self._thread.start()
+    
+    def then(self, func, args: tuple = None, kwargs: dict = None) -> 'Promise':
+        from functools import partial
+        self._then = partial(func, args or (), kwargs or {})
+        return self
+    
+    def fetch(self) -> t.Optional[t.Any]:
+        if not self._is_start:
+            self.start()
+        if self._is_done:
+            return self._result
+        
+        self._result = self._thread.join()
+        del self._thread
+        self._is_done = True
+        
+        if self._then:
+            self._result = self._then(self._result)
+        return self._result
+    
+    # alias
+    fulfill = join = fetch
+    
+    @property
+    def is_done(self):
+        return self._is_done
