@@ -2,6 +2,8 @@ import os
 import os.path
 from inspect import currentframe
 
+_IS_WINDOWS = os.name == 'nt'
+
 
 class T:
     import typing as _t
@@ -35,9 +37,12 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
         ./a/b/c/../     a/b
     """
     if force_abspath:
-        return os.path.abspath(path).replace('\\', '/')
+        out = os.path.abspath(path)
     else:
-        return os.path.normpath(path).replace('\\', '/')
+        out = os.path.normpath(path)
+    if _IS_WINDOWS:
+        out = out.replace('\\', '/')
+    return out
 
 
 # ------------------------------------------------------------------------------
@@ -353,7 +358,7 @@ def currdir() -> T.Path:
     return _get_dir_info_from_caller(caller_frame)
 
 
-def relpath(path: T.Path, ret_abspath=True) -> T.Path:
+def relpath(path: T.Path, force_abspath=True) -> T.Path:
     """ Consider relative path always based on caller's.
     
     References: https://blog.csdn.net/Likianta/article/details/89299937
@@ -366,18 +371,21 @@ def relpath(path: T.Path, ret_abspath=True) -> T.Path:
     else:
         out = os.path.abspath(os.path.join(caller_dir, path))
     
-    if ret_abspath:
+    if force_abspath:
         return normpath(out)
     else:
         return normpath(os.path.relpath(out, os.getcwd()))
 
 
-def _get_dir_info_from_caller(frame) -> T.Path:
+def _get_dir_info_from_caller(frame, ignore_error=False) -> T.Path:
     file = frame.f_globals.get('__file__') \
            or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):
-        print(':v4', 'Unable to get dir info from caller frame! Fallback to '
-                     'use current working directory.')
-        return normpath(os.getcwd())
+        if ignore_error:
+            print(':v4p2', 'Unable to locate directory from caller frame! '
+                           'Fallback using current working directory instead.')
+            return normpath(os.getcwd())
+        else:
+            raise OSError('Unable to locate directory from caller frame!')
     else:
         return normpath(os.path.dirname(file))
