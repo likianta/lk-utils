@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.3.0"
+version = "2.3.1-beta.1"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -27,5 +27,5 @@ ext = ["pyyaml", "toml"]
 all = ["xlrd", "xlsxwriter", "pypinyin", "pyyaml", "toml"]
 
 [build-system]
-requires = ["poetry>=1.0"]
+requires = ["poetry"]
 build-backend = "poetry.masonry.api"

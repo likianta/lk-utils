@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import os.path
 from inspect import currentframe
@@ -6,24 +8,22 @@ _IS_WINDOWS = os.name == 'nt'
 
 
 class T:
-    import typing as _t
-    
-    List = _t.List
+    import typing as t
     
     Path = DirPath = FilePath = str
     Name = DirName = FileName = str
-    Paths = DirPaths = FilePaths = List[Path]
-    Names = DirNames = FileNames = List[Name]
+    Paths = DirPaths = FilePaths = list[Path]
+    Names = DirNames = FileNames = list[Name]
+    Ext = str
     
-    PathFormat = _t.Literal[
+    PathFormat = t.Literal[
         'filepath', 'dirpath', 'path', 'filename', 'dirname', 'name', 'zip',
         'dict', 'list', 'dlist'
     ]
     
-    FinderReturn = _t.Iterator[_t.Tuple[FilePath, FileName]]
+    FinderReturn = t.Iterator[tuple[FilePath, FileName]]
     
-    Suffix = _t.Union[None, str, _t.Tuple[str, ...]]
-    Prefix = Suffix
+    Prefix = Suffix = t.Union[None, str, tuple[str, ...]]
 
 
 def normpath(path: T.Path, force_abspath=False) -> T.Path:
@@ -46,6 +46,13 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
 
 
 # ------------------------------------------------------------------------------
+
+def get_dirpath(path: T.Path) -> T.DirPath:
+    if os.path.isdir(path):
+        return normpath(path)
+    else:
+        return normpath(os.path.dirname(path))
+
 
 def get_dirname(path: T.Path) -> str:
     """ Return the directory name of path.
@@ -79,6 +86,23 @@ def get_filename(path: T.Path, suffix=True, strict=False) -> T.Path:
         return name
     else:
         return os.path.splitext(name)[0]
+
+
+def split(path: T.Path, separate_ext=False) -> tuple[str, ...]:
+    """
+    return:
+        `tuple[str dirpath, str filename]` or `tuple[str dirpath, str
+            filename_stem, str ext]`.
+        the dirpath is asserted not empty. others may be empty.
+    """
+    path = normpath(path, force_abspath=True)
+    head, tail = os.path.split(path)
+    head = head.rstrip('/')
+    if separate_ext:
+        tail, ext = os.path.splitext(tail)
+        return head, tail, ext
+    else:
+        return head, tail
 
 
 def __get_launch_path() -> T.Path:
