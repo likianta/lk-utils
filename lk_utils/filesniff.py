@@ -12,8 +12,8 @@ class T:
     
     Path = DirPath = FilePath = str
     Name = DirName = FileName = str
-    Paths = DirPaths = FilePaths = list[Path]
-    Names = DirNames = FileNames = list[Name]
+    Paths = DirPaths = FilePaths = t.List[Path]
+    Names = DirNames = FileNames = t.List[Name]
     Ext = str
     
     PathFormat = t.Literal[
@@ -21,9 +21,9 @@ class T:
         'dict', 'list', 'dlist'
     ]
     
-    FinderReturn = t.Iterator[tuple[FilePath, FileName]]
+    FinderReturn = t.Iterator[t.Tuple[FilePath, FileName]]
     
-    Prefix = Suffix = t.Union[None, str, tuple[str, ...]]
+    Prefix = Suffix = t.Union[None, str, t.Tuple[str, ...]]
 
 
 def normpath(path: T.Path, force_abspath=False) -> T.Path:
