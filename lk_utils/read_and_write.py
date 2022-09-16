@@ -179,7 +179,10 @@ def dumps(data: T.DumpableData, file: T.File, **kwargs) -> None:
     if file.endswith(('.yaml', '.yml')):  # pip install pyyaml
         from yaml import dump as ydump  # noqa
         with wopen(file) as f:
-            return ydump(data, f, **kwargs)
+            return ydump(data, f, **{
+                'sort_keys': False,
+                **kwargs
+            })
     
     if file.endswith(('.toml', '.tml')):  # pip install toml
         from toml import dump as tdump  # noqa
