@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.3.3a0"
+version = "2.3.3a2"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -14,7 +14,7 @@ default = true
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = "^0.4.2"
-lk-logger = "^5.2.4"
+lk-logger = "^5.3.1"
 xlrd = { version = "1.2.0", optional = true }
 xlsxwriter = { version = "", optional = true }
 pypinyin = { version = "", optional = true }
