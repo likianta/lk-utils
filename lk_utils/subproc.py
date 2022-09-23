@@ -249,10 +249,12 @@ def format_cmd(*args, **kwargs):
 
 # ------------------------------------------------------------------------------
 
+_IS_WIN = os.name == 'nt'
+
+
 def mklink(src_path, dst_path, exist_ok=False):
     """
-
-    References:
+    ref:
         https://blog.walterlv.com/post/ntfs-link-comparisons.html
     """
     assert os.path.exists(src_path), src_path
@@ -262,12 +264,17 @@ def mklink(src_path, dst_path, exist_ok=False):
         else:
             raise FileExistsError(dst_path)
     
-    if os.path.isdir(src_path):
-        run_cmd_shell(f'mklink /J "{dst_path}" "{src_path}"')
-    elif os.path.isfile(src_path):
-        run_cmd_shell(f'mklink /H "{dst_path}" "{src_path}"')
+    if _IS_WIN:
+        os.symlink(src_path, dst_path,
+                   target_is_directory=os.path.isdir(src_path))
+        # if os.path.isdir(src_path):
+        #     run_cmd_shell(f'mklink /J "{dst_path}" "{src_path}"')
+        # elif os.path.isfile(src_path):
+        #     run_cmd_shell(f'mklink /H "{dst_path}" "{src_path}"')
+        # else:
+        #     raise Exception(src_path)
     else:
-        raise Exception(src_path)
+        os.symlink(src_path, dst_path)
     
     return dst_path
 
