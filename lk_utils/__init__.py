@@ -33,6 +33,5 @@ from .subproc import run_cmd_args
 from .subproc import run_cmd_shell
 from .subproc import run_cmd_shell as send_cmd
 from .subproc import run_new_thread
-from .time_utils import timestamp
 
-__version__ = '2.3.3'
+__version__ = '2.4.0'
