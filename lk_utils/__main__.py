@@ -2,15 +2,15 @@ from argsense import cli
 
 
 @cli.cmd()
-def mklink(src, dst, exist_ok=True):
+def mklink(src, dst, overwrite: bool = None):
     import os
-    from .subproc import mklink
+    from .filesniff import mklink
     
     if os.path.exists(dst) and \
             os.path.basename(dst) != (x := os.path.basename(src)):
         dst += '/' + os.path.basename(x)
     
-    mklink(src, dst, exist_ok)
+    mklink(src, dst, overwrite)
     print('[green]soft-link done:[/] '
           '[red]{}[/] -> [cyan]{}[/]'.format(src, dst), ':r')
 

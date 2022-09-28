@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import subprocess
 import typing as t
 from collections import defaultdict
@@ -244,45 +243,6 @@ def format_cmd(*args, **kwargs):
             else:
                 out.append(k)
     
-    return out
-
-
-# ------------------------------------------------------------------------------
-
-_IS_WIN = os.name == 'nt'
-
-
-def mklink(src_path, dst_path, exist_ok=False):
-    """
-    ref:
-        https://blog.walterlv.com/post/ntfs-link-comparisons.html
-    """
-    assert os.path.exists(src_path), src_path
-    if os.path.exists(dst_path):
-        if exist_ok:
-            return dst_path
-        else:
-            raise FileExistsError(dst_path)
-    
-    if _IS_WIN:
-        os.symlink(src_path, dst_path,
-                   target_is_directory=os.path.isdir(src_path))
-        # if os.path.isdir(src_path):
-        #     run_cmd_shell(f'mklink /J "{dst_path}" "{src_path}"')
-        # elif os.path.isfile(src_path):
-        #     run_cmd_shell(f'mklink /H "{dst_path}" "{src_path}"')
-        # else:
-        #     raise Exception(src_path)
-    else:
-        os.symlink(src_path, dst_path)
-    
-    return dst_path
-
-
-def mklinks(src_dir, dst_dir, names=None, exist_ok=False):
-    out = []
-    for n in (names or os.listdir(src_dir)):
-        out.append(mklink(f'{src_dir}/{n}', f'{dst_dir}/{n}', exist_ok))
     return out
 
 
