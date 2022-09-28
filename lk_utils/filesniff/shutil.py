@@ -24,6 +24,8 @@ def remove_tree(dst: str) -> None:
 
 
 def clone_tree(src: str, dst: str) -> None:
+    if not os.path.exists(dst):
+        os.mkdir(dst)
     for d in findall_dirs(src):
         dp_o = f'{dst}/{d.relpath}'
         if not os.path.exists(dp_o):
