@@ -16,6 +16,10 @@ class PathKnob:
     @property
     def abspath(self) -> str:  # alias to 'path'
         return self.path
+    
+    @property
+    def name_stem(self) -> str:
+        return os.path.splitext(self.name)[0]
 
 
 class T:
