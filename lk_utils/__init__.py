@@ -23,6 +23,8 @@ from .filesniff import findall_dirs
 from .filesniff import findall_file_names
 from .filesniff import findall_file_paths
 from .filesniff import findall_files
+from .filesniff import mklink
+from .filesniff import mklinks
 from .filesniff import relpath
 from .read_and_write import dumps
 from .read_and_write import loads
