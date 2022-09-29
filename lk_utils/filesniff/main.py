@@ -23,47 +23,46 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
 
 # ------------------------------------------------------------------------------
 
-def get_dirpath(path: T.Path) -> T.DirPath:
+def dirpath(path: T.Path) -> T.DirPath:
     if ospath.isdir(path):
         return normpath(path)
     else:
         return normpath(ospath.dirname(path))
 
 
-def get_dirname(path: T.Path) -> str:
+def dirname(path: T.Path) -> str:
     """ Return the directory name of path.
 
     Examples:
         path = 'a/b/c/d.txt' -> 'c'
         path = 'a/b/c' -> 'c'
     """
+    path = normpath(path, True)
     if ospath.isfile(path):
         return ospath.basename(ospath.dirname(path))
     else:
         return ospath.basename(path)
 
 
-def get_filename(path: T.Path, suffix=True, strict=False) -> T.Path:
+def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
     """ Return the file name from path.
 
     Examples:
-        suffix  strict  input           output
-        True    True    'a/b/c.txt'     'c.txt'
-        True    True    'a/b'            error
-        True    False   'a/b'           'b'
-        False   True    'a/b/c.txt'     'c'
-        False   True    'a/b'            error
-        False   False   'a/b'           'b'
+        strict  input           output
+        True    'a/b/c.txt'     'c.txt'
+        True    'a/b'            error
+        False   'a/b'           'b'
     """
     if strict and isdir(path):
         raise Exception('Cannot get filename from a directory!')
-    name = ospath.basename(path)
-    if name == '.':
-        name = ospath.basename(ospath.abspath(path))
     if suffix:
-        return name
+        return ospath.basename(path)
     else:
-        return ospath.splitext(name)[0]
+        return ospath.splitext(ospath.basename(path))[0]
+
+
+def filestem(path: T.Path) -> str:
+    return ospath.splitext(ospath.basename(path))[0]
 
 
 def split(path: T.Path, separate_ext=False) -> tuple[str, ...]:

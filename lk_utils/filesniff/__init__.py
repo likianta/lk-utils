@@ -13,9 +13,10 @@ from .finder import findall_file_names
 from .finder import findall_file_paths
 from .finder import findall_files
 from .main import currdir
-from .main import get_dirname
-from .main import get_dirpath
-from .main import get_filename
+from .main import dirname
+from .main import dirpath
+from .main import filename
+from .main import filestem
 from .main import isdir
 from .main import isfile
 from .main import normpath
