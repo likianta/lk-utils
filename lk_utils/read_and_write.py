@@ -77,7 +77,7 @@ def write_file(content: T.Content, file: T.File,
 
 # ------------------------------------------------------------------------------
 
-def loads(file: T.File, **kwargs) -> T.Data:
+def loads(file: T.File, **_) -> T.Data:
     file_type = _detect_file_type(file)
     if file_type == 'plain':
         return read_file(file)
@@ -107,11 +107,10 @@ def loads(file: T.File, **kwargs) -> T.Data:
 
 def dumps(data: T.Data, file: T.File, **kwargs) -> None:
     file_type = _detect_file_type(file)
+    
     if file_type == 'plain':
         write_file(data, file, sep=kwargs.get('sep', '\n'))
-    elif file_type == 'binary':
-        with wopen(file, 'wb') as f:
-            f.write(data)
+    
     elif file_type == 'json':
         from json import dump as jdump
         with wopen(file) as f:
@@ -122,29 +121,28 @@ def dumps(data: T.Data, file: T.File, **kwargs) -> None:
             #   default=str
             #       when something is not serializble, callback `__str__`.
             #       it is useful to resolve `pathlib.PosixPath`.
-    elif file_type == 'yaml':
-        pass
     
-    if file.endswith(('.yaml', '.yml')):  # pip install pyyaml
+    elif file_type == 'yaml':  # pip install pyyaml
         from yaml import dump as ydump  # noqa
         with wopen(file) as f:
-            return ydump(data, f, **{
-                'sort_keys': False,
-                **kwargs
-            })
+            ydump(data, f, **{'sort_keys': False, **kwargs})
     
-    if file.endswith(('.toml', '.tml')):  # pip install toml
-        from toml import dump as tdump  # noqa
-        with wopen(file) as f:
-            return tdump(data, f, **kwargs)
-    
-    if file.endswith(('.pkl',)):
+    elif file_type == 'pickle':
         from pickle import dump as pdump
         with wopen(file, 'wb') as f:
-            return pdump(data, f, **kwargs)
+            pdump(data, f, **kwargs)
     
-    # unregistered file types, like: .js, .css, .py, etc.
-    return write_file(data, file, **kwargs)
+    elif file_type == 'toml':  # pip install toml
+        from toml import dump as tdump  # noqa
+        with wopen(file) as f:
+            tdump(data, f, **kwargs)
+    
+    elif file_type == 'binary':
+        with wopen(file, 'wb') as f:
+            f.write(data)
+    
+    else:
+        raise Exception(file_type, file, type(data))
 
 
 def _detect_file_type(filename: str) -> T.FileType:
@@ -174,10 +172,7 @@ def read(file: T.File, **kwargs) -> t.Any:
             print(len(r))
     """
     data = loads(file, **kwargs)
-    try:
-        yield data
-    finally:
-        del data
+    yield data
 
 
 @contextmanager
@@ -198,7 +193,5 @@ def write(file: T.File, data: t.Any = None, **kwargs):
         print('See "result.json:1"')
     """
     assert isinstance(data, (list, dict, set))
-    try:
-        yield data
-    finally:
-        dumps(data, file, **kwargs)
+    yield data
+    dumps(data, file, **kwargs)
