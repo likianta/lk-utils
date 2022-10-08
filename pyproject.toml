@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.4.0b6"
+version = "2.4.0"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -14,7 +14,7 @@ default = true
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = "^0.4.2"
-lk-logger = "^5.3.2"
+lk-logger = "^5.4.1"
 pyyaml = { version = "", optional = true }
 toml = { version = "", optional = true }
 
