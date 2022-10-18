@@ -28,13 +28,19 @@ class T:
     Paths = DirPaths = FilePaths = t.List[Path]
     Names = DirNames = FileNames = t.List[Name]
     
+    PathType = int
     Prefix = Suffix = t.Union[None, str, t.Tuple[str, ...]]
     
     FinderReturn = t.Iterator[PathKnob]
 
 
+class PathType:
+    FILE = 0
+    DIR = 1
+
+
 def _find_paths(
-        dirpath: T.Path, path_type: int, recursive=False,
+        dirpath: T.Path, path_type: T.PathType, recursive=False,
         prefix: T.Prefix = None, suffix: T.Suffix = None, filter_=None
 ) -> T.FinderReturn:
     """
@@ -55,10 +61,10 @@ def _find_paths(
     for root, dirs, files in os.walk(dirpath):
         root = normpath(root)
         
-        if path_type == 0:
-            names = dirs
-        else:
+        if path_type == PathType.FILE:
             names = files
+        else:
+            names = dirs
         
         for n in names:
             p = f'{root}/{n}'
@@ -73,7 +79,7 @@ def _find_paths(
                 path=p,
                 relpath=p[len(dirpath) + 1:],
                 name=n,
-                type='dir' if path_type == 0 else 'file',
+                type='dir' if path_type == PathType.DIR else 'file',
             )
         
         if not recursive:
@@ -86,7 +92,8 @@ def find_files(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=1, recursive=False, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=False, suffix=suffix, filter_=filter_
     )
 
 
@@ -94,7 +101,8 @@ def find_file_paths(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [x.path for x in _find_paths(
-        dirpath, path_type=0, recursive=False, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=False, suffix=suffix, filter_=filter_
     )]
 
 
@@ -102,7 +110,8 @@ def find_file_names(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [x.name for x in _find_paths(
-        dirpath, path_type=0, recursive=False, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=False, suffix=suffix, filter_=filter_
     )]
 
 
@@ -110,7 +119,8 @@ def findall_files(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=1, recursive=True, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=True, suffix=suffix, filter_=filter_
     )
 
 
@@ -118,7 +128,8 @@ def findall_file_paths(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [x.path for x in _find_paths(
-        dirpath, path_type=0, recursive=True, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=True, suffix=suffix, filter_=filter_
     )]
 
 
@@ -126,7 +137,8 @@ def findall_file_names(
         dirpath: T.Path, suffix: T.Suffix = None, filter_=None
 ) -> T.Paths:
     return [x.name for x in _find_paths(
-        dirpath, path_type=0, recursive=True, suffix=suffix, filter_=filter_
+        dirpath, path_type=PathType.FILE,
+        recursive=True, suffix=suffix, filter_=filter_
     )]
 
 
@@ -136,7 +148,7 @@ def find_dirs(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=1, recursive=False, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )
 
@@ -145,7 +157,7 @@ def find_dir_paths(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [x.path for x in _find_paths(
-        dirpath, path_type=1, recursive=False, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )]
 
@@ -154,7 +166,7 @@ def find_dir_names(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [x.name for x in _find_paths(
-        dirpath, path_type=1, recursive=False, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )]
 
@@ -163,7 +175,7 @@ def findall_dirs(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=1, recursive=True, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )
 
@@ -172,7 +184,7 @@ def findall_dir_paths(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [x.path for x in _find_paths(
-        dirpath, path_type=1, recursive=True, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )]
 
@@ -181,7 +193,7 @@ def findall_dir_names(
         dirpath: T.Path, prefix=None, exclude_protected_folders=True
 ) -> T.Paths:
     return [x.name for x in _find_paths(
-        dirpath, path_type=1, recursive=True, prefix=prefix,
+        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
         filter_=_default_dirs_filter if exclude_protected_folders else None
     )]
 
@@ -199,19 +211,23 @@ class ProtectedDirsFilter:
         self._blacklist.clear()
     
     def __call__(self, path: T.Path, name: T.Name) -> bool:
+        """
+        return: True means filter out, False means pass through. (it's the same
+        with `builtins.filter` function.)
+        """
         if path.startswith(tuple(self._whitelist)):
             self._whitelist.add(path + '/')
-            return True
+            return False
         elif path.startswith(tuple(self._blacklist)):
             self._blacklist.add(path + '/')
-            return False
+            return True
         
         if name.startswith(('.', '__', '~')):
             self._blacklist.add(path + '/')
-            return False
+            return True
         else:
             self._whitelist.add(path + '/')
-            return True
+            return False
 
 
 _default_dirs_filter = ProtectedDirsFilter()
