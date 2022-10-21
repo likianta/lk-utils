@@ -44,6 +44,15 @@ def dirname(path: T.Path) -> str:
         return ospath.basename(path)
 
 
+def filepath(path: T.Path, suffix=True, strict=False) -> str:
+    if strict and isdir(path):
+        raise Exception('Cannot get filepath from a directory!')
+    if suffix:
+        return normpath(path)
+    else:
+        return normpath(ospath.splitext(path)[0])
+    
+
 def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
     """ Return the file name from path.
 
@@ -59,6 +68,9 @@ def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
         return ospath.basename(path)
     else:
         return ospath.splitext(ospath.basename(path))[0]
+
+
+basename = filename
 
 
 def filestem(path: T.Path) -> str:
