@@ -16,9 +16,12 @@ from .main import currdir
 from .main import dirname
 from .main import dirpath
 from .main import filename
+from .main import filepath
 from .main import filestem
 from .main import isdir
+from .main import isdirlike
 from .main import isfile
+from .main import isfilelike
 from .main import normpath
 from .main import not_empty
 from .main import relpath

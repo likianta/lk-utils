@@ -128,6 +128,9 @@ def isfile(filepath: T.Path) -> bool:
         return False
 
 
+isfilelike = isfile
+
+
 def isdir(dirpath: T.Path) -> bool:
     """ Unsafe method judging dirpath-like string.
 
@@ -147,6 +150,9 @@ def isdir(dirpath: T.Path) -> bool:
         return True
     else:
         return False
+
+
+isdirlike = isdir
 
 
 def not_empty(file: T.FilePath) -> bool:
