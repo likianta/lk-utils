@@ -23,6 +23,10 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
 
 # ------------------------------------------------------------------------------
 
+def parent_path(path: T.Path) -> T.DirPath:
+    return normpath(ospath.dirname(path))
+
+
 def dirpath(path: T.Path) -> T.DirPath:
     if ospath.isdir(path):
         return normpath(path)

@@ -2,34 +2,45 @@ from __future__ import annotations
 
 import os
 import shutil
+from os.path import exists
 
 from .finder import findall_dirs
 from .main import _IS_WINDOWS
+
+__all__ = [
+    'clone_tree',
+    'copy_file',
+    'copy_tree',
+    'make_link',
+    'make_links',
+    'move',
+    'remove_tree',
+]
 
 
 class T:
     Path = DirPath = str
 
 
-def move(src: str, dst: str) -> None:
-    shutil.move(src, dst)
-
-
-def copy_tree(src: str, dst: str) -> None:
-    shutil.copytree(src, dst)
-
-
-def remove_tree(dst: str) -> None:
-    shutil.rmtree(dst)
-
-
-def clone_tree(src: str, dst: str) -> None:
+def clone_tree(src: str, dst: str, overwrite: bool = None) -> None:
+    if exists(dst):
+        _overwrite(dst, overwrite)
     if not os.path.exists(dst):
         os.mkdir(dst)
     for d in findall_dirs(src):
         dp_o = f'{dst}/{d.relpath}'
         if not os.path.exists(dp_o):
             os.mkdir(dp_o)
+
+
+def copy_file(src: str, dst: str, overwrite: bool = None) -> None:
+    if exists(dst):
+        _overwrite(dst, overwrite)
+    shutil.copyfile(src, dst)
+
+
+def copy_tree(src: str, dst: str) -> None:
+    shutil.copytree(src, dst)
 
 
 def make_link(src: str, dst: str, overwrite: bool = None) -> str:
@@ -43,20 +54,8 @@ def make_link(src: str, dst: str, overwrite: bool = None) -> str:
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
     """
     assert os.path.exists(src), src
-    
-    # overwrite scheme
-    if os.path.exists(dst):
-        if overwrite is None:
-            return dst
-        elif overwrite is True:
-            if os.path.islink(dst):
-                os.unlink(dst)
-            elif os.path.isfile(dst):
-                os.remove(dst)
-            else:
-                shutil.rmtree(dst)
-        else:  # False
-            raise FileExistsError(dst)
+    if exists(dst):
+        _overwrite(dst, overwrite)
     
     if _IS_WINDOWS:
         os.symlink(src, dst, target_is_directory=os.path.isdir(src))
@@ -73,9 +72,38 @@ def make_links(src, dst, names=None, overwrite: bool = None) -> list[str]:
     return out
 
 
-# alias
-copytree = copy_tree
-rmtree = remove_tree
-clonetree = clone_tree
-mklink = make_link
-mklinks = make_links
+def move(src: str, dst: str, overwrite: bool = None) -> None:
+    if exists(dst):
+        _overwrite(dst, overwrite)
+    shutil.move(src, dst)
+
+
+def remove_tree(dst: str) -> None:
+    if exists(dst):
+        if os.path.isdir(dst):
+            shutil.rmtree(dst)
+        elif os.path.islink(dst):
+            os.unlink(dst)
+        else:
+            raise Exception('Unknown file type', dst)
+
+
+def _overwrite(path: str, scheme: bool | None) -> None:
+    """
+    args:
+        scheme:
+            True: overwrite
+            False: not overwrite, and raise an FileExistsError
+            None: not overwrite, no error (skip)
+    """
+    if scheme is None:  # skip
+        return
+    elif scheme is True:  # overwrite
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.islink(path):
+            os.unlink(path)
+        else:
+            shutil.rmtree(path)
+    else:  # raise error
+        raise FileExistsError(path)

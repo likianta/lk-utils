@@ -24,12 +24,8 @@ from .main import isfile
 from .main import isfilelike
 from .main import normpath
 from .main import not_empty
+from .main import parent_path
 from .main import relpath
 from .main import split
-from .shutil import clonetree
-from .shutil import copytree
-from .shutil import mklink
-from .shutil import mklinks
-from .shutil import move
-from .shutil import rmtree
+from .shutil import *
 from .traceback import LAUNCH_ROOT
