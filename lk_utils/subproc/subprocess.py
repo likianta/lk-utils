@@ -16,16 +16,17 @@ def compose_command(*args: t.Any) -> t.List[str]:
         ('pip', 'install', 'lk-utils', ('-i', mirror)) ->
             if mirror is empty, returns ['pip', 'install', 'lk-utils']
             else returns ['pip', 'install', 'lk-utils', '-i', mirror]
-            
-    warning: `strip` method is not used, the caller should handle spaces-only
-        strings before calling this function.
     """
     out = []
-    for a in map(str, args):
-        if isinstance(a, (tuple, list)) and all(a):
-            out.extend(a)
-        elif a:
-            out.append(a)
+    for a in args:
+        if isinstance(a, (tuple, list)):
+            a = (str(x).strip() for x in a)
+            if all(a):
+                out.extend(a)
+        else:
+            a = str(a).strip()
+            if a:
+                out.append(a)
     return out
 
 
