@@ -1,5 +1,10 @@
 # 更新日志
 
+### 2.5.0 (wip)
+
+- 重构 subproc 模块
+- 更新 filesniff 模块
+
 ### 2.4.1 (2022-10-18)
 
 - 修复 filesniff.finder 相关的严重错误
