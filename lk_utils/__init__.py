@@ -25,7 +25,8 @@ from .filesniff import findall_file_paths
 from .filesniff import findall_files
 from .filesniff import make_link as mklink
 from .filesniff import make_links as mklinks
-from .filesniff import relpath
+from .filesniff import xpath
+from .filesniff import xpath as relpath  # backward compatible
 from .read_and_write import dumps
 from .read_and_write import loads
 from .read_and_write import ropen

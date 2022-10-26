@@ -27,6 +27,13 @@ def parent_path(path: T.Path) -> T.DirPath:
     return normpath(ospath.dirname(path))
 
 
+parent = parent_path  # alias
+
+
+def relpath(path: T.Path, start: T.Path = None) -> T.Path:
+    return normpath(ospath.relpath(path, start))
+
+
 def dirpath(path: T.Path) -> T.DirPath:
     if ospath.isdir(path):
         return normpath(path)
@@ -55,7 +62,7 @@ def filepath(path: T.Path, suffix=True, strict=False) -> str:
         return normpath(path)
     else:
         return normpath(ospath.splitext(path)[0])
-    
+
 
 def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
     """ Return the file name from path.
@@ -75,27 +82,6 @@ def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
 
 
 basename = filename
-
-
-def filestem(path: T.Path) -> str:
-    return ospath.splitext(ospath.basename(path))[0]
-
-
-def split(path: T.Path, separate_ext=False) -> tuple[str, ...]:
-    """
-    return:
-        `tuple[str dirpath, str filename]` or `tuple[str dirpath, str
-            filename_stem, str ext]`.
-        the dirpath is asserted not empty. others may be empty.
-    """
-    path = normpath(path, force_abspath=True)
-    head, tail = ospath.split(path)
-    head = head.rstrip('/')
-    if separate_ext:
-        tail, ext = ospath.splitext(tail)
-        return head, tail, ext
-    else:
-        return head, tail
 
 
 # ------------------------------------------------------------------------------
@@ -167,18 +153,20 @@ def not_empty(file: T.FilePath) -> bool:
     return bool(ospath.exists(file) and ospath.getsize(file))
 
 
+# -----------------------------------------------------------------------------
+
 def currdir() -> T.Path:
     caller_frame = currentframe().f_back
-    return _get_dir_info_from_caller(caller_frame)
+    return _get_dir_of_frame(caller_frame)
 
 
-def relpath(path: T.Path, force_abspath=True) -> T.Path:
+def xpath(path: T.Path, force_abspath=True) -> T.Path:
     """ Consider relative path always based on caller's.
 
     References: https://blog.csdn.net/Likianta/article/details/89299937
     """
     caller_frame = currentframe().f_back
-    caller_dir = _get_dir_info_from_caller(caller_frame)
+    caller_dir = _get_dir_of_frame(caller_frame)
     
     if path in ('', '.', './'):
         out = caller_dir
@@ -191,7 +179,7 @@ def relpath(path: T.Path, force_abspath=True) -> T.Path:
         return normpath(ospath.relpath(out, os.getcwd()))
 
 
-def _get_dir_info_from_caller(frame, ignore_error=False) -> T.Path:
+def _get_dir_of_frame(frame, ignore_error=False) -> T.Path:
     file = frame.f_globals.get('__file__') \
            or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):
