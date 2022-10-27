@@ -20,7 +20,7 @@ def compose_command(*args: t.Any) -> t.List[str]:
     out = []
     for a in args:
         if isinstance(a, (tuple, list)):
-            a = (str(x).strip() for x in a)
+            a = tuple(str(x).strip() for x in a)
             if all(a):
                 out.extend(a)
         else:
