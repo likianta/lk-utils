@@ -12,6 +12,7 @@ from .finder import findall_dirs
 from .finder import findall_file_names
 from .finder import findall_file_paths
 from .finder import findall_files
+from .main import basename
 from .main import currdir
 from .main import dirname
 from .main import dirpath
@@ -23,6 +24,7 @@ from .main import isfile
 from .main import isfilelike
 from .main import normpath
 from .main import not_empty
+from .main import parent
 from .main import parent_path
 from .main import relpath
 from .main import xpath
