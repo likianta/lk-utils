@@ -53,6 +53,10 @@ def make_link(src: str, dst: str, overwrite: bool = None) -> str:
     
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
     """
+    from .main import normpath
+    src = normpath(src, force_abspath=True)
+    dst = normpath(dst, force_abspath=True)
+    
     assert os.path.exists(src), src
     if exists(dst):
         _overwrite(dst, overwrite)
