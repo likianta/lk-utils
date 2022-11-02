@@ -5,7 +5,7 @@ import shutil
 from os.path import exists
 
 from .finder import findall_dirs
-from .main import _IS_WINDOWS
+from .main import _IS_WINDOWS  # noqa
 
 __all__ = [
     'clone_tree',
@@ -14,6 +14,7 @@ __all__ = [
     'make_link',
     'make_links',
     'move',
+    'remove_file',
     'remove_tree',
 ]
 
@@ -80,6 +81,11 @@ def move(src: str, dst: str, overwrite: bool = None) -> None:
     if exists(dst):
         _overwrite(dst, overwrite)
     shutil.move(src, dst)
+
+
+def remove_file(dst: str) -> None:
+    if exists(dst):
+        os.remove(dst)
 
 
 def remove_tree(dst: str) -> None:

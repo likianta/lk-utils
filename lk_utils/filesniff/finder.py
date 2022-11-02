@@ -4,6 +4,21 @@ from dataclasses import dataclass
 
 from .main import normpath
 
+__all__ = [
+    'find_dir_names',
+    'find_dir_paths',
+    'find_dirs',
+    'find_file_names',
+    'find_file_paths',
+    'find_files',
+    'findall_dir_names',
+    'findall_dir_paths',
+    'findall_dirs',
+    'findall_file_names',
+    'findall_file_paths',
+    'findall_files'
+]
+
 
 @dataclass
 class PathKnob:
