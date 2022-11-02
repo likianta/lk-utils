@@ -4,7 +4,7 @@
 
 - 重构 subproc 模块
 - 更新 filesniff 模块
-- 注意: `filenisff.relpath` 变更为 `filesniff.xpath`
+- 注意: `filesniff.relpath` 变更为 `filesniff.xpath`
 
 ### 2.4.1 (2022-10-18)
 

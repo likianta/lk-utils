@@ -40,8 +40,11 @@ def copy_file(src: str, dst: str, overwrite: bool = None) -> None:
     shutil.copyfile(src, dst)
 
 
-def copy_tree(src: str, dst: str) -> None:
-    shutil.copytree(src, dst)
+def copy_tree(src: str, dst: str, overwrite: bool = None,
+              symlinks=False) -> None:
+    if exists(dst):
+        _overwrite(dst, overwrite)
+    shutil.copytree(src, dst, symlinks=symlinks)
 
 
 def make_link(src: str, dst: str, overwrite: bool = None) -> str:
