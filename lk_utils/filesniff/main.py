@@ -15,6 +15,7 @@ __all__ = [
     'isdirlike',
     'isfile',
     'isfilelike',
+    'islink',
     'normpath',
     'not_empty',
     'parent',
@@ -162,6 +163,8 @@ def isdir(dirpath: T.Path) -> bool:
 
 
 isdirlike = isdir
+
+islink = ospath.islink
 
 
 def not_empty(file: T.FilePath) -> bool:
