@@ -4,7 +4,8 @@
 
 - 重构 subproc 模块
 - 更新 filesniff 模块
-- 注意: `filesniff.relpath` 变更为 `filesniff.xpath`
+    - 注意: `filesniff.relpath` 变更为 `filesniff.xpath`
+- 允许用户指定 loads/dumps 时的文件类型
 
 ### 2.4.1 (2022-10-18)
 

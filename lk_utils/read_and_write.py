@@ -8,8 +8,7 @@ class T:
     File = str
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileHandle = t.Union[t.TextIO, t.BinaryIO]
-    FileType = t.Literal['auto', 'plain', 'binary',
-                         'json', 'yaml', 'toml', 'pickle']
+    FileType = t.Literal['binary', 'json', 'pickle', 'plain', 'toml', 'yaml']
 
 
 @contextmanager
@@ -77,26 +76,27 @@ def write_file(content: T.Content, file: T.File,
 
 # ------------------------------------------------------------------------------
 
-def loads(file: T.File, **_) -> T.Data:
-    file_type = _detect_file_type(file)
-    if file_type == 'plain':
+def loads(file: T.File, ftype: T.FileType = None, **_) -> T.Data:
+    if ftype is None:
+        ftype = _detect_file_type(file)
+    if ftype == 'plain':
         return read_file(file)
-    elif file_type == 'binary':
+    elif ftype == 'binary':
         with ropen(file, 'rb') as f:
             return f.read()
-    elif file_type == 'json':
+    elif ftype == 'json':
         from json import load as jload
         with ropen(file) as f:
             return jload(f)
-    elif file_type == 'yaml':  # pip install pyyaml
+    elif ftype == 'yaml':  # pip install pyyaml
         from yaml import safe_load as yload  # noqa
         with ropen(file) as f:
             return yload(f)
-    elif file_type == 'toml':  # pip install toml
+    elif ftype == 'toml':  # pip install toml
         from toml import load as tload  # noqa
         with ropen(file) as f:
             return tload(f)
-    elif file_type == 'pickle':
+    elif ftype == 'pickle':
         from pickle import load as pload
         with ropen(file, 'rb') as f:
             return pload(f)
@@ -105,13 +105,15 @@ def loads(file: T.File, **_) -> T.Data:
         return read_file(file)
 
 
-def dumps(data: T.Data, file: T.File, **kwargs) -> None:
-    file_type = _detect_file_type(file)
+def dumps(data: T.Data, file: T.File,
+          ftype: T.FileType = None, **kwargs) -> None:
+    if ftype is None:
+        ftype = _detect_file_type(file)
     
-    if file_type == 'plain':
+    if ftype == 'plain':
         write_file(data, file, sep=kwargs.get('sep', '\n'))
     
-    elif file_type == 'json':
+    elif ftype == 'json':
         from json import dump as jdump
         with wopen(file) as f:
             jdump(data, f, ensure_ascii=False, default=str,
@@ -122,27 +124,27 @@ def dumps(data: T.Data, file: T.File, **kwargs) -> None:
             #       when something is not serializble, callback `__str__`.
             #       it is useful to resolve `pathlib.PosixPath`.
     
-    elif file_type == 'yaml':  # pip install pyyaml
+    elif ftype == 'yaml':  # pip install pyyaml
         from yaml import dump as ydump  # noqa
         with wopen(file) as f:
             ydump(data, f, **{'sort_keys': False, **kwargs})
     
-    elif file_type == 'pickle':
+    elif ftype == 'pickle':
         from pickle import dump as pdump
         with wopen(file, 'wb') as f:
             pdump(data, f, **kwargs)
     
-    elif file_type == 'toml':  # pip install toml
+    elif ftype == 'toml':  # pip install toml
         from toml import dump as tdump  # noqa
         with wopen(file) as f:
             tdump(data, f, **kwargs)
     
-    elif file_type == 'binary':
+    elif ftype == 'binary':
         with wopen(file, 'wb') as f:
             f.write(data)
     
     else:
-        raise Exception(file_type, file, type(data))
+        raise Exception(ftype, file, type(data))
 
 
 def _detect_file_type(filename: str) -> T.FileType:
