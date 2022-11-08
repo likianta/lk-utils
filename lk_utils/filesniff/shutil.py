@@ -11,6 +11,7 @@ __all__ = [
     'clone_tree',
     'copy_file',
     'copy_tree',
+    'make_dir',
     'make_link',
     'make_links',
     'move',
@@ -45,6 +46,11 @@ def copy_tree(src: str, dst: str, overwrite: bool = None,
     if exists(dst):
         _overwrite(dst, overwrite)
     shutil.copytree(src, dst, symlinks=symlinks)
+
+
+def make_dir(dst: str) -> None:
+    if not exists(dst):
+        os.mkdir(dst)
 
 
 def make_link(src: str, dst: str, overwrite: bool = None) -> str:
