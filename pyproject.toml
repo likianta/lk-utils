@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.5.0b17"
+version = "2.5.0b18"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
