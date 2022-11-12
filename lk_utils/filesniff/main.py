@@ -51,6 +51,7 @@ parent = parent_path  # alias
 
 
 def relpath(path: T.Path, start: T.Path = None) -> T.Path:
+    if not path: return ''
     return normpath(ospath.relpath(path, start))
 
 
