@@ -6,11 +6,11 @@ from inspect import currentframe
 
 __all__ = [
     'basename',
-    'currdir',
     'dirname',
     'dirpath',
     'filename',
     'filepath',
+    'get_current_dir',
     'isdir',
     'isdirlike',
     'isfile',
@@ -178,7 +178,7 @@ def not_empty(file: T.FilePath) -> bool:
 
 # -----------------------------------------------------------------------------
 
-def currdir() -> T.Path:
+def get_current_dir() -> T.Path:
     caller_frame = currentframe().f_back
     return _get_dir_of_frame(caller_frame)
 

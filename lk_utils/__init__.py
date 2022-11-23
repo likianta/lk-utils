@@ -10,7 +10,6 @@ from . import read_and_write
 from . import read_and_write as rw
 from . import subproc
 from . import time_utils
-from .filesniff import currdir
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths
 from .filesniff import find_dirs
@@ -23,6 +22,7 @@ from .filesniff import findall_dirs
 from .filesniff import findall_file_names
 from .filesniff import findall_file_paths
 from .filesniff import findall_files
+from .filesniff import get_current_dir
 from .filesniff import make_link as mklink
 from .filesniff import make_links as mklinks
 from .filesniff import normpath
