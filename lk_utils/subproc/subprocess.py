@@ -30,8 +30,13 @@ def compose_command(*args: t.Any) -> t.List[str]:
     return out
 
 
-def run_command_args(*args: t.Any, verbose=False, ignore_error=False) -> str:
-    proc = Popen(tuple(map(str, args)), stdout=PIPE, stderr=PIPE, text=True)
+def run_command_args(
+        *args: t.Any, verbose=False, shell=False, ignore_error=False
+) -> str:
+    proc = Popen(
+        tuple(map(str, args)),
+        stdout=PIPE, stderr=PIPE, text=True, shell=shell
+    )
     
     if verbose:
         # https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
@@ -59,8 +64,9 @@ def run_command_args(*args: t.Any, verbose=False, ignore_error=False) -> str:
 
 
 def run_command_shell(cmd: str, verbose=False, ignore_error=False) -> str:
+    import shlex
     return run_command_args(
-        *cmd.split(), verbose=verbose,
+        *shlex.split(cmd), verbose=verbose,
         ignore_error=ignore_error
     )
 
