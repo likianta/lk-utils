@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-def compose_command(*args: t.Any) -> t.List[str]:
+def compose_command(*args: t.Any, filter_=True) -> t.List[str]:
     """
     examples:
         ('pip', 'install', '', 'lk-utils') -> ['pip', 'install', 'lk-utils']
@@ -25,18 +25,20 @@ def compose_command(*args: t.Any) -> t.List[str]:
                 out.extend(a)
         else:
             a = str(a).strip()
-            if a:
+            if a or not filter_:
                 out.append(a)
     return out
 
 
 def run_command_args(
-        *args: t.Any, verbose=False, shell=False, ignore_error=False
+        *args: t.Any, verbose=False,
+        ignore_error=False, filter_=False
 ) -> str:
-    proc = Popen(
-        tuple(map(str, args)),
-        stdout=PIPE, stderr=PIPE, text=True, shell=shell
-    )
+    if filter_:
+        args = tuple(filter(None, map(str, args)))
+    else:
+        args = tuple(map(str, args))
+    proc = Popen(args, stdout=PIPE, stderr=PIPE, text=True)
     
     if verbose:
         # https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
@@ -63,11 +65,14 @@ def run_command_args(
     return out or err
 
 
-def run_command_shell(cmd: str, verbose=False, ignore_error=False) -> str:
+def run_command_shell(
+        cmd: str, verbose=False,
+        ignore_error=False, filter_=False
+) -> str:
     import shlex
     return run_command_args(
         *shlex.split(cmd), verbose=verbose,
-        ignore_error=ignore_error
+        ignore_error=ignore_error, filter_=filter_
     )
 
 
