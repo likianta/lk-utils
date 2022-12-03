@@ -1,3 +1,4 @@
+from argsense import cli
 from lk_utils import subproc
 
 
@@ -24,5 +25,24 @@ def test_raise_cmd_error():
         print(type(e), e)
 
 
+@cli.cmd()
+def test_new_thread_singleton():
+    from time import sleep
+    from random import choice
+    
+    @subproc.new_thread(singleton=True)
+    def foo(head: str):
+        for i in range(10):
+            print(head, i)
+            sleep(choice((0.1, 0.2, 0.3)))
+    
+    foo('alpha')
+    foo(' beta')
+    foo('gamma')
+    
+    sleep(5)
+    print('done')
+
+
 if __name__ == '__main__':
-    test_composing_command()
+    cli.run()

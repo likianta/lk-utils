@@ -1,5 +1,6 @@
 import typing as t
 from collections import defaultdict
+from functools import partial
 from functools import wraps
 from threading import Thread as BaseThread
 
@@ -8,6 +9,7 @@ class T:
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
     Target = t.Callable
+    Task = t.Tuple[t.Optional[tuple], t.Optional[dict]]
     Thread = t.ForwardRef('Thread')
     ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
 
@@ -17,25 +19,25 @@ class Thread(BaseThread):
     https://stackoverflow.com/questions/6893968/how-to-get-the-return-value
     -from-a-thread-in-python
     """
+    _tasks: t.List[T.Task]
     __result = None
     
     def __init__(
             self, target: t.Callable,
             args: tuple = None, kwargs: dict = None
     ):
-        super().__init__(
-            target=self._decorator(target),
-            args=args or (),
-            kwargs=kwargs or {},
-        )
+        self._tasks = [(args, kwargs)]
+        super().__init__(target=partial(self._run_tasks, target))
     
-    def _decorator(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            self.__result = func(*args, **kwargs)
-            return self.__result
-        
-        return wrapper
+    def _run_tasks(self, func) -> t.Any:
+        while self._tasks:
+            args, kwargs = self._tasks.pop(0)
+            self.__result = func(*(args or ()), **(kwargs or {}))
+        return self.__result
+    
+    def add_task(self, args: tuple = None, kwargs: dict = None) -> int:
+        self._tasks.append((args, kwargs))
+        return len(self._tasks)
     
     def join(self, timeout: float = None) -> t.Any:
         super().join(timeout)
@@ -69,7 +71,6 @@ class ThreadManager:
                     group, ident, func, args,
                     kwargs, daemon, singleton
                 )
-                thread.start()
                 return thread
             
             return wrapper
@@ -87,7 +88,6 @@ class ThreadManager:
             'default', id(target), target,
             args, kwargs, daemon
         )
-        thread.start()
         return thread
     
     def _create_thread(
@@ -98,13 +98,15 @@ class ThreadManager:
         if singleton:
             if t := self.thread_pool[group].get(ident):
                 if t.is_alive():
+                    t.add_task(args, kwargs)
                     return t
-                else:
-                    self.thread_pool.pop(ident)
+                # else:
+                #     self.thread_pool.pop(ident)
         thread = self.thread_pool[group][ident] = Thread(
             target=target, args=args or (), kwargs=kwargs or {}
         )
         thread.daemon = daemon
+        thread.start()
         return thread
     
     # -------------------------------------------------------------------------
