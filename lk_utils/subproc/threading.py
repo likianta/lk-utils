@@ -1,51 +1,106 @@
-import typing as t
+from __future__ import annotations
+
 from collections import defaultdict
-from functools import partial
+from collections import deque
+
+import typing as t
 from functools import wraps
-from threading import Thread as BaseThread
+from threading import Thread
 
 
 class T:
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
+    
+    # ThreadWorker
     Target = t.Callable
-    Task = t.Tuple[t.Optional[tuple], t.Optional[dict]]
-    Thread = t.ForwardRef('Thread')
-    ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
+    Args = t.Optional[tuple]
+    KwArgs = t.Optional[dict]
+    _Inherit = bool
+    Task = t.Tuple[Target, Args, KwArgs, _Inherit]
+    
+    # ThreadPool
+    ThreadWorker = t.ForwardRef('ThreadWorker')
+    ThreadPool = t.Dict[Group, t.Dict[Id, ThreadWorker]]
 
 
-class Thread(BaseThread):
-    """
-    https://stackoverflow.com/questions/6893968/how-to-get-the-return-value
-    -from-a-thread-in-python
-    """
-    _tasks: t.List[T.Task]
-    __result = None
+class ThreadWorker:
+    _daemon: bool
+    _is_running: bool
+    _result: t.Any
+    _target: T.Target
+    _tasks: t.Deque[T.Task]
+    _thread: Thread
+    
+    class Undefined:
+        pass
     
     def __init__(
-            self, target: t.Callable,
-            args: tuple = None, kwargs: dict = None
+            self,
+            target: T.Target,
+            args: T.Args,
+            kwargs: T.KwArgs,
+            daemon: bool
     ):
-        self._tasks = [(args, kwargs)]
-        super().__init__(target=partial(self._run_tasks, target))
+        self._tasks = deque()
+        self._tasks.append((target, args, kwargs, False))
+        self._daemon = daemon
+        self._is_running = False
+        self._result = ThreadWorker.Undefined
+        self._target = target
+        self.mainloop()
     
-    def _run_tasks(self, func) -> t.Any:
-        while self._tasks:
-            args, kwargs = self._tasks.pop(0)
-            self.__result = func(*(args or ()), **(kwargs or {}))
-        return self.__result
+    @property
+    def is_running(self) -> bool:
+        return self._is_running
     
-    def add_task(self, args: tuple = None, kwargs: dict = None) -> int:
-        self._tasks.append((args, kwargs))
-        return len(self._tasks)
-    
-    def join(self, timeout: float = None) -> t.Any:
-        super().join(timeout)
-        return self.__result
+    # @property
+    # def is_alive(self) -> bool:
+    #     return self._thread.is_alive()
     
     @property
     def result(self) -> t.Any:
-        return self.__result
+        if self._result is ThreadWorker.Undefined:
+            raise RuntimeError('The result is not ready yet.')
+        return self._result
+    
+    def mainloop(self) -> None:
+        self._is_running = True
+        
+        def loop() -> None:
+            while self._tasks:
+                func, args, kwargs, inherit = self._tasks.popleft()
+                if inherit:
+                    args = (self._result, *(args or ()))
+                self._result = func(*(args or ()), **(kwargs or {}))
+            self._is_running = False
+        
+        self._thread = Thread(target=loop)
+        self._thread.daemon = self._daemon
+        self._thread.start()
+    
+    def add_task(self, args: tuple = None, kwargs: dict = None) -> int:
+        self._tasks.append((self._target, args, kwargs, False))
+        number = len(self._tasks)
+        if not self._is_running:
+            self.mainloop()
+        return number
+    
+    def then(
+            self,
+            func: t.Callable,
+            args: tuple = None,
+            kwargs: dict = None,
+            inherit=True
+    ) -> t.Self:
+        self._tasks.append((func, args, kwargs, inherit))
+        if not self._is_running:
+            self.mainloop()
+        return self
+    
+    def join(self, timeout: float = None) -> t.Any:
+        self._thread.join(timeout)
+        return self._result
 
 
 class ThreadManager:
@@ -66,12 +121,11 @@ class ThreadManager:
                 ident = id(func)
             
             @wraps(func)
-            def wrapper(*args, **kwargs) -> T.Thread:
-                thread = self._create_thread(
+            def wrapper(*args, **kwargs) -> ThreadWorker:
+                return self._create_thread_worker(
                     group, ident, func, args,
                     kwargs, daemon, singleton
                 )
-                return thread
             
             return wrapper
         
@@ -81,51 +135,45 @@ class ThreadManager:
             self, target: T.Target,
             args=None, kwargs=None,
             daemon=True
-    ) -> T.Thread:
+    ) -> ThreadWorker:
         """ run function in a new thread at once. """
         # # assert id(target) not in __thread_pool  # should i check it?
-        thread = self._create_thread(
+        return self._create_thread_worker(
             'default', id(target), target,
             args, kwargs, daemon
         )
-        return thread
     
-    def _create_thread(
+    def _create_thread_worker(
             self, group: T.Group, ident: T.Id, target: T.Target,
             args=None, kwargs=None,
             daemon=True, singleton=False
-    ) -> T.Thread:
+    ) -> ThreadWorker:
         if singleton:
             if t := self.thread_pool[group].get(ident):
-                if t.is_alive():
-                    t.add_task(args, kwargs)
-                    return t
-                # else:
-                #     self.thread_pool.pop(ident)
-        thread = self.thread_pool[group][ident] = Thread(
-            target=target, args=args or (), kwargs=kwargs or {}
+                t.add_task(args, kwargs)
+                return t
+        worker = self.thread_pool[group][ident] = ThreadWorker(
+            target=target, args=args, kwargs=kwargs, daemon=daemon
         )
-        thread.daemon = daemon
-        thread.start()
-        return thread
+        return worker
     
     # -------------------------------------------------------------------------
     
     class _Delegate:
         
-        def __init__(self, *threads: T.Thread):
+        def __init__(self, *threads: ThreadWorker):
             self.threads = threads
         
         def __len__(self):
             return len(self.threads)
         
-        def fetch_one(self, index=0) -> t.Optional[T.Thread]:
+        def fetch_one(self, index=0) -> t.Optional[ThreadWorker]:
             if self.threads:
                 return self.threads[index]
             else:
                 return None
         
-        def all_join(self):
+        def join_all(self):
             for t in self.threads:
                 t.join()
     
