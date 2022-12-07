@@ -159,7 +159,7 @@ class ThreadManager:
     
     # -------------------------------------------------------------------------
     
-    class _Delegate:
+    class Delegate:
         
         def __init__(self, *threads: ThreadWorker):
             self.threads = threads
@@ -179,18 +179,16 @@ class ThreadManager:
     
     def retrieve_thread(
             self,
-            ident: T.Id = None,
+            ident: T.Id,
             group: T.Group = 'default'
-    ) -> 'ThreadManager._Delegate':
-        # print(':l', self.thread_pool, ident)
-        dict_ = self.thread_pool[group]
-        if ident is None:
-            return ThreadManager._Delegate(*dict_.values())
-        else:
-            if t := dict_.get(ident):
-                return ThreadManager._Delegate(t)
-            else:
-                return ThreadManager._Delegate()
+    ) -> ThreadWorker | None:
+        return self.thread_pool[group].get(ident)
+    
+    def retrieve_threads(
+            self,
+            group: T.Group = 'default'
+    ) -> 'ThreadManager.Delegate':
+        return ThreadManager.Delegate(*self.thread_pool[group].values())
 
 
 thread_manager = ThreadManager()
