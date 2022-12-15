@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import typing as t
 from collections import defaultdict
 from collections import deque
-
-import typing as t
 from functools import wraps
 from threading import Thread
+from types import GeneratorType
 
 
 class T:
@@ -26,6 +26,7 @@ class T:
 
 class ThreadWorker:
     _daemon: bool
+    _interruptible: bool
     _is_running: bool
     _result: t.Any
     _target: T.Target
@@ -40,15 +41,21 @@ class ThreadWorker:
             target: T.Target,
             args: T.Args,
             kwargs: T.KwArgs,
-            daemon: bool
+            daemon: bool,
+            interruptible: bool = False
     ):
         self._tasks = deque()
         self._tasks.append((target, args, kwargs, False))
         self._daemon = daemon
+        self._interruptible = interruptible
         self._is_running = False
         self._result = ThreadWorker.Undefined
         self._target = target
         self.mainloop()
+    
+    @property
+    def interruptible(self) -> bool:
+        return self._interruptible
     
     @property
     def is_running(self) -> bool:
@@ -73,6 +80,18 @@ class ThreadWorker:
                 if inherit:
                     args = (self._result, *(args or ()))
                 self._result = func(*(args or ()), **(kwargs or {}))
+                if self._interruptible:
+                    if isinstance(self._result, GeneratorType):
+                        for _ in self._result:
+                            if not self._is_running:
+                                # a safe "break signal" emitted from the outside.
+                                print('[red dim]thread is safely killed[/]',
+                                      func, ':r')
+                                return
+                    else:
+                        print('[yellow dim]thread is marked interruptible but '
+                              'there is no break point in function[/]', func,
+                              ':r')
             self._is_running = False
         
         self._thread = Thread(target=loop)
@@ -101,6 +120,19 @@ class ThreadWorker:
     def join(self, timeout: float = None) -> t.Any:
         self._thread.join(timeout)
         return self._result
+    
+    def kill(self) -> bool:
+        """
+        https://stackoverflow.com/questions/6416538/how-to-check-if-an-object-is
+        -a-generator-object-in-python
+        """
+        if self._interruptible:
+            self._is_running = False
+            return True
+        else:
+            # raise RuntimeError('the thread is not interuptable!')
+            print('the thread is not interruptible!', self._thread, ':v4p')
+            return False
 
 
 class ThreadManager:
@@ -111,7 +143,7 @@ class ThreadManager:
     
     def new_thread(
             self, ident: T.Id = None, group: T.Group = 'default',
-            daemon=True, singleton=False
+            daemon=True, singleton=False, interruptible=False
     ) -> t.Callable:
         """ a decorator wraps target function in a new thread. """
         
@@ -124,7 +156,7 @@ class ThreadManager:
             def wrapper(*args, **kwargs) -> ThreadWorker:
                 return self._create_thread_worker(
                     group, ident, func, args,
-                    kwargs, daemon, singleton
+                    kwargs, daemon, singleton, interruptible
                 )
             
             return wrapper
@@ -134,26 +166,27 @@ class ThreadManager:
     def run_new_thread(
             self, target: T.Target,
             args=None, kwargs=None,
-            daemon=True
+            daemon=True, interruptible=False
     ) -> ThreadWorker:
         """ run function in a new thread at once. """
         # # assert id(target) not in __thread_pool  # should i check it?
         return self._create_thread_worker(
             'default', id(target), target,
-            args, kwargs, daemon
+            args, kwargs, daemon, False, interruptible
         )
     
     def _create_thread_worker(
             self, group: T.Group, ident: T.Id, target: T.Target,
             args=None, kwargs=None,
-            daemon=True, singleton=False
+            daemon=True, singleton=False, interruptible=False
     ) -> ThreadWorker:
         if singleton:
             if t := self.thread_pool[group].get(ident):
                 t.add_task(args, kwargs)
                 return t
         worker = self.thread_pool[group][ident] = ThreadWorker(
-            target=target, args=args, kwargs=kwargs, daemon=daemon
+            target=target, args=args, kwargs=kwargs, daemon=daemon,
+            interruptible=interruptible
         )
         return worker
     
