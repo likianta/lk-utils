@@ -1,6 +1,6 @@
 import typing as t
 
-from .threading import Thread
+from .threading import ThreadWorker as Thread
 
 
 def defer(func: t.Callable, *args, **kwargs) -> 'Promise':
@@ -21,33 +21,29 @@ def defer(func: t.Callable, *args, **kwargs) -> 'Promise':
     """
     start_now = kwargs.pop('__instant_starting__', True)
     daemon = kwargs.pop('__daemon__', True)
-    t = Thread(target=func, args=args, kwargs=kwargs)
-    t.daemon = daemon
-    return Promise(t, start_now)
+    t = Thread(
+        func, args=args, kwargs=kwargs,
+        daemon=daemon, start_now=start_now
+    )
+    return Promise(t)
 
 
 class Promise:
-    _is_start: bool
     _is_done: bool
     _thread: Thread
     _then: t.Optional[t.Callable]
     _result: t.Any
     
-    def __init__(self, thread: Thread, start_now=True):
-        self._is_start = False
+    def __init__(self, thread: Thread):
         self._is_done = False
         self._thread = thread
         self._then = None
         self._result = None
-        if start_now:
-            self.start()
     
     def __call__(self) -> t.Any:
         return self.fulfill()
     
     def start(self) -> None:
-        if self._is_start: return
-        self._is_start = True
         self._thread.start()
     
     def then(self, func, args: tuple = None, kwargs: dict = None) -> 'Promise':
@@ -56,8 +52,6 @@ class Promise:
         return self
     
     def fetch(self) -> t.Optional[t.Any]:
-        if not self._is_start:
-            self.start()
         if self._is_done:
             return self._result
         

@@ -27,6 +27,7 @@ class T:
 class ThreadWorker:
     _daemon: bool
     _interruptible: bool
+    _is_executed: bool
     _is_running: bool
     _result: t.Any
     _target: T.Target
@@ -42,16 +43,21 @@ class ThreadWorker:
             args: T.Args,
             kwargs: T.KwArgs,
             daemon: bool,
-            interruptible: bool = False
+            interruptible: bool = False,
+            start_now: bool = True
     ):
         self._tasks = deque()
         self._tasks.append((target, args, kwargs, False))
         self._daemon = daemon
         self._interruptible = interruptible
+        self._is_executed = False
         self._is_running = False
         self._result = ThreadWorker.Undefined
         self._target = target
-        self.mainloop()
+        if start_now:
+            self.mainloop()
+
+    # -------------------------------------------------------------------------
     
     @property
     def interruptible(self) -> bool:
@@ -70,6 +76,14 @@ class ThreadWorker:
         if self._result is ThreadWorker.Undefined:
             raise RuntimeError('The result is not ready yet.')
         return self._result
+
+    # -------------------------------------------------------------------------
+    
+    def start(self) -> None:
+        if self._is_running:
+            print('thread is already running', ':pv3')
+            return
+        self.mainloop()
     
     def mainloop(self) -> None:
         self._is_running = True
@@ -97,6 +111,7 @@ class ThreadWorker:
         self._thread = Thread(target=loop)
         self._thread.daemon = self._daemon
         self._thread.start()
+        self._is_executed = True
     
     def add_task(self, args: tuple = None, kwargs: dict = None) -> int:
         self._tasks.append((self._target, args, kwargs, False))
@@ -118,6 +133,8 @@ class ThreadWorker:
         return self
     
     def join(self, timeout: float = None) -> t.Any:
+        if not self._is_executed:
+            raise Exception('thread is never started!')
         self._thread.join(timeout)
         return self._result
     
