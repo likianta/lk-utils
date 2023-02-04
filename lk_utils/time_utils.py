@@ -44,6 +44,9 @@ def timeout_gen(timeout: float, interval: float = 1) -> Iterator[int]:
     raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
 
 
+wait = timeout_gen
+
+
 def timestamp(style='y-m-d h:n:s', ctime: float = 0.0) -> str:
     """
     generate a timestamp string.
