@@ -26,6 +26,7 @@ class T:
 
 class ThreadWorker:
     _daemon: bool
+    _illed: t.Optional[Exception]
     _interruptible: bool
     _is_executed: bool
     _is_running: bool
@@ -58,6 +59,10 @@ class ThreadWorker:
             self.mainloop()
 
     # -------------------------------------------------------------------------
+    
+    @property
+    def illed(self) -> t.Optional[Exception]:
+        return self._illed
     
     @property
     def interruptible(self) -> bool:
@@ -93,7 +98,12 @@ class ThreadWorker:
                 func, args, kwargs, inherit = self._tasks.popleft()
                 if inherit:
                     args = (self._result, *(args or ()))
-                self._result = func(*(args or ()), **(kwargs or {}))
+                try:
+                    self._result = func(*(args or ()), **(kwargs or {}))
+                except Exception as e:
+                    self._illed = e
+                    self._is_running = False
+                    raise e
                 if self._interruptible:
                     if isinstance(self._result, GeneratorType):
                         for _ in self._result:
