@@ -127,7 +127,11 @@ def dumps(data: T.Data, file: T.File,
     elif ftype == 'yaml':  # pip install pyyaml
         from yaml import dump as ydump  # noqa
         with wopen(file) as f:
-            ydump(data, f, **{'sort_keys': False, **kwargs})
+            ydump(data, f, **{
+                'allow_unicode': True,
+                'sort_keys': False,
+                **kwargs
+            })
     
     elif ftype == 'pickle':
         from pickle import dump as pdump
