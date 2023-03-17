@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 import os.path as ospath
+from functools import partial
 from inspect import currentframe
 
 __all__ = [
+    'abspath',
     'basename',
     'dirname',
     'dirpath',
@@ -21,6 +23,7 @@ __all__ = [
     'parent',
     'parent_path',
     'relpath',
+    'split',
     'xpath'
 ]
 
@@ -39,6 +42,9 @@ def normpath(path: T.Path, force_abspath=False) -> T.Path:
     if _IS_WINDOWS:
         out = out.replace('\\', '/')
     return out
+
+
+abspath = partial(normpath, force_abspath=True)
 
 
 # ------------------------------------------------------------------------------
@@ -200,6 +206,20 @@ def xpath(path: T.Path, force_abspath=True) -> T.Path:
         return normpath(out)
     else:
         return normpath(ospath.relpath(out, os.getcwd()))
+
+
+def split(path: T.Path, parts=2) -> tuple[str, ...]:
+    path = abspath(path)
+    if parts == 2:
+        a, b = path.rsplit('/', 1)
+        return a, b
+    elif parts == 3:
+        assert isfile(path)
+        a, b = path.rsplit('/', 1)
+        b, c = b.rsplit('.', 1)
+        return a, b, c
+    else:
+        raise ValueError('Unsupported parts number!')
 
 
 def _get_dir_of_frame(frame, ignore_error=False) -> T.Path:
