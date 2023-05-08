@@ -34,7 +34,7 @@ def compose_command(*args: t.Any, filter_=True) -> t.List[str]:
 
 def run_command_args(
         *args: t.Any, verbose=False,
-        ignore_error=False, filter_=True,
+        ignore_error=False, filter_=True, shell=False,
         _refmt_args=True
 ) -> str:
     """
@@ -50,10 +50,10 @@ def run_command_args(
     #     assert all(isinstance(x, str) for x in args)
     
     if not verbose:
-        sub_run(args, check=not ignore_error)
+        sub_run(args, check=not ignore_error, shell=shell)
         return ''
     
-    proc = Popen(args, stdout=PIPE, stderr=PIPE, text=True)
+    proc = Popen(args, stdout=PIPE, stderr=PIPE, text=True, shell=shell)
     
     out, err = '', ''
     for line in proc.stdout:
@@ -77,11 +77,11 @@ def run_command_args(
 
 def run_command_shell(
         cmd: str, verbose=False,
-        ignore_error=False, filter_=False
+        ignore_error=False, filter_=False, shell=False,
 ) -> str:
     return run_command_args(
         *shlex.split(cmd), verbose=verbose,
-        ignore_error=ignore_error, filter_=filter_,
+        ignore_error=ignore_error, filter_=filter_, shell=shell,
         _refmt_args=False
     )
 
