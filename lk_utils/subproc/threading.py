@@ -12,7 +12,7 @@ class T:
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
     
-    # ThreadWorker
+    # ThreadBroker
     Target = t.Callable
     Args = t.Optional[tuple]
     KwArgs = t.Optional[dict]
@@ -20,11 +20,11 @@ class T:
     Task = t.Tuple[Target, Args, KwArgs, _Inherit]
     
     # ThreadPool
-    ThreadWorker = t.ForwardRef('ThreadWorker')
-    ThreadPool = t.Dict[Group, t.Dict[Id, ThreadWorker]]
+    ThreadBroker = t.ForwardRef('ThreadBroker')
+    ThreadPool = t.Dict[Group, t.Dict[Id, ThreadBroker]]
 
 
-class ThreadWorker:
+class ThreadBroker:
     _daemon: bool
     _illed: t.Optional[Exception]
     _interruptible: bool
@@ -53,7 +53,7 @@ class ThreadWorker:
         self._interruptible = interruptible
         self._is_executed = False
         self._is_running = False
-        self._result = ThreadWorker.Undefined
+        self._result = ThreadBroker.Undefined
         self._target = target
         if start_now:
             self.mainloop()
@@ -78,7 +78,7 @@ class ThreadWorker:
     
     @property
     def result(self) -> t.Any:
-        if self._result is ThreadWorker.Undefined:
+        if self._result is ThreadBroker.Undefined:
             raise RuntimeError('The result is not ready yet.')
         return self._result
 
@@ -180,8 +180,8 @@ class ThreadManager:
                 ident = id(func)
             
             @wraps(func)
-            def wrapper(*args, **kwargs) -> ThreadWorker:
-                return self._create_thread_worker(
+            def wrapper(*args, **kwargs) -> ThreadBroker:
+                return self._create_thread_broker(
                     group, ident, func, args,
                     kwargs, daemon, singleton, interruptible
                 )
@@ -194,40 +194,40 @@ class ThreadManager:
             self, target: T.Target,
             args=None, kwargs=None,
             daemon=True, interruptible=False
-    ) -> ThreadWorker:
+    ) -> ThreadBroker:
         """ run function in a new thread at once. """
         # # assert id(target) not in __thread_pool  # should i check it?
-        return self._create_thread_worker(
+        return self._create_thread_broker(
             'default', id(target), target,
             args, kwargs, daemon, False, interruptible
         )
     
-    def _create_thread_worker(
+    def _create_thread_broker(
             self, group: T.Group, ident: T.Id, target: T.Target,
             args=None, kwargs=None,
             daemon=True, singleton=False, interruptible=False
-    ) -> ThreadWorker:
+    ) -> ThreadBroker:
         if singleton:
             if t := self.thread_pool[group].get(ident):
                 t.add_task(args, kwargs)
                 return t
-        worker = self.thread_pool[group][ident] = ThreadWorker(
+        broker = self.thread_pool[group][ident] = ThreadBroker(
             target=target, args=args, kwargs=kwargs, daemon=daemon,
             interruptible=interruptible
         )
-        return worker
+        return broker
     
     # -------------------------------------------------------------------------
     
     class Delegate:
         
-        def __init__(self, *threads: ThreadWorker):
+        def __init__(self, *threads: ThreadBroker):
             self.threads = threads
         
         def __len__(self):
             return len(self.threads)
         
-        def fetch_one(self, index=0) -> t.Optional[ThreadWorker]:
+        def fetch_one(self, index=0) -> t.Optional[ThreadBroker]:
             if self.threads:
                 return self.threads[index]
             else:
@@ -241,7 +241,7 @@ class ThreadManager:
             self,
             ident: T.Id,
             group: T.Group = 'default'
-    ) -> ThreadWorker | None:
+    ) -> ThreadBroker | None:
         return self.thread_pool[group].get(ident)
     
     def retrieve_threads(

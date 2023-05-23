@@ -1,6 +1,6 @@
 import typing as t
 
-from .threading import ThreadWorker as Thread
+from .threading import ThreadBroker as Thread
 
 
 def defer(func: t.Callable, *args, **kwargs) -> 'Promise':
