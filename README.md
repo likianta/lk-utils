@@ -1,6 +1,6 @@
 # LK Utils
 
-lk-utils is a set of utility wrappers to make data processing more simple and fluent.
+lk-utils is a set of utilities to make data processing more simple and fluent.
 
 # Install
 
@@ -8,16 +8,7 @@ lk-utils is a set of utility wrappers to make data processing more simple and fl
 pip install lk-utils
 ```
 
-the default pip install doesn't include extra dependencies. to get extra support for excel or nlp processing, pip install this:
-
-```shell
-pip install lk-utils  # to add lk-logger (required dependency)
-pip install lk-utils[exl]  # to add lk-logger, xlrd, xlsxwriter
-pip install lk-utils[nlp]  # to add lk-logger, pypinyin
-pip install lk-utils[all]  # to add all of the above
-```
-
-lk-utils requires Python 3.8 or higher version.
+lk-utils requires python 3.8 or higher version.
 
 # Usage
 
@@ -26,74 +17,78 @@ lk-utils requires Python 3.8 or higher version.
 ### new thread decorator
 
 ```python
-from lk_utils.subproc import new_thread
+from lk_utils import new_thread
 
-@new_thread(daemon=True, singleton=False)
-def background_loop():
-    from time import sleep
-    i = 0
-    while i < 10:
-        i += 1
-        print(i)
-        sleep(1)
 
-x = background_loop()
-print(type(x))  # -> threading.Thread
+def main(files: list[str]) -> None:
+    for f in files:
+        handle_file(f)
+
+
+@new_thread()
+def handle_file(file: str) -> None:
+    # do something
+    ...
 ```
 
-### run in new thread
+### fetch results from threads
 
 ```python
-from lk_utils.subproc import run_new_thread
+from lk_utils import new_thread
 
-def background_loop():
-    from time import sleep
-    i = 0
-    while i < 10:
-        i += 1
-        print(i)
-        sleep(1)
 
-x = run_new_thread(background_loop, args=None, kwargs=None, daemon=True)
-print(type(x))  # -> threading.Thread
+def main(files: list[str]) -> None:
+    pool = []
+    for f in files:
+        thread = handle_file(f)
+        pool.append(thread)
+    
+    ...
+    
+    for thread in pool:
+        result = thread.join()
+        print(result)
+
+
+@new_thread()
+def handle_file(file: str) -> str:
+    # do something
+    ...
 ```
 
 ### run cmd args
 
 ```python
-from lk_utils.subproc import run_cmd_shell, run_cmd_args
-run_cmd_shell('python -m pip list')
+from lk_utils import run_cmd_args
+from lk_utils import run_cmd_shell
 run_cmd_args('python', '-m', 'pip', 'list')
+run_cmd_shell('python -m pip list')
+```
+
+advanced filter:
+
+```python
+from lk_utils import run_cmd_args
+
+
+def pip_install(
+        dest: str, 
+        url_index: str = None
+) -> None:
+    run_cmd_args(
+        ('python', '-m', 'pip'),
+        ('install', '-r', 'requirements.txt'),
+        ('-t', dest),
+        ('-i', url_index),
+    )
 ```
 
 ### mklink, mklinks
 
 ```python
-"""
-example structure:
-    |= from_dir
-       |= folder_xxx
-       |- file_xxx.txt
-    |= to_dir_1    # empty
-    |= to_dir_2    # not empty
-       |- ...
-"""
-
-from lk_utils.subproc import mklink, mklinks
+from lk_utils import mklink, mklinks
 mklink('/from_dir', '/to_dir_1')
 mklinks('/from_dir', '/to_dir_2')
-
-"""
-result:
-    |= from_dir
-       |= folder_xxx
-       |- file_xxx.txt
-    |= to_dir_1         # this is a symlink
-    |= to_dir_2
-       |- ...
-       |= folder_xxx    # this is a symlink
-       |- file_xxx.txt  # this is a symlink
-"""
 ```
 
 ## filesniff
@@ -103,10 +98,8 @@ result:
 ```python
 import os
 from lk_utils import filesniff as fs
-print(fs.currdir()
-      == os.path.dirname(__file__)).replace('\\', '/'))  # -> True
-print(fs.relpath('..')
-      == os.path.dirname(fs.currdir()))  # -> True
+print(fs.currdir() == os.path.dirname(__file__).replace('\\', '/'))  # -> True
+print(fs.relpath('..') == os.path.dirname(fs.currdir()))  # -> True
 ```
 
 ### list files/dirs
