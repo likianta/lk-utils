@@ -1,14 +1,13 @@
-try:
+if True:
     import lk_logger
     lk_logger.setup(quiet=True)
-except Exception:
-    pass
 
 from . import filesniff
 from . import filesniff as fs
 from . import read_and_write
 from . import read_and_write as rw
 from . import subproc
+from . import textwrap
 from . import time_utils
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths
@@ -37,4 +36,4 @@ from .subproc import run_cmd_args
 from .subproc import run_cmd_shell
 from .subproc import run_new_thread
 
-__version__ = '2.5.6'
+__version__ = '2.6.0'
