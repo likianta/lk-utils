@@ -5,19 +5,30 @@ import typing as t
 def dedent(text: str, lstrip: bool = True) -> str:
     out = textwrap.dedent(text).rstrip()
     if lstrip:
-        out = out.lstrip()
+        return out.lstrip()
     return out
 
 
-def indent(text: str, spaces: int = 4) -> str:
-    return textwrap.indent(text, ' ' * spaces).strip()
+def indent(text: str, spaces: int = 4, rstrip: bool = True) -> str:
+    out = textwrap.indent(text, ' ' * spaces)
+    if rstrip:
+        return out.rstrip()
+    return out
 
 
 def reindent(text: str, spaces: int = 4) -> str:
     return indent(dedent(text), spaces)
 
 
-def join(parts: t.Iterable[str], indent_: int = 0, sep: str = '\n') -> str:
+def join(
+        parts: t.Iterable[str],
+        indent_: int = 0,
+        sep: str = '\n',
+        lstrip: bool = True
+) -> str:
     if indent_:
-        return indent(sep.join(parts), indent_)
+        out = indent(sep.join(parts), indent_)
+        if lstrip:
+            return out.lstrip()
+        return out
     return sep.join(parts)
