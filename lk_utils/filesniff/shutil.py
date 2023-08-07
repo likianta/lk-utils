@@ -24,11 +24,11 @@ def clone_tree(src: str, dst: str, overwrite: bool = None) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite):
             return
-    if not os.path.exists(dst):
+    if not exists(dst):
         os.mkdir(dst)
     for d in findall_dirs(src):
         dp_o = f'{dst}/{d.relpath}'
-        if not os.path.exists(dp_o):
+        if not exists(dp_o):
             os.mkdir(dp_o)
 
 
@@ -70,7 +70,7 @@ def make_link(src: str, dst: str, overwrite: bool = None) -> str:
     src = normpath(src, force_abspath=True)
     dst = normpath(dst, force_abspath=True)
     
-    assert os.path.exists(src), src
+    assert exists(src), src
     if exists(dst):
         if _overwrite(dst, overwrite):
             return dst

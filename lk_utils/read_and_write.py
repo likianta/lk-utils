@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 class T:
     Content = t.Union[str, t.Iterable[str]]
-    Data = t.Any
+    Data = t.Union[str, bytes, list, dict, t.Any]
     File = str
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileHandle = t.Union[t.TextIO, t.BinaryIO]
@@ -170,7 +170,7 @@ def _detect_file_type(filename: str) -> T.FileType:
 # ------------------------------------------------------------------------------
 
 @contextmanager
-def read(file: T.File, **kwargs) -> t.Any:
+def read(file: T.File, **kwargs) -> T.Data:
     """ Open file as a read handle.
     
     Usage:
@@ -182,7 +182,7 @@ def read(file: T.File, **kwargs) -> t.Any:
 
 
 @contextmanager
-def write(file: T.File, data: t.Any = None, **kwargs):
+def write(file: T.File, data: T.Data = None, **kwargs):
     """ Create a write handle, file will be generated after the `with` block
         closed.
         

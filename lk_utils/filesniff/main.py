@@ -10,6 +10,7 @@ __all__ = [
     'basename',
     'dirname',
     'dirpath',
+    'exists',
     'filename',
     'filepath',
     'get_current_dir',
@@ -24,9 +25,10 @@ __all__ = [
     'parent_path',
     'relpath',
     'split',
-    'xpath'
+    'xpath',
 ]
 
+exists = ospath.exists
 _IS_WINDOWS = os.name == 'nt'
 
 
