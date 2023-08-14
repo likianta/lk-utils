@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import typing as t
 from collections import defaultdict
 from collections import deque
@@ -13,7 +11,7 @@ class T:
     Id = t.Union[str, int]
     
     # ThreadBroker
-    Target = t.Callable
+    Target = t.TypeVar('Target', bound=t.Callable)
     Args = t.Optional[tuple]
     KwArgs = t.Optional[dict]
     _Inherit = bool
@@ -39,13 +37,13 @@ class ThreadBroker:
         pass
     
     def __init__(
-            self,
-            target: T.Target,
-            args: T.Args,
-            kwargs: T.KwArgs,
-            daemon: bool,
-            interruptible: bool = False,
-            start_now: bool = True
+        self,
+        target: T.Target,
+        args: T.Args,
+        kwargs: T.KwArgs,
+        daemon: bool,
+        interruptible: bool = False,
+        start_now: bool = True,
     ):
         self._tasks = deque()
         self._tasks.append((target, args, kwargs, False))
@@ -57,7 +55,7 @@ class ThreadBroker:
         self._target = target
         if start_now:
             self.mainloop()
-
+    
     # -------------------------------------------------------------------------
     
     @property
@@ -81,7 +79,7 @@ class ThreadBroker:
         if self._result is ThreadBroker.Undefined:
             raise RuntimeError('The result is not ready yet.')
         return self._result
-
+    
     # -------------------------------------------------------------------------
     
     def start(self) -> None:
@@ -109,13 +107,19 @@ class ThreadBroker:
                         for _ in self._result:
                             if not self._is_running:
                                 # a safe "break signal" emitted from the outside.
-                                print('[red dim]thread is safely killed[/]',
-                                      func, ':r')
+                                print(
+                                    '[red dim]thread is safely killed[/]',
+                                    func,
+                                    ':r',
+                                )
                                 return
                     else:
-                        print('[yellow dim]thread is marked interruptible but '
-                              'there is no break point in function[/]', func,
-                              ':r')
+                        print(
+                            '[yellow dim]thread is marked interruptible but '
+                            'there is no break point in function[/]',
+                            func,
+                            ':r',
+                        )
             self._is_running = False
         
         self._thread = Thread(target=loop)
@@ -131,11 +135,11 @@ class ThreadBroker:
         return number
     
     def then(
-            self,
-            func: t.Callable,
-            args: tuple = None,
-            kwargs: dict = None,
-            inherit=True
+        self,
+        func: T.Target,
+        args: tuple = None,
+        kwargs: dict = None,
+        inherit: bool = True,
     ) -> t.Self:
         self._tasks.append((func, args, kwargs, inherit))
         if not self._is_running:
@@ -169,12 +173,16 @@ class ThreadManager:
         self.thread_pool = defaultdict(dict)
     
     def new_thread(
-            self, ident: T.Id = None, group: T.Group = 'default',
-            daemon=True, singleton=False, interruptible=False
-    ) -> t.Callable:
-        """ a decorator wraps target function in a new thread. """
+        self,
+        ident: T.Id = None,
+        group: T.Group = 'default',
+        daemon: bool = True,
+        singleton: bool = False,
+        interruptible: bool = False,
+    ) -> t.Callable[[T.Target], t.Callable[[...], ThreadBroker]]:
+        """a decorator wraps target function in a new thread."""
         
-        def decorator(func: T.Target):
+        def decorator(func: T.Target) -> t.Callable[[...], ThreadBroker]:
             nonlocal ident
             if ident is None:
                 ident = id(func)
@@ -182,8 +190,14 @@ class ThreadManager:
             @wraps(func)
             def wrapper(*args, **kwargs) -> ThreadBroker:
                 return self._create_thread_broker(
-                    group, ident, func, args,
-                    kwargs, daemon, singleton, interruptible
+                    group,
+                    ident,
+                    func,
+                    args,
+                    kwargs,
+                    daemon,
+                    singleton,
+                    interruptible,
                 )
             
             return wrapper
@@ -191,40 +205,57 @@ class ThreadManager:
         return decorator
     
     def run_new_thread(
-            self, target: T.Target,
-            args=None, kwargs=None,
-            daemon=True, interruptible=False
+        self,
+        target: T.Target,
+        args: T.Args = None,
+        kwargs: T.KwArgs = None,
+        daemon: bool = True,
+        interruptible: bool = False,
     ) -> ThreadBroker:
-        """ run function in a new thread at once. """
+        """run function in a new thread at once."""
         # # assert id(target) not in __thread_pool  # should i check it?
         return self._create_thread_broker(
-            'default', id(target), target,
-            args, kwargs, daemon, False, interruptible
+            'default',
+            id(target),
+            target,
+            args,
+            kwargs,
+            daemon,
+            False,
+            interruptible,
         )
     
     def _create_thread_broker(
-            self, group: T.Group, ident: T.Id, target: T.Target,
-            args=None, kwargs=None,
-            daemon=True, singleton=False, interruptible=False
+        self,
+        group: T.Group,
+        ident: T.Id,
+        target: T.Target,
+        args: T.Args = None,
+        kwargs: T.KwArgs = None,
+        daemon: bool = True,
+        singleton: bool = False,
+        interruptible: bool = False,
     ) -> ThreadBroker:
         if singleton:
             if t := self.thread_pool[group].get(ident):
                 t.add_task(args, kwargs)
                 return t
         broker = self.thread_pool[group][ident] = ThreadBroker(
-            target=target, args=args, kwargs=kwargs, daemon=daemon,
-            interruptible=interruptible
+            target=target,
+            args=args,
+            kwargs=kwargs,
+            daemon=daemon,
+            interruptible=interruptible,
         )
         return broker
     
     # -------------------------------------------------------------------------
     
     class Delegate:
-        
         def __init__(self, *threads: ThreadBroker):
             self.threads = threads
         
-        def __len__(self):
+        def __len__(self) -> int:
             return len(self.threads)
         
         def fetch_one(self, index=0) -> t.Optional[ThreadBroker]:
@@ -233,20 +264,17 @@ class ThreadManager:
             else:
                 return None
         
-        def join_all(self):
+        def join_all(self) -> None:
             for t in self.threads:
                 t.join()
     
     def retrieve_thread(
-            self,
-            ident: T.Id,
-            group: T.Group = 'default'
-    ) -> ThreadBroker | None:
+        self, ident: T.Id, group: T.Group = 'default'
+    ) -> t.Optional[ThreadBroker]:
         return self.thread_pool[group].get(ident)
     
     def retrieve_threads(
-            self,
-            group: T.Group = 'default'
+        self, group: T.Group = 'default'
     ) -> 'ThreadManager.Delegate':
         return ThreadManager.Delegate(*self.thread_pool[group].values())
 

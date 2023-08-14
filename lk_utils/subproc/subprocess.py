@@ -5,9 +5,14 @@ from subprocess import Popen
 from subprocess import run as sub_run
 
 __all__ = [
-    'compose', 'compose_cmd', 'compose_command',
-    'run', 'run_cmd_args', 'run_command_args',
-    'run_cmd_shell', 'run_command_shell',
+    'compose',
+    'compose_cmd',
+    'compose_command',
+    'run',
+    'run_cmd_args',
+    'run_command_args',
+    'run_cmd_shell',
+    'run_command_shell',
 ]
 
 
@@ -33,10 +38,14 @@ def compose_command(*args: t.Any, filter_=True) -> t.List[str]:
 
 
 def run_command_args(
-        *args: t.Any, verbose=False,
-        ignore_error=False, filter_=True, shell=False,
-        _refmt_args=True
-) -> str:
+    *args: t.Any,
+    verbose=False,
+    shell=False,
+    ignore_error=False,
+    ignore_return=False,
+    filter_=True,
+    _refmt_args=True,
+) -> t.Optional[str]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
     -command-output-and-show-it-in-terminal-at-realtime
@@ -49,20 +58,30 @@ def run_command_args(
     # else:
     #     assert all(isinstance(x, str) for x in args)
     
-    if not verbose:
+    if ignore_return:
         sub_run(args, check=not ignore_error, shell=shell)
-        return ''
+        return None
     
     proc = Popen(args, stdout=PIPE, stderr=PIPE, text=True, shell=shell)
     
     out, err = '', ''
     for line in proc.stdout:
-        print(':psr', '[dim]{}[/]'.format(
-            line.rstrip().replace('[', '\\[')))
+        if verbose:
+            print(
+                '[dim]{}[/]'.format(
+                    line.rstrip().replace('[', '\\['),
+                ),
+                ':psr',
+            )
         out += line
     for line in proc.stderr:
-        print(':psr', '[red dim]{}[/]'.format(
-            line.rstrip().replace('[', '\\[')))
+        if verbose:
+            print(
+                '[red dim]{}[/]'.format(
+                    line.rstrip().replace('[', '\\['),
+                ),
+                ':psr',
+            )
         err += line
     
     if (code := proc.wait()) != 0:
@@ -76,41 +95,52 @@ def run_command_args(
 
 
 def run_command_shell(
-        cmd: str, verbose=False,
-        ignore_error=False, filter_=False, shell=False,
+    cmd: str,
+    verbose=False,
+    shell=False,
+    ignore_error=False,
+    ignore_return=False,
+    filter_=False,
 ) -> str:
     return run_command_args(
-        *shlex.split(cmd), verbose=verbose,
-        ignore_error=ignore_error, filter_=filter_, shell=shell,
-        _refmt_args=False
+        *shlex.split(cmd),
+        verbose=verbose,
+        shell=shell,
+        ignore_error=ignore_error,
+        ignore_return=ignore_return,
+        filter_=filter_,
+        _refmt_args=False,
     )
 
 
 class E:
     class SubprocessError(Exception):
         def __init__(
-                self,
-                args: t.Iterable[str],
-                response: str,
-                return_code: int = None
+            self, args: t.Iterable[str], response: str, return_code: int = None
         ):
             self._args = ' '.join(args)
             self._resp = response
             self._code = str(return_code or 'null')
         
         def __str__(self):
-            from textwrap import dedent, indent
-            return dedent('''
+            from textwrap import dedent
+            from textwrap import indent
+            
+            return (
+                dedent('''
                 error happened with exit code {code}:
                     args:
                         {args}
                     response:
                         {response}
-            ''').format(
-                code=self._code,
-                args=self._args,
-                response=indent(self._resp, ' ' * 8).lstrip()
-            ).strip()
+            ''')
+                .format(
+                    code=self._code,
+                    args=self._args,
+                    response=indent(self._resp, ' ' * 8).lstrip(),
+                )
+                .strip()
+            )
 
 
 # alias
