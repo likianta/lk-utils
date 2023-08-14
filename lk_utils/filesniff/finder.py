@@ -16,7 +16,7 @@ __all__ = [
     'findall_dirs',
     'findall_file_names',
     'findall_file_paths',
-    'findall_files'
+    'findall_files',
 ]
 
 
@@ -26,7 +26,7 @@ class PathKnob:
     path: str
     relpath: str
     name: str
-    type: str
+    type: t.Literal['dir', 'file']
     
     @property
     def abspath(self) -> str:  # alias to 'path'
@@ -35,6 +35,10 @@ class PathKnob:
     @property
     def name_stem(self) -> str:
         return os.path.splitext(self.name)[0]
+    
+    @property
+    def ext(self) -> str:
+        return os.path.splitext(self.name)[1]
 
 
 class T:
@@ -43,6 +47,7 @@ class T:
     Paths = DirPaths = FilePaths = t.List[Path]
     Names = DirNames = FileNames = t.List[Name]
     
+    PathFilter = t.Callable[[Path, Name], bool]
     PathType = int
     Prefix = Suffix = t.Union[None, str, t.Tuple[str, ...]]
     
@@ -55,8 +60,12 @@ class PathType:
 
 
 def _find_paths(
-        dirpath: T.Path, path_type: T.PathType, recursive=False,
-        prefix: T.Prefix = None, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path,
+    path_type: T.PathType,
+    recursive: bool = False,
+    prefix: T.Prefix = None,
+    suffix: T.Suffix = None,
+    filter_: T.PathFilter = None,
 ) -> T.FinderReturn:
     """
     args:
@@ -92,136 +101,209 @@ def _find_paths(
             yield PathKnob(
                 dir=root,
                 path=p,
-                relpath=p[len(dirpath) + 1:],
+                relpath=p[len(dirpath) + 1 :],
                 name=n,
-                type='dir' if path_type == PathType.DIR else 'file',
+                type='dir' if path_type == PathType.DIR else 'file',  # noqa
             )
         
-        if not recursive:
-            break
+        if not recursive: break
 
 
 # -----------------------------------------------------------------------------
 
+
 def find_files(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=False, suffix=suffix, filter_=filter_
+        dirpath,
+        path_type=PathType.FILE,
+        recursive=False,
+        suffix=suffix,
+        filter_=filter_,
     )
 
 
 def find_file_paths(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.Paths:
-    return [x.path for x in _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=False, suffix=suffix, filter_=filter_
-    )]
+    return [
+        x.path
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.FILE,
+            recursive=False,
+            suffix=suffix,
+            filter_=filter_,
+        )
+    ]
 
 
 def find_file_names(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.Paths:
-    return [x.name for x in _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=False, suffix=suffix, filter_=filter_
-    )]
+    return [
+        x.name
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.FILE,
+            recursive=False,
+            suffix=suffix,
+            filter_=filter_,
+        )
+    ]
 
 
 def findall_files(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=True, suffix=suffix, filter_=filter_
+        dirpath,
+        path_type=PathType.FILE,
+        recursive=True,
+        suffix=suffix,
+        filter_=filter_,
     )
 
 
 def findall_file_paths(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.Paths:
-    return [x.path for x in _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=True, suffix=suffix, filter_=filter_
-    )]
+    return [
+        x.path
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.FILE,
+            recursive=True,
+            suffix=suffix,
+            filter_=filter_,
+        )
+    ]
 
 
 def findall_file_names(
-        dirpath: T.Path, suffix: T.Suffix = None, filter_=None
+    dirpath: T.Path, suffix: T.Suffix = None, filter_: T.PathFilter = None
 ) -> T.Paths:
-    return [x.name for x in _find_paths(
-        dirpath, path_type=PathType.FILE,
-        recursive=True, suffix=suffix, filter_=filter_
-    )]
+    return [
+        x.name
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.FILE,
+            recursive=True,
+            suffix=suffix,
+            filter_=filter_,
+        )
+    ]
 
 
 # -----------------------------------------------------------------------------
 
+
 def find_dirs(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
+        dirpath,
+        path_type=PathType.DIR,
+        recursive=False,
+        prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None,
     )
 
 
 def find_dir_paths(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.Paths:
-    return [x.path for x in _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
-    )]
+    return [
+        x.path
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.DIR,
+            recursive=False,
+            prefix=prefix,
+            filter_=_default_dirs_filter if exclude_protected_folders else None,
+        )
+    ]
 
 
 def find_dir_names(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.Paths:
-    return [x.name for x in _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=False, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
-    )]
+    return [
+        x.name
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.DIR,
+            recursive=False,
+            prefix=prefix,
+            filter_=_default_dirs_filter if exclude_protected_folders else None,
+        )
+    ]
 
 
 def findall_dirs(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.FinderReturn:
     return _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
+        dirpath,
+        path_type=PathType.DIR,
+        recursive=True,
+        prefix=prefix,
+        filter_=_default_dirs_filter if exclude_protected_folders else None,
     )
 
 
 def findall_dir_paths(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.Paths:
-    return [x.path for x in _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
-    )]
+    return [
+        x.path
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.DIR,
+            recursive=True,
+            prefix=prefix,
+            filter_=_default_dirs_filter if exclude_protected_folders else None,
+        )
+    ]
 
 
 def findall_dir_names(
-        dirpath: T.Path, prefix=None, exclude_protected_folders=True
+    dirpath: T.Path,
+    prefix: T.Prefix = None,
+    exclude_protected_folders: bool = True,
 ) -> T.Paths:
-    return [x.name for x in _find_paths(
-        dirpath, path_type=PathType.DIR, recursive=True, prefix=prefix,
-        filter_=_default_dirs_filter if exclude_protected_folders else None
-    )]
+    return [
+        x.name
+        for x in _find_paths(
+            dirpath,
+            path_type=PathType.DIR,
+            recursive=True,
+            prefix=prefix,
+            filter_=_default_dirs_filter if exclude_protected_folders else None,
+        )
+    ]
 
 
 # -----------------------------------------------------------------------------
 
+
 class ProtectedDirsFilter:
-    
     def __init__(self):
         self._whitelist = set()
         self._blacklist = set()
     
-    def reset(self):
+    def reset(self) -> None:
         self._whitelist.clear()
         self._blacklist.clear()
     
