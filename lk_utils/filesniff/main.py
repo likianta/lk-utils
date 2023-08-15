@@ -24,6 +24,7 @@ __all__ = [
     'parent',
     'parent_path',
     'relpath',
+    'replace_ext',
     'split',
     'xpath',
 ]
@@ -191,6 +192,24 @@ def get_current_dir() -> T.Path:
     return _get_dir_of_frame(caller_frame)
 
 
+def replace_ext(path: T.Path, ext: str) -> T.Path:
+    return ospath.splitext(path)[0] + '.' + ext
+
+
+def split(path: T.Path, parts=2) -> tuple[str, ...]:
+    path = abspath(path)
+    if parts == 2:
+        a, b = path.rsplit('/', 1)
+        return a, b
+    elif parts == 3:
+        assert isfile(path)
+        a, b = path.rsplit('/', 1)
+        b, c = b.rsplit('.', 1)
+        return a, b, c
+    else:
+        raise ValueError('Unsupported parts number!')
+
+
 def xpath(path: T.Path, force_abspath=True) -> T.Path:
     """ Consider relative path always based on caller's.
 
@@ -208,20 +227,6 @@ def xpath(path: T.Path, force_abspath=True) -> T.Path:
         return normpath(out)
     else:
         return normpath(ospath.relpath(out, os.getcwd()))
-
-
-def split(path: T.Path, parts=2) -> tuple[str, ...]:
-    path = abspath(path)
-    if parts == 2:
-        a, b = path.rsplit('/', 1)
-        return a, b
-    elif parts == 3:
-        assert isfile(path)
-        a, b = path.rsplit('/', 1)
-        b, c = b.rsplit('.', 1)
-        return a, b, c
-    else:
-        raise ValueError('Unsupported parts number!')
 
 
 def _get_dir_of_frame(frame, ignore_error=False) -> T.Path:

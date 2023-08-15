@@ -91,7 +91,7 @@ def run_command_args(
             else:
                 raise E.SubprocessError(proc.args, err, code)
     
-    return out or err
+    return (out or err).lstrip('\n').rstrip()
 
 
 def run_command_shell(
