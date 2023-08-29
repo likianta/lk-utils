@@ -47,4 +47,4 @@ from .subproc import run_cmd_args
 from .subproc import run_cmd_shell
 from .subproc import run_new_thread
 
-__version__ = '2.6.1'
+__version__ = '2.6.2'

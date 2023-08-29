@@ -38,7 +38,7 @@ class PathKnob:
     
     @property
     def ext(self) -> str:
-        return os.path.splitext(self.name)[1]
+        return os.path.splitext(self.name)[1][1:].lower()
 
 
 class T:
