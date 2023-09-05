@@ -2,7 +2,6 @@
 design guide: docs/filename-extension-form-in-design-thinking.zh.md
 """
 import os
-import re
 import typing as t
 from dataclasses import dataclass
 
@@ -55,10 +54,11 @@ class T:
     _Path = Path
     
     DirPath = str
-    Name = DirName = FileName = str
-    
     FinderResult = t.Iterator[_Path]
-    PathFilter = t.Callable[[DirPath, t.Union[DirName, FileName]], bool]
+    PathFilter = t.Callable[[str, str], bool]
+    #   callable[[abspath, name], bool]
+    #       the abspath could either be a file or a dir.
+    #       the name could either be a file or a dir.
     PathType = int
     
     Prefix = t.Union[str, t.Tuple[str, ...]]
@@ -127,52 +127,66 @@ def _find_paths(
         if not recursive: break
 
 
+class _DefaultFilter:
+    def __init__(self):
+        self._whitelist = set()  # DELETE
+        self._blacklist = set()
+    
+    def reset(self) -> None:
+        self._whitelist.clear()
+        self._blacklist.clear()
+    
+    """
+    filter returns:
+        True means accepted, False means rejected. (this is different with \
+        python's built-in `filter` function)
+    """
+    
+    def filter_file(self, filepath: str, filename: str) -> bool:
+        dirpath = filepath[: -(len(filename) + 1)]
+        if dirpath in self._blacklist:
+            return False
+        if filename.startswith(('.', '~')):
+            self._blacklist.add(dirpath)
+            return False
+        return True
+    
+    def filter_dir(self, dirpath: str, dirname: str) -> bool:
+        if dirpath in self._blacklist:
+            return False
+        if dirname.startswith(('.', '~', '__')):
+            self._blacklist.add(dirpath)
+            return False
+        return True
+
+
+_default_filter = _DefaultFilter()
+
+
 # -----------------------------------------------------------------------------
 
 
-# DELETE
-def _norm_suffix(suffix: T.Suffix) -> t.Tuple[str, ...]:
-    """
-    normalize suffix.
-    
-    examples:
-        'png' -> ('.png',)
-        '.png' -> ('.png',)
-        '*.png' -> ('.png',)
-        'png jpg' -> ('.png', '.jpg')
-        '.png .jpg' -> ('.png', '.jpg')
-        '*.png *.jpg' -> ('.png', '.jpg')
-        ('png', 'jpg') -> ('.png', '.jpg')
-        ('.png', '.jpg') -> ('.png', '.jpg')
-        ('*.png', '*.jpg') -> ('.png', '.jpg')
-    """
-    if isinstance(suffix, str):
-        if ' ' in suffix:
-            return tuple(
-                '.' + x.lstrip('*.').lower() for x in re.split(r' +', suffix)
-            )
-        else:
-            return ('.' + suffix.lstrip('*.').lower(),)
-    elif isinstance(suffix, tuple):
-        return tuple('.' + x.lstrip('*.').lower() for x in suffix)
-    else:
-        raise Exception('invalid type', type(suffix), suffix)
-
-
 def find_files(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
         dirpath,
         path_type=PathType.FILE,
         recursive=False,
         suffix=suffix,
+        filter=filter,
         **kwargs,
     )
 
 
 def find_file_paths(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> t.List[str]:
     return [
         x.path
@@ -181,13 +195,17 @@ def find_file_paths(
             path_type=PathType.FILE,
             recursive=False,
             suffix=suffix,
+            filter=filter,
             **kwargs,
         )
     ]
 
 
 def find_file_names(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> t.List[str]:
     return [
         x.name
@@ -196,25 +214,33 @@ def find_file_names(
             path_type=PathType.FILE,
             recursive=False,
             suffix=suffix,
+            filter=filter,
             **kwargs,
         )
     ]
 
 
 def findall_files(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
         dirpath,
         path_type=PathType.FILE,
         recursive=True,
         suffix=suffix,
+        filter=filter,
         **kwargs,
     )
 
 
 def findall_file_paths(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> t.List[str]:
     return [
         x.path
@@ -223,13 +249,17 @@ def findall_file_paths(
             path_type=PathType.FILE,
             recursive=True,
             suffix=suffix,
+            filter=filter,
             **kwargs,
         )
     ]
 
 
 def findall_file_names(
-    dirpath: T.DirPath, suffix: T.Suffix = None, **kwargs
+    dirpath: T.DirPath,
+    suffix: T.Suffix = None,
+    filter: T.PathFilter = _default_filter.filter_file,
+    **kwargs,
 ) -> t.List[str]:
     return [
         x.name
@@ -238,6 +268,7 @@ def findall_file_names(
             path_type=PathType.FILE,
             recursive=True,
             suffix=suffix,
+            filter=filter,
             **kwargs,
         )
     ]
@@ -249,7 +280,7 @@ def findall_file_names(
 def find_dirs(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -257,7 +288,7 @@ def find_dirs(
         path_type=PathType.DIR,
         recursive=False,
         prefix=prefix,
-        filter=_default_dirs_filter if use_default_filter else None,
+        filter=filter,
         **kwargs,
     )
 
@@ -265,7 +296,7 @@ def find_dirs(
 def find_dir_paths(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -275,7 +306,7 @@ def find_dir_paths(
             path_type=PathType.DIR,
             recursive=False,
             prefix=prefix,
-            filter=_default_dirs_filter if use_default_filter else None,
+            filter=filter,
             **kwargs,
         )
     ]
@@ -284,7 +315,7 @@ def find_dir_paths(
 def find_dir_names(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -294,7 +325,7 @@ def find_dir_names(
             path_type=PathType.DIR,
             recursive=False,
             prefix=prefix,
-            filter=_default_dirs_filter if use_default_filter else None,
+            filter=filter,
             **kwargs,
         )
     ]
@@ -303,7 +334,7 @@ def find_dir_names(
 def findall_dirs(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -311,7 +342,7 @@ def findall_dirs(
         path_type=PathType.DIR,
         recursive=True,
         prefix=prefix,
-        filter=_default_dirs_filter if use_default_filter else None,
+        filter=filter,
         **kwargs,
     )
 
@@ -319,7 +350,7 @@ def findall_dirs(
 def findall_dir_paths(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -329,7 +360,7 @@ def findall_dir_paths(
             path_type=PathType.DIR,
             recursive=True,
             prefix=prefix,
-            filter=_default_dirs_filter if use_default_filter else None,
+            filter=filter,
             **kwargs,
         )
     ]
@@ -338,7 +369,7 @@ def findall_dir_paths(
 def findall_dir_names(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    use_default_filter: bool = True,
+    filter: T.PathFilter = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -348,42 +379,7 @@ def findall_dir_names(
             path_type=PathType.DIR,
             recursive=True,
             prefix=prefix,
-            filter=_default_dirs_filter if use_default_filter else None,
+            filter=filter,
             **kwargs,
         )
     ]
-
-
-# -----------------------------------------------------------------------------
-
-
-class _ProtectedDirsFilter:
-    def __init__(self):
-        self._whitelist = set()
-        self._blacklist = set()
-    
-    def reset(self) -> None:
-        self._whitelist.clear()
-        self._blacklist.clear()
-    
-    def __call__(self, path: T.DirPath, name: T.Name) -> bool:
-        """
-        return: True means accepted, False means rejected. (this is different \
-            with python's built-in `filter` function)
-        """
-        if path.startswith(tuple(self._whitelist)):
-            self._whitelist.add(path + '/')
-            return True
-        elif path.startswith(tuple(self._blacklist)):
-            self._blacklist.add(path + '/')
-            return False
-        
-        if name.startswith(('.', '__', '~')):
-            self._blacklist.add(path + '/')
-            return False
-        else:
-            self._whitelist.add(path + '/')
-            return True
-
-
-_default_dirs_filter = _ProtectedDirsFilter()
