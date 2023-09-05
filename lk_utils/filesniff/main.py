@@ -193,7 +193,13 @@ def get_current_dir() -> T.Path:
 
 
 def replace_ext(path: T.Path, ext: str) -> T.Path:
-    return ospath.splitext(path)[0] + '.' + ext
+    """
+    params:
+        ext:
+            recommend no dot prefiexed, like 'png'.
+            but for compatibility, '.png' is also acceptable.
+    """
+    return ospath.splitext(path)[0] + '.' + ext.lstrip('.')
 
 
 def split(path: T.Path, parts=2) -> tuple[str, ...]:
