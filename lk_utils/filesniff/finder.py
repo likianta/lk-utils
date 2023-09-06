@@ -80,6 +80,8 @@ class T:
     #   (new) suffix supported formats:
     #       '.png'
     #       ('.png', '.jpg')
+    
+    SortBy = t.Literal['name', 'path', 'time']
 
 
 def _find_paths(
@@ -89,6 +91,7 @@ def _find_paths(
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
     filter: T.PathFilter = None,
+    sort_by: T.SortBy = None,
 ) -> T.FinderResult:
     """
     args:
@@ -102,33 +105,48 @@ def _find_paths(
             callable:
                 return: True means matched, False means dropped.
     """
-    dirpath = normpath(dirpath, force_abspath=True)
-    for root, dirs, files in os.walk(dirpath):
-        root = normpath(root)
-        
-        if path_type == PathType.FILE:
-            names = files
-        else:
-            names = dirs
-        
-        for n in names:
-            p = f'{root}/{n}'
-            if filter and filter(p, n) is False:
-                continue
-            if prefix and not n.startswith(prefix):
-                continue
-            if suffix and not n.endswith(suffix):
-                continue
+    
+    def main() -> T.FinderResult:
+        dirpath = normpath(dirpath, force_abspath=True)
+        for root, dirs, files in os.walk(dirpath):
+            root = normpath(root)
             
-            yield Path(
-                dir=root,
-                path=p,
-                relpath=p[len(dirpath) + 1 :],
-                name=n,
-                type='dir' if path_type == PathType.DIR else 'file',  # noqa
-            )
-        
-        if not recursive: break
+            if path_type == PathType.FILE:
+                names = files
+            else:
+                names = dirs
+            
+            for n in names:
+                p = f'{root}/{n}'
+                if filter and filter(p, n) is False:
+                    continue
+                if prefix and not n.startswith(prefix):
+                    continue
+                if suffix and not n.endswith(suffix):
+                    continue
+                
+                yield Path(
+                    dir=root,
+                    path=p,
+                    relpath=p[len(dirpath) + 1 :],
+                    name=n,
+                    type='dir' if path_type == PathType.DIR else 'file',  # noqa
+                )
+            
+            if not recursive:
+                break
+    
+    if sort_by is None:
+        yield from main()
+    elif sort_by == 'name':
+        yield from sorted(main(), key=lambda x: x.name)
+    elif sort_by == 'path':
+        yield from sorted(main(), key=lambda x: x.path)
+    elif sort_by == 'time':
+        yield from sorted(main(), key=lambda x: os.path.getmtime(x.path),
+                          reverse=True)  # fmt:skip
+    else:
+        raise ValueError(sort_by)
 
 
 class _DefaultFilter:
