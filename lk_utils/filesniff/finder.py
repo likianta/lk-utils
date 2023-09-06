@@ -43,6 +43,10 @@ class Path:
     @property
     def ext(self) -> str:
         return os.path.splitext(self.name)[1][1:].lower()
+    
+    # make it sortable.
+    def __lt__(self, other: 'Path') -> bool:
+        return self.path < other.path
 
 
 class PathType:
@@ -144,10 +148,10 @@ class _DefaultFilter:
     
     def filter_file(self, filepath: str, filename: str) -> bool:
         dirpath = filepath[: -(len(filename) + 1)]
-        if dirpath in self._blacklist:
+        dirname = dirpath.rsplit('/', 1)[-1]
+        if self.filter_dir(dirpath, dirname) is False:
             return False
         if filename.startswith(('.', '~')):
-            self._blacklist.add(dirpath)
             return False
         return True
     
