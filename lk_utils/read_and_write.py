@@ -12,13 +12,13 @@ class T:
 
 
 @contextmanager
-def ropen(file: T.File,
-          mode: T.FileMode = 'r',
-          encoding='utf-8') -> T.FileHandle:
+def ropen(
+    file: T.File, mode: T.FileMode = 'r', encoding='utf-8', **kwargs
+) -> T.FileHandle:
     if 'b' in mode:
-        handle = open(file, mode=mode)
+        handle = open(file, mode=mode, **kwargs)
     else:
-        handle = open(file, mode=mode, encoding=encoding)
+        handle = open(file, mode=mode, encoding=encoding, **kwargs)
     try:
         yield handle
     finally:
@@ -26,9 +26,9 @@ def ropen(file: T.File,
 
 
 @contextmanager
-def wopen(file: T.File,
-          mode: T.FileMode = 'w',
-          encoding='utf-8') -> T.FileHandle:
+def wopen(
+    file: T.File, mode: T.FileMode = 'w', encoding='utf-8'
+) -> T.FileHandle:
     if 'b' in mode:
         handle = open(file, mode=mode)
     else:
@@ -39,8 +39,8 @@ def wopen(file: T.File,
         handle.close()
 
 
-def read_file(file: T.File) -> str:
-    with ropen(file) as f:
+def read_file(file: T.File, **kwargs) -> str:
+    with ropen(file, **kwargs) as f:
         content = f.read()
         # https://blog.csdn.net/liu_xzhen/article/details/79563782
         if content.startswith(u'\ufeff'):
@@ -49,18 +49,19 @@ def read_file(file: T.File) -> str:
     return content
 
 
-def read_lines(file: T.File, offset=0) -> t.List[str]:
+def read_lines(file: T.File, offset: int = 0, **kwargs) -> t.List[str]:
     """
     References:
         https://blog.csdn.net/qq_40925239/article/details/81486637
     """
-    with ropen(file) as f:
+    with ropen(file, **kwargs) as f:
         out = [line.rstrip() for line in f]
     return out[offset:]
 
 
-def write_file(content: T.Content, file: T.File,
-               mode: T.FileMode = 'w', sep='\n'):
+def write_file(
+    content: T.Content, file: T.File, mode: T.FileMode = 'w', sep='\n'
+):
     """
     ref:
         python 在最后一行追加 https://www.cnblogs.com/zle1992/p/6138125.html
@@ -76,37 +77,43 @@ def write_file(content: T.Content, file: T.File,
 
 # ------------------------------------------------------------------------------
 
-def loads(file: T.File, ftype: T.FileType = None, **_) -> T.Data:
+
+def loads(file: T.File, ftype: T.FileType = None, **kwargs) -> T.Data:
     if ftype is None:
         ftype = _detect_file_type(file)
     if ftype == 'plain':
-        return read_file(file)
+        return read_file(file, **kwargs)
     elif ftype == 'binary':
-        with ropen(file, 'rb') as f:
+        with ropen(file, 'rb', **kwargs) as f:
             return f.read()
     elif ftype == 'json':
         from json import load as jload
-        with ropen(file) as f:
+        
+        with ropen(file, **kwargs) as f:
             return jload(f)
     elif ftype == 'yaml':  # pip install pyyaml
         from yaml import safe_load as yload  # noqa
-        with ropen(file) as f:
+        
+        with ropen(file, **kwargs) as f:
             return yload(f)
     elif ftype == 'toml':  # pip install toml
         from toml import load as tload  # noqa
-        with ropen(file) as f:
+        
+        with ropen(file, **kwargs) as f:
             return tload(f)
     elif ftype == 'pickle':
         from pickle import load as pload
-        with ropen(file, 'rb') as f:
+        
+        with ropen(file, 'rb', **kwargs) as f:
             return pload(f)
     else:
         # unregistered file types, like: .js, .css, .py, etc.
-        return read_file(file)
+        return read_file(file, **kwargs)
 
 
-def dumps(data: T.Data, file: T.File,
-          ftype: T.FileType = None, **kwargs) -> None:
+def dumps(
+    data: T.Data, file: T.File, ftype: T.FileType = None, **kwargs
+) -> None:
     if ftype is None:
         ftype = _detect_file_type(file)
     
@@ -115,9 +122,15 @@ def dumps(data: T.Data, file: T.File,
     
     elif ftype == 'json':
         from json import dump as jdump
+        
         with wopen(file) as f:
-            jdump(data, f, ensure_ascii=False, default=str,
-                  indent=kwargs.get('indent', 4))
+            jdump(
+                data,
+                f,
+                ensure_ascii=False,
+                default=str,
+                indent=kwargs.get('indent', 4),
+            )
             #   ensure_ascii=False
             #       https://www.cnblogs.com/zdz8207/p/python_learn_note_26.html
             #   default=str
@@ -126,20 +139,27 @@ def dumps(data: T.Data, file: T.File,
     
     elif ftype == 'yaml':  # pip install pyyaml
         from yaml import dump as ydump  # noqa
+        
         with wopen(file) as f:
-            ydump(data, f, **{
-                'allow_unicode': True,
-                'sort_keys': False,
-                **kwargs
-            })
+            ydump(
+                data,
+                f,
+                **{
+                    'allow_unicode': True,
+                    'sort_keys': False,
+                    **kwargs,
+                }
+            )
     
     elif ftype == 'pickle':
         from pickle import dump as pdump
+        
         with wopen(file, 'wb') as f:
             pdump(data, f, **kwargs)
     
     elif ftype == 'toml':  # pip install toml
         from toml import dump as tdump  # noqa
+        
         with wopen(file) as f:
             tdump(data, f, **kwargs)
     
@@ -169,9 +189,10 @@ def _detect_file_type(filename: str) -> T.FileType:
 
 # ------------------------------------------------------------------------------
 
+
 @contextmanager
 def read(file: T.File, **kwargs) -> T.Data:
-    """ Open file as a read handle.
+    """Open file as a read handle.
     
     Usage:
         with read('input.json') as r:
@@ -183,15 +204,15 @@ def read(file: T.File, **kwargs) -> T.Data:
 
 @contextmanager
 def write(file: T.File, data: T.Data = None, **kwargs):
-    """ Create a write handle, file will be generated after the `with` block
+    """Create a write handle, file will be generated after the `with` block
         closed.
-        
+    
     Args:
         file: See `dumps`.
         data (list|dict|set|str): If the data type is incorrect, an Assertion
             Error will be raised.
         kwargs: See `dumps`.
-        
+    
     Usage:
         with write('output.json', []) as w:
             for i in range(10):
