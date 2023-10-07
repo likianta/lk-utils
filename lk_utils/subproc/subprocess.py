@@ -1,8 +1,6 @@
 import shlex
+import subprocess as sp
 import typing as t
-from subprocess import PIPE
-from subprocess import Popen
-from subprocess import run as sub_run
 
 __all__ = [
     'compose',
@@ -16,7 +14,7 @@ __all__ = [
 ]
 
 
-def compose_command(*args: t.Any, filter_=True) -> t.List[str]:
+def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
     """
     examples:
         ('pip', 'install', '', 'lk-utils') -> ['pip', 'install', 'lk-utils']
@@ -24,27 +22,35 @@ def compose_command(*args: t.Any, filter_=True) -> t.List[str]:
             if mirror is empty, returns ['pip', 'install', 'lk-utils']
             else returns ['pip', 'install', 'lk-utils', '-i', mirror]
     """
+    
+    def flatten(seq: t.Sequence) -> t.Iterator:
+        for s in seq:
+            if isinstance(s, (tuple, list)):
+                yield from flatten(s)
+            else:
+                yield s
+    
     out = []
     for a in args:
         if isinstance(a, (tuple, list)):
-            a = tuple(str(x).strip() for x in a)
+            a = tuple(str(x).strip() for x in flatten(a))
             if all(a):
                 out.extend(a)
         else:
             a = str(a).strip()
-            if a or not filter_:
+            if a or not filter:
                 out.append(a)
     return out
 
 
 def run_command_args(
     *args: t.Any,
-    verbose=False,
-    shell=False,
-    ignore_error=False,
-    ignore_return=False,
-    filter_=True,
-    _refmt_args=True,
+    verbose: bool = False,
+    shell: bool = False,
+    ignore_error: bool = False,
+    ignore_return: bool = False,
+    filter: bool = True,
+    _refmt_args: bool = True,
 ) -> t.Optional[str]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
@@ -54,15 +60,15 @@ def run_command_args(
         _refmt_args: set to False is faster. this is for internal use only.
     """
     if _refmt_args:
-        args = compose_command(*args, filter_=filter_)
+        args = compose_command(*args, filter=filter)
     # else:
     #     assert all(isinstance(x, str) for x in args)
     
     if ignore_return:
-        sub_run(args, check=not ignore_error, shell=shell)
+        sp.run(args, check=not ignore_error, shell=shell)
         return None
     
-    proc = Popen(args, stdout=PIPE, stderr=PIPE, text=True, shell=shell)
+    proc = sp.Popen(args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell)
     
     out, err = '', ''
     for line in proc.stdout:
@@ -96,11 +102,11 @@ def run_command_args(
 
 def run_command_shell(
     cmd: str,
-    verbose=False,
-    shell=False,
-    ignore_error=False,
-    ignore_return=False,
-    filter_=False,
+    verbose: bool = False,
+    shell: bool = False,
+    ignore_error: bool = False,
+    ignore_return: bool = False,
+    filter: bool = False,
 ) -> str:
     return run_command_args(
         *shlex.split(cmd),
@@ -108,7 +114,7 @@ def run_command_shell(
         shell=shell,
         ignore_error=ignore_error,
         ignore_return=ignore_return,
-        filter_=filter_,
+        filter=filter,
         _refmt_args=False,
     )
 
