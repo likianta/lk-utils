@@ -47,57 +47,72 @@ def run_command_args(
     *args: t.Any,
     verbose: bool = False,
     shell: bool = False,
+    blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
     _refmt_args: bool = True,
-) -> t.Optional[str]:
+) -> t.Union[None, str, sp.Popen]:
     """
-    https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
+    https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
     -command-output-and-show-it-in-terminal-at-realtime
     
-    args:
-        _refmt_args: set to False is faster. this is for internal use only.
+    params:
+        _refmt_args: set to False is faster. this is for internal use.
+        
+    returns:
+        if non blocking: returns sp.Popen.
+        if ignore_return: returns None.
+        else: returns string.
     """
     if _refmt_args:
         args = compose_command(*args, filter=filter)
     # else:
     #     assert all(isinstance(x, str) for x in args)
     
-    if ignore_return:
+    if ignore_return and blocking:
+        # note: `sp.run` is blocking, `sp.Popen` is non-blocking.
         sp.run(args, check=not ignore_error, shell=shell)
         return None
     
-    proc = sp.Popen(args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell)
+    proc = sp.Popen(
+        args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell
+    )
     
-    out, err = '', ''
-    for line in proc.stdout:
-        if verbose:
-            print(
-                '[dim]{}[/]'.format(
-                    line.rstrip().replace('[', '\\['),
-                ),
-                ':psr',
-            )
-        out += line
-    for line in proc.stderr:
-        if verbose:
-            print(
-                '[red dim]{}[/]'.format(
-                    line.rstrip().replace('[', '\\['),
-                ),
-                ':psr',
-            )
-        err += line
+    if not blocking:
+        assert not verbose, 'cannot use `verbose=True` in non-blocking mode!'
     
-    if (code := proc.wait()) != 0:
-        if not ignore_error:
-            if verbose:  # the output already printed
-                exit(code)
-            else:
-                raise E.SubprocessError(proc.args, err, code)
-    
-    return (out or err).lstrip('\n').rstrip()
+    if blocking:
+        out, err = '', ''
+        for line in proc.stdout:
+            if verbose:
+                print(
+                    '[dim]{}[/]'.format(
+                        line.rstrip().replace('[', '\\['),
+                    ),
+                    ':psr',
+                )
+            out += line
+        for line in proc.stderr:
+            if verbose:
+                print(
+                    '[red dim]{}[/]'.format(
+                        line.rstrip().replace('[', '\\['),
+                    ),
+                    ':psr',
+                )
+            err += line
+        
+        if (code := proc.wait()) != 0:
+            if not ignore_error:
+                if verbose:  # the output already printed
+                    exit(code)
+                else:
+                    raise E.SubprocessError(proc.args, err, code)
+        
+        return (out or err).lstrip('\n').rstrip()
+    else:
+        return proc
 
 
 def run_command_shell(
@@ -107,7 +122,7 @@ def run_command_shell(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = False,
-) -> str:
+) -> t.Union[None, str, sp.Popen]:
     return run_command_args(
         *shlex.split(cmd),
         verbose=verbose,

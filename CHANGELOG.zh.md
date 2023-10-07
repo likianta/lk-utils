@@ -4,7 +4,7 @@
 
 - 重构 `filesniff.finder` 模块
 - 规范文件后缀名格式
-- 更新 `textwrap`, `filesniff` 等模块
+- 更新 `textwrap`, `filesniff`, `subprocess` 等模块
 
 ### 2.6.1 (2023-08-18)
 
