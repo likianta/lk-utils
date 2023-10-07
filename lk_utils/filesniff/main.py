@@ -7,6 +7,7 @@ from inspect import currentframe
 
 __all__ = [
     'abspath',
+    'barename',
     'basename',
     'dirname',
     'dirpath',
@@ -85,7 +86,7 @@ def dirname(path: T.Path) -> str:
         return ospath.basename(path)
 
 
-def filepath(path: T.Path, suffix=True, strict=False) -> str:
+def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
     if strict and isdir(path):
         raise Exception('Cannot get filepath from a directory!')
     if suffix:
@@ -94,7 +95,7 @@ def filepath(path: T.Path, suffix=True, strict=False) -> str:
         return normpath(ospath.splitext(path)[0])
 
 
-def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
+def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
     """ Return the file name from path.
 
     Examples:
@@ -112,6 +113,10 @@ def filename(path: T.Path, suffix=True, strict=False) -> T.Path:
 
 
 basename = filename
+
+
+def barename(path: T.Path, strict: bool = False) -> str:
+    return filename(path, suffix=False, strict=strict)
 
 
 # ------------------------------------------------------------------------------
