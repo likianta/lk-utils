@@ -105,9 +105,9 @@ def _find_paths(
             callable:
                 return: True means matched, False means dropped.
     """
+    dirpath = normpath(dirpath, force_abspath=True)
     
     def main() -> T.FinderResult:
-        dirpath = normpath(dirpath, force_abspath=True)
         for root, dirs, files in os.walk(dirpath):
             root = normpath(root)
             
@@ -165,6 +165,8 @@ class _DefaultFilter:
     """
     
     def filter_file(self, filepath: str, filename: str) -> bool:
+        if filepath.endswith('~'):  # e.g. '/path/to/file.py~'
+            return False
         dirpath = filepath[: -(len(filename) + 1)]
         dirname = dirpath.rsplit('/', 1)[-1]
         if self.filter_dir(dirpath, dirname) is False:
