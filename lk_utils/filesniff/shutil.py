@@ -13,6 +13,7 @@ __all__ = [
     'copy_tree',
     'make_dir',
     'make_dirs',
+    'make_file',
     'make_link',
     'make_links',
     'move',
@@ -54,6 +55,10 @@ def make_dir(dst: str) -> None:
 
 def make_dirs(dst: str) -> None:
     os.makedirs(dst, exist_ok=True)
+
+
+def make_file(dst: str) -> None:
+    open(dst, 'w').close()
 
 
 def make_link(src: str, dst: str, overwrite: bool = None) -> str:
