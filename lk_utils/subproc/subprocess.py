@@ -9,8 +9,8 @@ __all__ = [
     'run',
     'run_cmd_args',
     'run_command_args',
-    'run_cmd_shell',
-    'run_command_shell',
+    'run_cmd_line',
+    'run_command_line',
 ]
 
 
@@ -47,6 +47,7 @@ def run_command_args(
     *args: t.Any,
     verbose: bool = False,
     shell: bool = False,
+    cwd: str = None,
     blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
@@ -72,11 +73,11 @@ def run_command_args(
     
     if ignore_return and blocking:
         # note: `sp.run` is blocking, `sp.Popen` is non-blocking.
-        sp.run(args, check=not ignore_error, shell=shell)
+        sp.run(args, check=not ignore_error, shell=shell, cwd=cwd)
         return None
     
     proc = sp.Popen(
-        args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell
+        args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell, cwd=cwd
     )
     
     if not blocking:
@@ -115,10 +116,11 @@ def run_command_args(
         return proc
 
 
-def run_command_shell(
+def run_command_line(
     cmd: str,
     verbose: bool = False,
     shell: bool = False,
+    cwd: str = None,
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = False,
@@ -127,6 +129,7 @@ def run_command_shell(
         *shlex.split(cmd),
         verbose=verbose,
         shell=shell,
+        cwd=cwd,
         ignore_error=ignore_error,
         ignore_return=ignore_return,
         filter=filter,
@@ -167,4 +170,4 @@ class E:
 # alias
 compose = compose_cmd = compose_command
 run = run_cmd_args = run_command_args
-run_cmd_shell = run_command_shell
+run_cmd_line = run_command_line

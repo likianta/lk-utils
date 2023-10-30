@@ -44,7 +44,7 @@ from .read_and_write import ropen
 from .read_and_write import wopen
 from .subproc import new_thread
 from .subproc import run_cmd_args
-from .subproc import run_cmd_shell
+from .subproc import run_cmd_line
 from .subproc import run_new_thread
 
-__version__ = '2.7.1'
+__version__ = '2.7.2'
