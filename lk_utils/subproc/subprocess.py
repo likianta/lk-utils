@@ -2,6 +2,8 @@ import shlex
 import subprocess as sp
 import typing as t
 
+from .threading import run_new_thread
+
 __all__ = [
     'compose',
     'compose_cmd',
@@ -52,87 +54,100 @@ def run_command_args(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
+    # rich_print: bool = True,
     _refmt_args: bool = True,
-) -> t.Union[None, str, sp.Popen]:
+) -> t.Union[str, sp.Popen, None]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
     -command-output-and-show-it-in-terminal-at-realtime
     
     params:
         _refmt_args: set to False is faster. this is for internal use.
-        
+    
     returns:
-        if non blocking: returns sp.Popen.
-        if ignore_return: returns None.
-        else: returns string.
+        if ignore_return:
+            return None
+        else:
+            if blocking:
+                return <string>
+            else:
+                return <Popen object>
+    
+    memo:
+        `sp.run` is blocking, `sp.Popen` is non-blocking.
     """
     if _refmt_args:
         args = compose_command(*args, filter=filter)
     # else:
     #     assert all(isinstance(x, str) for x in args)
     
-    if ignore_return and blocking:
-        # note: `sp.run` is blocking, `sp.Popen` is non-blocking.
-        sp.run(args, check=not ignore_error, shell=shell, cwd=cwd)
-        return None
-    
     proc = sp.Popen(
         args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell, cwd=cwd
     )
     
-    if not blocking:
-        assert not verbose, 'cannot use `verbose=True` in non-blocking mode!'
-    
-    if blocking:
-        out, err = '', ''
+    def communicate() -> t.Iterator[t.Tuple[str, int]]:
+        # log_mark = ':p2sr' if rich_print else ':p2s1r'
         for line in proc.stdout:
             if verbose:
                 print(
-                    '[dim]{}[/]'.format(
-                        line.rstrip().replace('[', '\\['),
-                    ),
-                    ':psr',
+                    '[dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
+                    ':p2sr',
                 )
-            out += line
+            yield line, 0
         for line in proc.stderr:
             if verbose:
                 print(
-                    '[red dim]{}[/]'.format(
-                        line.rstrip().replace('[', '\\['),
-                    ),
-                    ':psr',
+                    '[red dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
+                    ':p2sr',
                 )
-            err += line
+            yield line, 1
+    
+    if blocking:
+        out, err = '', ''
+        for line, code in communicate():
+            if ignore_return:
+                continue
+            if code == 0:
+                out += line
+            else:
+                err += line
         
         if (code := proc.wait()) != 0:
             if not ignore_error:
-                if verbose:  # the output already printed
+                if verbose:  # the error trace info was already printed
                     exit(code)
                 else:
                     raise E.SubprocessError(proc.args, err, code)
         
-        return (out or err).lstrip('\n').rstrip()
+        return None if ignore_return else (out or err).lstrip('\n').rstrip()
     else:
-        return proc
+        if verbose:
+            run_new_thread(lambda: [_ for _ in communicate()])
+        return None if ignore_return else proc
 
 
 def run_command_line(
     cmd: str,
+    *,
     verbose: bool = False,
     shell: bool = False,
     cwd: str = None,
+    blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
-    filter: bool = False,
-) -> t.Union[None, str, sp.Popen]:
+    filter: bool = False,  # notice this differs
+    # rich_print: bool = True,
+) -> t.Union[str, sp.Popen, None]:
     return run_command_args(
         *shlex.split(cmd),
         verbose=verbose,
         shell=shell,
         cwd=cwd,
+        blocking=blocking,
         ignore_error=ignore_error,
         ignore_return=ignore_return,
         filter=filter,
+        # rich_print=rich_print,
         _refmt_args=False,
     )
 
