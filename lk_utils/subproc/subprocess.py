@@ -2,6 +2,8 @@ import shlex
 import subprocess as sp
 import typing as t
 
+from lk_logger import bprint
+
 from .threading import run_new_thread
 
 __all__ = [
@@ -54,7 +56,6 @@ def run_command_args(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
-    # rich_print: bool = True,
     _refmt_args: bool = True,
 ) -> t.Union[str, sp.Popen, None]:
     """
@@ -86,20 +87,21 @@ def run_command_args(
     )
     
     def communicate() -> t.Iterator[t.Tuple[str, int]]:
-        # log_mark = ':p2sr' if rich_print else ':p2s1r'
         for line in proc.stdout:
             if verbose:
-                print(
-                    '[dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
-                    ':p2sr',
-                )
+                bprint(line.rstrip())
+                # print(
+                #     '[dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
+                #     ':p2s1r',
+                # )
             yield line, 0
         for line in proc.stderr:
             if verbose:
-                print(
-                    '[red dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
-                    ':p2sr',
-                )
+                bprint(line.rstrip())
+                # print(
+                #     '[red dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
+                #     ':p2s1r',
+                # )
             yield line, 1
     
     if blocking:
@@ -136,7 +138,6 @@ def run_command_line(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = False,  # notice this differs
-    # rich_print: bool = True,
 ) -> t.Union[str, sp.Popen, None]:
     return run_command_args(
         *shlex.split(cmd),
@@ -147,7 +148,6 @@ def run_command_line(
         ignore_error=ignore_error,
         ignore_return=ignore_return,
         filter=filter,
-        # rich_print=rich_print,
         _refmt_args=False,
     )
 
