@@ -2,6 +2,8 @@ if 1:
     import lk_logger
     lk_logger.setup(quiet=True)
 
+from . import common_typing as t
+from . import common_typing as typing
 from . import filesniff
 from . import filesniff as fs
 from . import read_and_write
@@ -36,4 +38,4 @@ from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
 
-__version__ = '2.7.3'
+__version__ = '2.8.0'

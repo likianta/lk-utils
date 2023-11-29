@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-import typing_extensions as t
+from . import common_typing as t
 
 
 class T:

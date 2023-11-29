@@ -2,9 +2,9 @@ import shlex
 import subprocess as sp
 
 from lk_logger import bprint
-import typing_extensions as t
 
 from .threading import run_new_thread
+from .. import common_typing as t
 
 __all__ = [
     'compose',

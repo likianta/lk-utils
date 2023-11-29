@@ -4,7 +4,7 @@ from functools import wraps
 from threading import Thread
 from types import GeneratorType
 
-import typing_extensions as t
+from .. import common_typing as t
 
 
 class T:
@@ -180,10 +180,10 @@ class ThreadManager:
         daemon: bool = True,
         singleton: bool = False,
         interruptible: bool = False,
-    ) -> t.Callable[[T.Target], t.Callable[[...], ThreadBroker]]:
+    ) -> t.Callable[[T.Target], t.Callable[[t.Any], ThreadBroker]]:
         """a decorator wraps target function in a new thread."""
         
-        def decorator(func: T.Target) -> t.Callable[[...], ThreadBroker]:
+        def decorator(func: T.Target) -> t.Callable[[t.Any], ThreadBroker]:
             nonlocal ident
             if ident is None:
                 ident = id(func)

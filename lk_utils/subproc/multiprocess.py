@@ -2,7 +2,7 @@ from functools import wraps
 from multiprocessing import Process
 from types import FunctionType
 
-import typing_extensions as t
+from .. import common_typing as t
 
 
 class T:

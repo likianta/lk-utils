@@ -4,9 +4,8 @@ design guide: docs/filename-extension-form-in-design-thinking.zh.md
 import os
 from dataclasses import dataclass
 
-import typing_extensions as t
-
 from .main import normpath
+from .. import common_typing as t
 
 __all__ = [
     'Path',

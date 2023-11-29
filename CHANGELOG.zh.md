@@ -1,9 +1,8 @@
 # 更新日志
 
-### 2.7.3 (wip)
+### 2.8.0 (wip)
 
-- 修复 python 3.8 兼容性
-- 使用 typing-extensions 替代标准库 typing
+- 新增 `common_typing` 模块
 
 ### 2.7.2 (2023-11-02)
 

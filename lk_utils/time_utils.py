@@ -1,7 +1,7 @@
 import time
 from os import stat
 
-import typing_extensions as t
+from . import common_typing as t
 
 
 def get_file_created_time(

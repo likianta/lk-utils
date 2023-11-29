@@ -4,7 +4,7 @@ from functools import partial
 from inspect import currentframe
 from types import FrameType
 
-import typing_extensions as t
+from .. import common_typing as t
 
 __all__ = [
     'abspath',

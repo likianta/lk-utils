@@ -3,10 +3,9 @@ import shutil
 from functools import partial
 from os.path import exists
 
-import typing_extensions as t
-
 from .finder import findall_dirs
 from .main import _IS_WINDOWS  # noqa
+from .. import common_typing as t
 
 __all__ = [
     'clone_tree',
