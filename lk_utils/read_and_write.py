@@ -1,5 +1,6 @@
-import typing as t
 from contextlib import contextmanager
+
+import typing_extensions as t
 
 
 class T:
@@ -13,7 +14,7 @@ class T:
 
 @contextmanager
 def ropen(
-    file: T.File, mode: T.FileMode = 'r', encoding='utf-8', **kwargs
+    file: T.File, mode: T.FileMode = 'r', encoding: str = 'utf-8', **kwargs
 ) -> T.FileHandle:
     if 'b' in mode:
         handle = open(file, mode=mode, **kwargs)
@@ -27,7 +28,7 @@ def ropen(
 
 @contextmanager
 def wopen(
-    file: T.File, mode: T.FileMode = 'w', encoding='utf-8'
+    file: T.File, mode: T.FileMode = 'w', encoding: str = 'utf-8'
 ) -> T.FileHandle:
     if 'b' in mode:
         handle = open(file, mode=mode)
@@ -60,7 +61,7 @@ def read_lines(file: T.File, offset: int = 0, **kwargs) -> t.List[str]:
 
 
 def write_file(
-    content: T.Content, file: T.File, mode: T.FileMode = 'w', sep='\n'
+    content: T.Content, file: T.File, mode: T.FileMode = 'w', sep: str = '\n'
 ):
     """
     ref:

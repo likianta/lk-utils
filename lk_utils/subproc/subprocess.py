@@ -1,8 +1,8 @@
 import shlex
 import subprocess as sp
-import typing as t
 
 from lk_logger import bprint
+import typing_extensions as t
 
 from .threading import run_new_thread
 

@@ -1,4 +1,4 @@
-import typing as t
+import typing_extensions as t
 
 from .threading import ThreadBroker as Thread
 
@@ -46,7 +46,7 @@ class Promise:
     def start(self) -> None:
         self._thread.start()
     
-    def then(self, func, args: tuple = None, kwargs: dict = None) -> 'Promise':
+    def then(self, func, args: tuple = None, kwargs: dict = None) -> t.Self:
         from functools import partial
         self._then = partial(func, args or (), kwargs or {})
         return self
@@ -67,5 +67,5 @@ class Promise:
     fulfill = join = fetch
     
     @property
-    def is_done(self):
+    def is_done(self) -> bool:
         return self._is_done

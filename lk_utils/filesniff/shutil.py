@@ -1,8 +1,9 @@
 import os
 import shutil
-import typing as t
 from functools import partial
 from os.path import exists
+
+import typing_extensions as t
 
 from .finder import findall_dirs
 from .main import _IS_WINDOWS  # noqa
@@ -41,7 +42,7 @@ def copy_file(src: str, dst: str, overwrite: bool = None) -> None:
 
 
 def copy_tree(
-    src: str, dst: str, overwrite: bool = None, symlinks=False
+    src: str, dst: str, overwrite: bool = None, symlinks: bool = False
 ) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
@@ -119,7 +120,7 @@ def remove_tree(dst: str) -> None:
             raise Exception('Unknown file type', dst)
 
 
-def _overwrite(path: str, scheme: t.Optional[bool]) -> bool:
+def _overwrite(path: str, scheme: t.Union[None, bool]) -> bool:
     """
     args:
         scheme:

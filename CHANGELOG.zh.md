@@ -1,5 +1,10 @@
 # 更新日志
 
+### 2.7.3 (wip)
+
+- 修复 python 3.8 兼容性
+- 使用 typing-extensions 替代标准库 typing
+
 ### 2.7.2 (2023-11-02)
 
 - 增强 `run_cmd_args`

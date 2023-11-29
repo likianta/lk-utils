@@ -2,8 +2,9 @@
 design guide: docs/filename-extension-form-in-design-thinking.zh.md
 """
 import os
-import typing as t
 from dataclasses import dataclass
+
+import typing_extensions as t
 
 from .main import normpath
 

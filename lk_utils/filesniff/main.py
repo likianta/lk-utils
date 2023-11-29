@@ -1,9 +1,10 @@
-from __future__ import annotations
-
 import os
 import os.path as ospath
 from functools import partial
 from inspect import currentframe
+from types import FrameType
+
+import typing_extensions as t
 
 __all__ = [
     'abspath',
@@ -38,7 +39,7 @@ class T:
     Path = DirPath = FilePath = str
 
 
-def normpath(path: T.Path, force_abspath=False) -> T.Path:
+def normpath(path: T.Path, force_abspath: bool = False) -> T.Path:
     if force_abspath:
         out = ospath.abspath(path)
     else:
@@ -207,7 +208,7 @@ def replace_ext(path: T.Path, ext: str) -> T.Path:
     return ospath.splitext(path)[0] + '.' + ext.lstrip('.')
 
 
-def split(path: T.Path, parts=2) -> tuple[str, ...]:
+def split(path: T.Path, parts: int = 2) -> t.Tuple[str, ...]:
     path = abspath(path)
     if parts == 2:
         a, b = path.rsplit('/', 1)
@@ -221,7 +222,7 @@ def split(path: T.Path, parts=2) -> tuple[str, ...]:
         raise ValueError('Unsupported parts number!')
 
 
-def xpath(path: T.Path, force_abspath=True) -> T.Path:
+def xpath(path: T.Path, force_abspath: bool = True) -> T.Path:
     """ Consider relative path always based on caller's.
 
     References: https://blog.csdn.net/Likianta/article/details/89299937
@@ -240,7 +241,7 @@ def xpath(path: T.Path, force_abspath=True) -> T.Path:
         return normpath(ospath.relpath(out, os.getcwd()))
 
 
-def _get_dir_of_frame(frame, ignore_error=False) -> T.Path:
+def _get_dir_of_frame(frame: FrameType, ignore_error: bool = False) -> T.Path:
     file = frame.f_globals.get('__file__') \
            or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):

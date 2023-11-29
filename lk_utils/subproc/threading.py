@@ -1,9 +1,10 @@
-import typing as t
 from collections import defaultdict
 from collections import deque
 from functools import wraps
 from threading import Thread
 from types import GeneratorType
+
+import typing_extensions as t
 
 
 class T:

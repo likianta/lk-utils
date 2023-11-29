@@ -1,6 +1,7 @@
 import re
 import textwrap
-import typing as t
+
+import typing_extensions as t
 
 
 def dedent(text: str, lstrip: bool = True, join_sep: str = None) -> str:

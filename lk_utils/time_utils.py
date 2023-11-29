@@ -1,10 +1,12 @@
 import time
 from os import stat
-from typing import Iterator
-from typing import Union
+
+import typing_extensions as t
 
 
-def get_file_created_time(filepath: str, style='') -> Union[str, float]:
+def get_file_created_time(
+    filepath: str, style: str = ''
+) -> t.Union[str, float]:
     """
     REF: demos/os_demo#get_file_created_time
     """
@@ -15,7 +17,9 @@ def get_file_created_time(filepath: str, style='') -> Union[str, float]:
         return time_float
 
 
-def get_file_modified_time(filepath: str, style='') -> Union[str, float]:
+def get_file_modified_time(
+    filepath: str, style: str = ''
+) -> t.Union[str, float]:
     """
     REF: demos/os_demo#get_file_created_time
     """
@@ -36,7 +40,7 @@ def seconds_to_hms(second: int) -> str:
     return hms
 
 
-def timeout_gen(timeout: float, interval: float = 1) -> Iterator[int]:
+def timeout_gen(timeout: float, interval: float = 1) -> t.Iterator[int]:
     count = int(timeout / interval)
     for i in range(count):
         yield i
@@ -47,7 +51,7 @@ def timeout_gen(timeout: float, interval: float = 1) -> Iterator[int]:
 wait = timeout_gen
 
 
-def timestamp(style='y-m-d h:n:s', ctime: float = 0.0) -> str:
+def timestamp(style: str = 'y-m-d h:n:s', ctime: float = 0.0) -> str:
     """
     generate a timestamp string.
     e.g. 'y-m-d h:n:s' -> '2018-12-27 15:13:45'
