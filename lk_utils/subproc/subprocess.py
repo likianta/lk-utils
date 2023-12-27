@@ -34,14 +34,17 @@ def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
             else:
                 yield s
     
+    def stringify(x: t.Optional[t.AnyStr]) -> str:
+        return '' if x is None else str(x).strip()
+    
     out = []
     for a in args:
         if isinstance(a, (tuple, list)):
-            a = tuple(str(x).strip() for x in flatten(a))
-            if all(a):
+            a = tuple(stringify(x) for x in flatten(a))
+            if all(a) or not filter:
                 out.extend(a)
         else:
-            a = str(a).strip()
+            a = stringify(a)
             if a or not filter:
                 out.append(a)
     return out
