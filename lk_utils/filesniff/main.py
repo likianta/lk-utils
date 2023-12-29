@@ -10,6 +10,7 @@ __all__ = [
     'abspath',
     'barename',
     'basename',
+    'cd_current_dir',
     'dirname',
     'dirpath',
     'exists',
@@ -192,6 +193,14 @@ def not_empty(file: T.FilePath) -> bool:
 
 
 # -----------------------------------------------------------------------------
+
+
+def cd_current_dir() -> T.Path:
+    caller_frame = currentframe().f_back
+    dir = _get_dir_of_frame(caller_frame)
+    os.chdir(dir)
+    return dir
+
 
 def get_current_dir() -> T.Path:
     caller_frame = currentframe().f_back

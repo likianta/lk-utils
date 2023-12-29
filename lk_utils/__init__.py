@@ -11,6 +11,7 @@ from . import read_and_write as rw
 from . import subproc
 from . import textwrap
 from . import time_utils
+from .filesniff import cd_current_dir
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths
 from .filesniff import find_dirs
