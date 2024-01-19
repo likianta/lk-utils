@@ -7,19 +7,12 @@ from . import common_typing as t
 def dedent(text: str, lstrip: bool = True, join_sep: str = None) -> str:
     """
     params:
-        join_sep: suggest '-' or '|'.
-            notice for joiniing '\\', you should pass '\\\\' to `join_sep`. -
-            for example:
-                dedent(
-                    '''
-                        aaa \\
-                        bbb
-                    ''',
-                    join_sep='\\\\'
-                )
+        join_sep: suggest: '-', '|' or '\\'.
     """
     out = textwrap.dedent(text).rstrip()
     if join_sep:
+        if join_sep == '\\':
+            join_sep = '\\\\'  # escape for regular expression
         out = re.sub(rf' +{join_sep} *\n', ' ', out)
     return out.lstrip() if lstrip else out
 
