@@ -1,13 +1,21 @@
 import atexit
 import os.path
+import traceback
 import typing as t
 from contextlib import contextmanager
 from functools import partial
+from functools import wraps
 from inspect import currentframe
 from time import time
+from types import FunctionType
 
 import rich
 import rich.table
+
+
+class T:
+    Decorator = t.Callable
+    Function = FunctionType
 
 
 class TimeIt:
@@ -21,11 +29,32 @@ class TimeIt:
             if self.records:
                 self.report()
     
-    def __call__(self, label: str = None) -> t.ContextManager:
-        return partial(self.timing, label)
+    def __call__(self, label: str = None) -> t.Union[
+        t.ContextManager, T.Decorator
+    ]:
+        """
+        timeit can either be used as a decorator or a context manager.
+        usage 1:
+            @timeit(some_label)
+            def func():
+                pass
+        usage 2:
+            with timeit(some_label):
+                pass
+        """
+        # get source line of the caller
+        # ref: https://stackoverflow.com/a/72817601
+        stack = traceback.extract_stack(limit=2)
+        line = stack[-2].line.lstrip()
+        if line.startswith('@'):
+            return partial(self._wrap_func_with_timeit, label=label)
+        elif line.startswith('with '):
+            return partial(self._timing, label=label)
+        else:
+            raise Exception('wrong usage', line)
     
     @contextmanager
-    def timing(self, label: str = None) -> None:
+    def _timing(self, label: str = None) -> None:
         if label is None:
             caller_frame = currentframe().f_back
             label = '{}:{}'.format(
@@ -53,6 +82,16 @@ class TimeIt:
             node['shortest'] = duration
         if duration > node['longest']:
             node['longest'] = duration
+    
+    def _wrap_func_with_timeit(
+        self, func: T.Function, label: str = None
+    ) -> T.Decorator:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> t.Any:
+            with self._timing(label or func.__qualname__):
+                return func(*args, **kwargs)
+        
+        return wrapper
     
     def report(self) -> None:
         table = rich.table.Table(
