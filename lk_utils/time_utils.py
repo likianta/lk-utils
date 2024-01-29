@@ -40,17 +40,6 @@ def seconds_to_hms(second: int) -> str:
     return hms
 
 
-def timeout_gen(timeout: float, interval: float = 1) -> t.Iterator[int]:
-    count = int(timeout / interval)
-    for i in range(count):
-        yield i
-        time.sleep(interval)
-    raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
-
-
-wait = timeout_gen
-
-
 def timestamp(style: str = 'y-m-d h:n:s', ctime: float = 0.0) -> str:
     """
     generate a timestamp string.
@@ -63,3 +52,11 @@ def timestamp(style: str = 'y-m-d h:n:s', ctime: float = 0.0) -> str:
         return time.strftime(style, time.localtime(ctime))
     else:
         return time.strftime(style)
+
+
+def wait(timeout: float, interval: float = 1) -> t.Iterator[int]:
+    count = int(timeout / interval)
+    for i in range(count):
+        yield i
+        time.sleep(interval)
+    raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
