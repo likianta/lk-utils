@@ -84,6 +84,8 @@ def run_command_args(
         args = compose_command(*args, filter=filter)
     # else:
     #     assert all(isinstance(x, str) for x in args)
+    if verbose:
+        print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
     proc = sp.Popen(
         args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell, cwd=cwd
