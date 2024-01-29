@@ -10,7 +10,7 @@ from . import read_and_write
 from . import read_and_write as rw
 from . import subproc
 from . import textwrap
-from . import time_utils
+from . import time_utils  # TODO: rename to "time"?
 from .filesniff import cd_current_dir
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths
@@ -30,6 +30,9 @@ from .filesniff import make_links as mklinks
 from .filesniff import normpath
 from .filesniff import xpath
 from .filesniff import xpath as relpath  # backward compatible
+from .lambda_ex import bind_with
+from .lambda_ex import call_once
+from .lambda_ex import signal
 from .read_and_write import dumps
 from .read_and_write import loads
 from .read_and_write import ropen
@@ -38,5 +41,7 @@ from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
+from .time_utils import timestamp
+from .time_utils import wait
 
-__version__ = '2.8.1'
+__version__ = '2.9.0'
