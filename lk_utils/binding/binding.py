@@ -16,9 +16,11 @@ class TARGET:
 _bound_funcs = set()
 
 
-def call_once(func: T.Func) -> T.Func:
-    func()
-    return func
+def call_once(*_args, **_kwargs) -> T.FuncWrapper:
+    def wrapper(func: T.Func) -> T.Func:
+        func(*_args, **_kwargs)
+        return func
+    return wrapper
 
 
 def bind_with(trigger: T.Trigger) -> T.FuncWrapper:
