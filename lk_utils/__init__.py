@@ -11,9 +11,9 @@ from . import read_and_write as rw
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
+from .binding import Signal
 from .binding import bind_with
 from .binding import call_once
-from .binding import signal
 from .filesniff import cd_current_dir
 from .filesniff import find_dir_names
 from .filesniff import find_dir_paths
