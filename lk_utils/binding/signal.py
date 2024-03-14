@@ -1,3 +1,5 @@
+import re
+import textwrap
 import typing as t
 from contextlib import contextmanager
 from functools import partial
@@ -13,7 +15,7 @@ class T:
     Funcs = t.Dict[FuncId, Func]
 
 
-class _Config:
+class _Config:  # DELETE
     duplicate_locals_scheme: T.DuplicateLocalsScheme = 'override'
     # use_thread_pool: bool = False
 
@@ -33,7 +35,7 @@ class Signal:
         """
         return cls
     
-    def __init__(self):
+    def __init__(self, *_) -> None:
         self._funcs = {}
     
     def __bool__(self) -> bool:
@@ -47,24 +49,25 @@ class Signal:
         self.bind(func)
         return func
     
-    def emit(self, *_args, **_kwargs) -> None:
+    def emit(self, *_args, error_level: int = 1, **_kwargs) -> None:
+        """
+        error_level: see `_PropagationChain._error_level:comment`
+        """
         if not self._funcs: return
+
         # print(self._funcs, ':l')
-        with _propagation_chain.locking(self):
+        with _prop_chain.locking(self, error_level):
             f: T.Func
             for f in tuple(self._funcs.values()):
-                if _propagation_chain.check(f):
+                if _prop_chain.check(f):
                     try:
                         f(*_args, **_kwargs)
                     except Exception as e:
                         print(':e', e)
-                else:
-                    print(
-                        'function prevented because '
-                        'out of propagation chain', f
-                    )
+                # else:  # TODO: should we break here or use `config` to decide?
+                #     break
     
-    # DELETE: we don't want to use `name` param in future.
+    # DELETE: param `name` may be removed in future.
     def bind(self, func: T.Func, name: str = None) -> T.FuncId:
         id = name or get_func_id(func)
         if (
@@ -90,26 +93,36 @@ class Signal:
 
 class _PropagationChain:
     """
-    a chain to check and avoid infinite loop, which may be caused by mutual
+    a chain to check and avoid infinite loop, which may be caused by mutual -
     signal binding.
     """
     
-    _chain: t.Set[T.FuncId]
+    _chain: t.List[T.FuncId]
+    _error_level: int
+    #   0: no error print
+    #   1: brief error print
+    #   2: detailed error print
+    #   3: detailed error print and raise error
     _is_locked: bool
     _lock_owner: t.Optional[Signal]
     
-    def __init__(self):
-        self._chain = set()
+    def __init__(self) -> None:
+        self._chain = []
+        self._error_level = 0
         self._is_locked = False
         self._lock_owner = None
     
+    # @property
+    # def chain(self) -> t.List[T.FuncId]:
+    #     return self._chain
+
     @property
     def lock_owner(self) -> t.Optional[Signal]:
         return self._lock_owner
     
     @contextmanager
-    def locking(self, owner: Signal) -> t.Iterator[None]:
-        self.lock(owner)
+    def locking(self, owner: Signal, error_level: int = 1) -> t.Iterator[None]:
+        self.lock(owner, error_level)
         yield
         self.unlock(owner)
     
@@ -118,27 +131,63 @@ class _PropagationChain:
         check if function already triggered in this propagation chain.
         """
         if (id := get_func_id(func)) not in self._chain:
-            self._chain.add(id)
+            self._chain.append(id)
             return True
-        else:
-            return False
+        
+        def print_error_details() -> None:
+            chain = tuple(map(_pretty_id, self._chain))
+            if len(chain) == 1:
+                diagram = (
+                    '╭─▶ 1. {}'.format(chain[0]),
+                    '╰─x 2. {}'.format(chain[0]),
+                )
+            else:
+                diagram = (
+                    '╭─▶ 1. {}'.format(chain[0]),
+                    *(
+                        '│   {}. {}'.format(i, x) 
+                        for i, x in enumerate(chain[1:], 2)
+                    ),
+                    '╰─x {}. {}'.format(len(chain) + 1, chain[0]),
+                )
+
+            print(textwrap.dedent('''
+                signal prevented because of circular emissions:
+                    {}
+            ''').format(
+                textwrap.indent('\n'.join(diagram), '    ').lstrip()
+            ), ':p3v4s')
+
+        def _pretty_id(func_id: T.FuncId) -> str:
+            a, b, c = re.fullmatch(r'(.+)\((.+):(.+)\)', func_id).groups()
+            b = re.split(r'[/\\]', b)[-1]
+            return f'{a} ({b}:{c})'
+
+        if self._error_level == 1:
+            print('signal prevented because of circular emissions', ':p2vs')
+        elif self._error_level == 2:
+            print_error_details()
+        elif self._error_level == 3:
+            print_error_details()
+            raise RecursionError('circular signal emissions')
+        return False
     
-    def lock(self, owner: Signal) -> bool:
+    def lock(self, owner: Signal, error_level: int = 1) -> bool:
         if self._lock_owner:
             return False
+        # assert not self._chain
+        self._error_level = error_level
         self._is_locked = True
         self._lock_owner = owner
-        # assert not self._chain
-        # # self._chain.clear()
-        # print(f'locked by {owner}', ':pv')
         return True
     
     def unlock(self, controller: Signal) -> bool:
-        if self._lock_owner != controller:
+        if controller is not self._lock_owner:
             return False
+        self._chain.clear()
+        self._error_level = 0
         self._is_locked = False
         self._lock_owner = None
-        self._chain.clear()
         return True
 
 
@@ -155,10 +204,13 @@ def get_func_id(func: T.Func) -> T.FuncId:
     else:
         # https://stackoverflow.com/a/46479810
         if isinstance(func, partial):
-            # fix: `functools.partial` has no `__qualname__`.
-            return func.func.__qualname__
-        else:
-            return func.__qualname__
+            func = func.func
+        # # return func.__qualname__
+        return '{}({}:{})'.format(
+            func.__qualname__,
+            func.__code__.co_filename, 
+            func.__code__.co_firstlineno,
+        )
 
 
-_propagation_chain = _PropagationChain()
+_prop_chain = _PropagationChain()
