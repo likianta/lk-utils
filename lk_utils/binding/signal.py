@@ -21,8 +21,17 @@ class _Config:
 config = _Config()
 
 
-class _Signal:
+class Signal:
     _funcs: T.Funcs
+
+    def __class_getitem__(cls, *_: t.Any) -> t.Type['Signal']:
+        """
+        use square brackets to annotate a signal type.
+        https://stackoverflow.com/a/68982326
+        usage:
+            some_signal: Signal[int, str]
+        """
+        return cls
     
     def __init__(self):
         self._funcs = {}
@@ -79,18 +88,6 @@ class _Signal:
     clear = unbind_all
 
 
-class SignalFactory:
-    
-    def __getitem__(self, *types: t.Type) -> t.Type[_Signal]:
-        return _Signal
-    
-    def __call__(self, *types: t.Type) -> _Signal:
-        return _Signal()
-
-
-Signal = SignalFactory()
-
-
 class _PropagationChain:
     """
     a chain to check and avoid infinite loop, which may be caused by mutual
@@ -99,7 +96,7 @@ class _PropagationChain:
     
     _chain: t.Set[T.FuncId]
     _is_locked: bool
-    _lock_owner: t.Optional[_Signal]
+    _lock_owner: t.Optional[Signal]
     
     def __init__(self):
         self._chain = set()
@@ -107,11 +104,11 @@ class _PropagationChain:
         self._lock_owner = None
     
     @property
-    def lock_owner(self) -> t.Optional[_Signal]:
+    def lock_owner(self) -> t.Optional[Signal]:
         return self._lock_owner
     
     @contextmanager
-    def locking(self, owner: _Signal) -> None:
+    def locking(self, owner: Signal) -> t.Iterator[None]:
         self.lock(owner)
         yield
         self.unlock(owner)
@@ -126,7 +123,7 @@ class _PropagationChain:
         else:
             return False
     
-    def lock(self, owner: _Signal) -> bool:
+    def lock(self, owner: Signal) -> bool:
         if self._lock_owner:
             return False
         self._is_locked = True
@@ -136,7 +133,7 @@ class _PropagationChain:
         # print(f'locked by {owner}', ':pv')
         return True
     
-    def unlock(self, controller: _Signal) -> bool:
+    def unlock(self, controller: Signal) -> bool:
         if self._lock_owner != controller:
             return False
         self._is_locked = False
