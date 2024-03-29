@@ -11,9 +11,10 @@ def dedent(text: str, lstrip: bool = True, join_sep: str = None) -> str:
     """
     out = textwrap.dedent(text).rstrip()
     if join_sep:
-        if join_sep == '\\':
-            join_sep = '\\\\'  # escape for regular expression
-        out = re.sub(rf' +{join_sep} *\n', ' ', out)
+        if '\\' in join_sep:
+            # escape for regular expression
+            join_sep = join_sep.replace('\\', '\\\\')
+        out = re.sub(rf' +{join_sep} *\n *', ' ', out)
     return out.lstrip() if lstrip else out
 
 
