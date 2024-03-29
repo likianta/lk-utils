@@ -1,6 +1,6 @@
 if 1:
     import lk_logger
-    lk_logger.setup(quiet=True)
+    lk_logger.setup(quiet=True, show_funcname=False, show_varnames=True)
 
 from . import binding
 from . import common_typing as t
