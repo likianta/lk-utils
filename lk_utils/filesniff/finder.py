@@ -90,7 +90,7 @@ def _find_paths(
     recursive: bool = False,
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = None,
+    filter: t.Optional[T.PathFilter] = None,
     sort_by: T.SortBy = None,
 ) -> T.FinderResult:
     """
@@ -193,7 +193,7 @@ _default_filter = _DefaultFilter()
 def find_files(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -209,7 +209,7 @@ def find_files(
 def find_file_paths(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -228,7 +228,7 @@ def find_file_paths(
 def find_file_names(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -247,7 +247,7 @@ def find_file_names(
 def findall_files(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -263,7 +263,7 @@ def findall_files(
 def findall_file_paths(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -282,7 +282,7 @@ def findall_file_paths(
 def findall_file_names(
     dirpath: T.DirPath,
     suffix: T.Suffix = None,
-    filter: T.PathFilter = _default_filter.filter_file,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_file,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -304,7 +304,7 @@ def findall_file_names(
 def find_dirs(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -320,7 +320,7 @@ def find_dirs(
 def find_dir_paths(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -339,7 +339,7 @@ def find_dir_paths(
 def find_dir_names(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -358,7 +358,7 @@ def find_dir_names(
 def findall_dirs(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> T.FinderResult:
     return _find_paths(
@@ -374,7 +374,7 @@ def findall_dirs(
 def findall_dir_paths(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
@@ -393,7 +393,7 @@ def findall_dir_paths(
 def findall_dir_names(
     dirpath: T.DirPath,
     prefix: T.Prefix = None,
-    filter: T.PathFilter = _default_filter.filter_dir,
+    filter: t.Optional[T.PathFilter] = _default_filter.filter_dir,
     **kwargs,
 ) -> t.List[str]:
     return [
