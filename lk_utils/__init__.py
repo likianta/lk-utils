@@ -7,8 +7,8 @@ from . import common_typing as t
 from . import common_typing as typing
 from . import filesniff
 from . import filesniff as fs
-from . import read_and_write
-from . import read_and_write as rw
+from . import io
+from . import io as rw
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
@@ -38,10 +38,10 @@ from .filesniff import xpath as relpath  # backward compatible
 # from .importer import get_package
 # from .importer import load_module
 # from .importer import load_package
-from .read_and_write import dumps
-from .read_and_write import loads
-from .read_and_write import ropen
-from .read_and_write import wopen
+from .io import dump
+from .io import dumps  # backward compatible
+from .io import load
+from .io import loads  # backward compatible
 from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
@@ -49,4 +49,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.9.5'
+__version__ = '2.9.6'
