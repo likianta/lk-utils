@@ -86,7 +86,6 @@ def _find_paths(
     recursive: bool = False,
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
-    # filter: t.Optional[T.PathFilter] = None,
     sort_by: T.SortBy = None,
     enable_filter: bool = True,
 ) -> T.FinderResult:
@@ -97,10 +96,6 @@ def _find_paths(
             1. each item must be string start with '.' ('.jpg', '.txt', etc.)
             2. case insensitive.
             3. param type is str or tuple[str], cannot be list[str].
-        filter:
-            None: no filter (everything pass through)
-            callable:
-                return: True means matched, False means dropped.
     """
     dirpath = normpath(dirpath, force_abspath=True)
     filter = (
@@ -121,7 +116,7 @@ def _find_paths(
             for n in names:
                 p = f'{root}/{n}'
                 # noinspection PyArgumentList
-                if filter and filter(p, n, is_root=(root==dirpath)) is False:
+                if filter and filter(p, n, is_root=(root == dirpath)) is False:
                     continue
                 if prefix and not n.startswith(prefix):
                     continue
@@ -131,7 +126,7 @@ def _find_paths(
                 yield Path(
                     dir=root,
                     path=p,
-                    relpath=p[len(dirpath) + 1 :],
+                    relpath=p[len(dirpath) + 1:],
                     name=n,
                     type='dir' if path_type == PathType.DIR else 'file',  # noqa
                 )
