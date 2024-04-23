@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import contextmanager
 
 
 class E:
@@ -8,6 +9,7 @@ class E:
 
 
 class T:
+    ContextHolder = t.Iterator
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileType = t.Literal[
         'auto', 'binary', 'json', 'pickle', 'plain', 'toml', 'yaml'
@@ -121,3 +123,10 @@ def _detect_file_type(filename: str) -> T.FileType:
 # alias
 rd = read = loads = load
 wr = write = dumps = dump
+
+
+@contextmanager
+def writing_to(file: str, **kwargs) -> T.ContextHolder[list]:
+    data = []
+    yield data
+    dump(data, file, **kwargs)

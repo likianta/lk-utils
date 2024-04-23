@@ -6,11 +6,12 @@ if 1:
 
 if 2:
     import sys
+    import typing as _typing
     if sys.version_info[:2] < (3, 11):
         # fix the missing `Self` type in `typing` module
-        import typing as _typing
         setattr(_typing, 'Self', _typing.Any)
 
-if 3:
     if 'TextIO' not in globals():
-        from typing.io import *
+        from typing.io import *  # noqa
+    
+    setattr(_typing, 'ContextHolder', _typing.Iterator)
