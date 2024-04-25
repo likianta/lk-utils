@@ -12,7 +12,7 @@ class T:
     ContextHolder = t.Iterator
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileType = t.Literal[
-        'auto', 'binary', 'json', 'pickle', 'plain', 'toml', 'yaml'
+        'auto', 'binary', 'json', 'pickle', 'plain', 'table', 'toml', 'yaml'
     ]
 
 
@@ -36,20 +36,23 @@ def load(
             # if out.startswith(u'\ufeff'):
             #     out = out.encode('utf-8')[3:].decode('utf-8')
             return f.read()
-        if type == 'binary':
-            return f.read()
         if type == 'json':
             from json import load as jload
             return jload(f, **kwargs)
         if type == 'yaml':  # pip install pyyaml
             from yaml import safe_load as yload
             return yload(f)
-        if type == 'toml':  # pip install toml
-            from toml import load as tload  # noqa
-            return tload(f, **kwargs)
+        if type == 'table':
+            import csv
+            return list(csv.reader(f))
         if type == 'pickle':
             from pickle import load as pload
             return pload(f, **kwargs)  # noqa
+        if type == 'binary':
+            return f.read()
+        if type == 'toml':  # pip install toml
+            from toml import load as tload  # noqa
+            return tload(f, **kwargs)
     raise E.Unreachable
 
 
@@ -93,14 +96,18 @@ def dump(
                 **kwargs
             }
             ydump(data, f, **kwargs)
+        elif type == 'table':
+            # data is a list of lists.
+            import csv
+            csv.writer(f).writerows(data)
         elif type == 'pickle':
             from pickle import dump as pdump
             pdump(data, f, **kwargs)  # noqa
+        elif type == 'binary':
+            f.write(data)
         elif type == 'toml':
             from toml import dump as tdump  # noqa
             tdump(data, f, **kwargs)
-        elif type == 'binary':
-            f.write(data)
         else:
             raise E.Unreachable
 
@@ -112,6 +119,8 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'json'
     elif filename.endswith(('.yaml', '.yml')):  # pip install pyyaml
         return 'yaml'
+    elif filename.endswith(('.csv',)):
+        return 'table'
     elif filename.endswith(('.toml', '.tml')):  # pip install toml
         return 'toml'
     elif filename.endswith(('.pkl',)):
