@@ -27,7 +27,9 @@ def load(
     with open(
         file,
         mode='rb' if type in ('binary', 'pickle') else 'r',
-        encoding=kwargs.pop('encoding', 'utf-8'),
+        encoding=kwargs.pop(
+            'encoding', None if type in ('binary', 'pickle') else 'utf-8'
+        ),
     ) as f:
         if type == 'plain':
             # out = f.read()
@@ -69,6 +71,9 @@ def dump(
     with open(
         file,
         mode='wb' if type in ('binary', 'pickle') else 'w',
+        encoding=kwargs.pop(
+            'encoding', None if type in ('binary', 'pickle') else 'utf-8'
+        ),
     ) as f:
         if type == 'plain':
             if not isinstance(data, str):
