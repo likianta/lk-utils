@@ -20,8 +20,9 @@ def load(
     file: str,
     type: T.FileType = 'auto',
     **kwargs
-) -> t.Union[str, bytes, dict, list, t.Any]:
-    # TODO: add csv support
+):  # -> t.Union[str, bytes, dict, list, t.Any]
+    #   we don't annotate the return type because some IDE's type checking -
+    #   doesn't work correctly. (last found at pycharm v2024.01)
     if type == 'auto':
         type = _detect_file_type(file)
     with open(
@@ -65,7 +66,6 @@ def dump(
     ensure_line_feed: bool = True,
     **kwargs
 ) -> None:
-    # TODO: add csv support
     if type == 'auto':
         type = _detect_file_type(file)
     with open(
