@@ -23,6 +23,9 @@ def load(
 ):  # -> t.Union[str, bytes, dict, list, t.Any]
     #   we don't annotate the return type because some IDE's type checking -
     #   doesn't work correctly. (last found at pycharm v2024.01)
+    if x := kwargs.pop('ftyle', None):  # backward compatibility
+        assert type == 'auto'
+        type = x
     if type == 'auto':
         type = _detect_file_type(file)
     with open(
@@ -66,6 +69,9 @@ def dump(
     ensure_line_feed: bool = True,
     **kwargs
 ) -> None:
+    if x := kwargs.pop('ftyle', None):  # backward compatibility
+        assert type == 'auto'
+        type = x
     if type == 'auto':
         type = _detect_file_type(file)
     with open(
