@@ -80,6 +80,7 @@ def dump(
         encoding=kwargs.pop(
             'encoding', None if type in ('binary', 'pickle') else 'utf-8'
         ),
+        newline='' if type == 'table' else None,
     ) as f:
         if type == 'plain':
             if not isinstance(data, str):
