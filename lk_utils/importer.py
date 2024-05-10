@@ -1,11 +1,13 @@
 import importlib.util
 import sys
+from functools import partial
 from os.path import basename
 from os.path import exists
+from os.path import isdir
 from types import ModuleType
 
 
-def get_module(path: str, name: str = None) -> ModuleType:
+def _get_module(path: str, name: str = None) -> ModuleType:
     assert path.endswith('.py')
     if not name: name = basename(path)
     spec = importlib.util.spec_from_file_location(name, path)
@@ -15,23 +17,28 @@ def get_module(path: str, name: str = None) -> ModuleType:
     return module
 
 
-def get_package(path: str, name: str = None) -> ModuleType:
+def _get_package(path: str, name: str = None) -> ModuleType:
     """
     ref: https://stackoverflow.com/a/50395128
     """
     init_file = f'{path}/__init__.py'
     assert exists(init_file)
     if not name: name = basename(path)
-    return get_module(init_file, name)
+    return _get_module(init_file, name)
 
 
-def load_module(path: str, name: str = None) -> ModuleType:
+def load(
+    path: str,
+    name: str = None,
+    type: str = 'auto',  # 'auto', 'module', 'package'
+    sync_sys_modules: bool = True,
+) -> ModuleType:
     if not name: name = basename(path)
-    out = sys.modules[name] = get_module(path, name)
+    if type == 'auto': type = 'package' if isdir(path) else 'module'
+    out = _get_package(path) if type == 'package' else _get_module(path)
+    if sync_sys_modules: sys.modules[name] = out
     return out
 
 
-def load_package(path: str, name: str = None) -> ModuleType:
-    if not name: name = basename(path)
-    out = sys.modules[name] = get_package(path)
-    return out
+load_module = partial(load, type='module')
+load_package = partial(load, type='package')

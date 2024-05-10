@@ -7,6 +7,7 @@ from . import common_typing as t
 from . import common_typing as typing
 from . import filesniff
 from . import filesniff as fs
+from . import importer
 from . import io
 from . import io as rw
 from . import subproc
@@ -34,10 +35,6 @@ from .filesniff import make_links as mklinks
 from .filesniff import normpath
 from .filesniff import xpath
 from .filesniff import xpath as relpath  # backward compatible
-# from .importer import get_module
-# from .importer import get_package
-# from .importer import load_module
-# from .importer import load_package
 from .io import dump
 from .io import dumps  # backward compatible
 from .io import load
