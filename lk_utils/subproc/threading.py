@@ -10,6 +10,7 @@ from .. import common_typing as t
 class T:
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
+    Result = t.Any
     
     # ThreadBroker
     Target = t.TypeVar('Target', bound=t.Callable)
@@ -29,7 +30,7 @@ class ThreadBroker:
     _interruptible: bool
     _is_executed: bool
     _is_running: bool
-    _result: t.Any
+    _result: T.Result
     _target: T.Target
     _tasks: t.Deque[T.Task]
     _thread: Thread
@@ -45,7 +46,7 @@ class ThreadBroker:
         daemon: bool,
         interruptible: bool = False,
         start_now: bool = True,
-    ):
+    ) -> None:
         self._tasks = deque()
         self._tasks.append((target, args, kwargs, False))
         self._daemon = daemon
@@ -76,7 +77,7 @@ class ThreadBroker:
     #     return self._thread.is_alive()
     
     @property
-    def result(self) -> t.Any:
+    def result(self) -> T.Result:
         if self._result is ThreadBroker.Undefined:
             raise RuntimeError('The result is not ready yet.')
         return self._result
@@ -147,11 +148,13 @@ class ThreadBroker:
             self.mainloop()
         return self
     
-    def join(self, timeout: float = None) -> t.Any:
+    def join(self, timeout: float = None) -> T.Result:
         if not self._is_executed:
             raise Exception('thread is never started!')
+        if self.result:  # already joined
+            return self.result
         self._thread.join(timeout)
-        return self._result
+        return self.result
     
     def kill(self) -> bool:
         """

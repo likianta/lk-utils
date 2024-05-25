@@ -6,5 +6,5 @@ from .shutil import *
 from .traceback import LAUNCH_ROOT
 
 # for convenience
-from ..io import load
-from ..io import dump
+from ..io import load  # noqa
+from ..io import dump  # noqa

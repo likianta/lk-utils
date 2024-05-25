@@ -1,6 +1,6 @@
 if 1:
     import lk_logger
-    lk_logger.setup(quiet=True, show_funcname=False, show_varnames=True)
+    lk_logger.setup(quiet=True, show_funcname=False, show_varnames=False)
 
 from . import binding
 from . import common_typing as t
@@ -46,4 +46,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.10.0'
+__version__ = '2.10.1'
