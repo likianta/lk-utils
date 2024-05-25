@@ -2,10 +2,13 @@ import os
 import shutil
 from functools import partial
 from os.path import exists
+from textwrap import dedent
 
 from .finder import findall_dirs
-from .main import _IS_WINDOWS  # noqa
+from .main import IS_WINDOWS  # noqa
+from .main import xpath
 from .. import common_typing as t
+from ..subproc import run_cmd_args
 
 __all__ = [
     'clone_tree',
@@ -16,6 +19,7 @@ __all__ = [
     'make_file',
     'make_link',
     'make_links',
+    'make_shortcut',
     'move',
     'overwrite',
     'remove_file',
@@ -81,7 +85,7 @@ def make_link(src: str, dst: str, overwrite: bool = None) -> str:
         if _overwrite(dst, overwrite) is False:
             return dst
     
-    if _IS_WINDOWS:
+    if IS_WINDOWS:
         os.symlink(src, dst, target_is_directory=os.path.isdir(src))
     else:
         os.symlink(src, dst)
@@ -96,6 +100,51 @@ def make_links(
     for n in names or os.listdir(src):
         out.append(make_link(f'{src}/{n}', f'{dst}/{n}', overwrite))
     return out
+
+
+def make_shortcut(src: str, dst: str = None, overwrite: bool = None) -> None:
+    """
+    use batch script to create shortcut, no pywin32 required.
+    
+    params:
+        dst:
+            if not given, will create a shortcut in the same folder as `src`, -
+            with the same base name.
+            trick: use "{desktop}" to create a shortcut on the desktop.
+    
+    refs:
+        https://superuser.com/questions/455364/how-to-create-a-shortcut
+        -using-a-batch-script
+        https://www.blog.pythonlibrary.org/2010/01/23/using-python-to-create
+        -shortcuts/
+    """
+    if exists(dst):
+        if _overwrite(dst, overwrite) is False: return
+    if not IS_WINDOWS:
+        raise NotImplementedError
+    
+    assert os.path.exists(src) and not src.endswith('.lnk')
+    if not dst:
+        dst = os.path.splitext(os.path.basename(src))[0] + '.lnk'
+    else:
+        assert dst.endswith('.lnk')
+        if '{desktop}' in dst:
+            dst = dst.format(desktop=os.path.expanduser('~/Desktop'))
+    
+    vbs = xpath('./_temp_shortcut_generator.vbs')
+    with open(vbs, 'w') as f:
+        f.write(dedent('''
+            Set objWS = WScript.CreateObject("WScript.Shell")
+            lnkFile = "{file_o}"
+            Set objLink = objWS.CreateShortcut(lnkFile)
+            objLink.TargetPath = "{file_i}"
+            objLink.Save
+        ''').format(
+            file_i=src.replace('/', '\\'),
+            file_o=dst.replace('/', '\\'),
+        ))
+    run_cmd_args('cscript', '/nologo', vbs)
+    os.remove(vbs)
 
 
 def move(src: str, dst: str, overwrite: bool = None) -> None:

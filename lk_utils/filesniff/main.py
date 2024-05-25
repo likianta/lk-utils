@@ -32,8 +32,8 @@ __all__ = [
     'xpath',
 ]
 
+IS_WINDOWS = os.name == 'nt'
 exists = ospath.exists
-_IS_WINDOWS = os.name == 'nt'
 
 
 class T:
@@ -45,7 +45,7 @@ def normpath(path: T.Path, force_abspath: bool = False) -> T.Path:
         out = ospath.abspath(path)
     else:
         out = ospath.normpath(path)
-    if _IS_WINDOWS:
+    if IS_WINDOWS:
         out = out.replace('\\', '/')
     return out
 
