@@ -110,7 +110,7 @@ def make_shortcut(src: str, dst: str = None, overwrite: bool = None) -> None:
         dst:
             if not given, will create a shortcut in the same folder as `src`, -
             with the same base name.
-            trick: use "{desktop}" to create a shortcut on the desktop.
+            trick: use "<desktop>" to create a shortcut on the desktop.
     
     refs:
         https://superuser.com/questions/455364/how-to-create-a-shortcut
@@ -128,8 +128,8 @@ def make_shortcut(src: str, dst: str = None, overwrite: bool = None) -> None:
         dst = os.path.splitext(os.path.basename(src))[0] + '.lnk'
     else:
         assert dst.endswith('.lnk')
-        if '{desktop}' in dst:
-            dst = dst.format(desktop=os.path.expanduser('~/Desktop'))
+        if '<desktop>' in dst:
+            dst = dst.replace('<desktop>', os.path.expanduser('~/Desktop'))
     
     vbs = xpath('./_temp_shortcut_generator.vbs')
     with open(vbs, 'w') as f:
