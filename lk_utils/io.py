@@ -10,6 +10,7 @@ class E:
 
 class T:
     ContextHolder = t.Iterator
+    DataHolder = t.TypeVar('DataHolder', bound=t.Any)
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileType = t.Literal[
         'auto', 'binary', 'json', 'pickle', 'plain', 'table', 'toml', 'yaml'
@@ -147,7 +148,12 @@ wr = write = dumps = dump
 
 
 @contextmanager
-def writing_to(file: str, **kwargs) -> T.ContextHolder[list]:
-    data = []
-    yield data
-    dump(data, file, **kwargs)
+def writing_to(
+    file: str,
+    data_holder: T.DataHolder = None,
+    **kwargs
+) -> T.ContextHolder[T.DataHolder]:
+    if data_holder is None:
+        data_holder = []
+    yield data_holder
+    dump(data_holder, file, **kwargs)
