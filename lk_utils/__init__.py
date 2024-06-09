@@ -39,6 +39,8 @@ from .io import dump
 from .io import dumps  # backward compatible
 from .io import load
 from .io import loads  # backward compatible
+from .progress import spinner
+from .progress import track
 from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
@@ -46,4 +48,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.10.1'
+__version__ = '2.10.2'
