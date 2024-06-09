@@ -56,7 +56,7 @@ abspath = partial(normpath, force_abspath=True)
 # ------------------------------------------------------------------------------
 
 def parent_path(path: T.Path) -> T.DirPath:
-    return normpath(ospath.dirname(path))
+    return normpath(ospath.dirname(path.rstrip('/\\')))
 
 
 parent = parent_path  # alias
