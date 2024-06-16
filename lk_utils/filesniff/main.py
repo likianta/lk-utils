@@ -16,6 +16,7 @@ __all__ = [
     'exists',
     'filename',
     'filepath',
+    'filesize',
     'get_current_dir',
     'isdir',
     'isdirlike',
@@ -112,6 +113,21 @@ def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
         return ospath.basename(path)
     else:
         return ospath.splitext(ospath.basename(path))[0]
+
+
+def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
+    size = os.path.getsize(path)
+    if fmt is int:
+        return size
+    elif fmt is str:
+        for unit in ('B', 'KB', 'MB', 'GB'):
+            if size < 1024:
+                return f'{size:.2f}{unit}'
+            size /= 1024
+        else:
+            return f'{size:.2f}TB'
+    else:
+        raise Exception(fmt, path)
 
 
 basename = filename
