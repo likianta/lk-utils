@@ -34,6 +34,7 @@ from .filesniff import make_link as mklink
 from .filesniff import make_links as mklinks
 from .filesniff import normpath
 from .filesniff import xpath
+from .filesniff import xpath as p
 from .filesniff import xpath as relpath  # backward compatible
 from .io import dump
 from .io import dumps  # backward compatible
