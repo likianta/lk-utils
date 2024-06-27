@@ -105,7 +105,7 @@ def _find_paths(
     )
     
     def main() -> T.FinderResult:
-        for root, dirs, files in os.walk(dirpath):
+        for root, dirs, files in os.walk(dirpath, followlinks=True):
             root = normpath(root)
             
             if path_type == PathType.FILE:
