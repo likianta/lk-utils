@@ -5,11 +5,10 @@ if 1:
 from . import binding
 from . import common_typing as t
 from . import common_typing as typing
-from . import filesniff
 from . import filesniff as fs
 from . import importer
 from . import io
-from . import io as rw
+from . import io as rw  # alias
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
@@ -17,19 +16,11 @@ from .binding import Signal
 from .binding import bind_with
 from .binding import call_once
 from .filesniff import cd_current_dir
-from .filesniff import find_dir_names
-from .filesniff import find_dir_paths
 from .filesniff import find_dirs
-from .filesniff import find_file_names
-from .filesniff import find_file_paths
 from .filesniff import find_files
-from .filesniff import findall_dir_names
-from .filesniff import findall_dir_paths
 from .filesniff import findall_dirs
-from .filesniff import findall_file_names
-from .filesniff import findall_file_paths
 from .filesniff import findall_files
-from .filesniff import get_current_dir
+# from .filesniff import get_current_dir
 from .filesniff import make_link as mklink
 from .filesniff import make_links as mklinks
 from .filesniff import normpath
@@ -49,4 +40,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.10.2'
+__version__ = '2.10.3'
