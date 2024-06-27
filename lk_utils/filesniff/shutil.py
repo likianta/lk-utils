@@ -1,6 +1,5 @@
 import os
 import shutil
-from functools import partial
 from os.path import exists
 from textwrap import dedent
 
@@ -21,7 +20,7 @@ __all__ = [
     'make_links',
     'make_shortcut',
     'move',
-    'overwrite',
+    'remove',
     'remove_file',
     'remove_tree',
 ]
@@ -153,6 +152,16 @@ def move(src: str, dst: str, overwrite: bool = None) -> None:
     shutil.move(src, dst)
 
 
+def remove(dst: str) -> None:
+    if exists(dst):
+        if os.path.isfile(dst):
+            os.remove(dst)
+        elif os.path.islink(dst):
+            os.unlink(dst)
+        else:
+            shutil.rmtree(dst)
+
+
 def remove_file(dst: str) -> None:
     if exists(dst):
         os.remove(dst)
@@ -185,15 +194,7 @@ def _overwrite(path: str, scheme: t.Union[None, bool]) -> bool:
     if scheme is None:
         return False
     elif scheme is True:
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.islink(path):
-            os.unlink(path)
-        else:
-            shutil.rmtree(path)
+        remove(path)
         return True
     else:  # raise error
         raise FileExistsError(path)
-
-
-overwrite = partial(_overwrite, scheme=True)
