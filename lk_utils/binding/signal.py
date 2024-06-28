@@ -1,31 +1,36 @@
-import re
-import textwrap
 import typing as t
 from contextlib import contextmanager
 from functools import partial
+from os.path import basename
+from traceback import extract_stack
 from types import FunctionType
 
 
 class T:
+    CircularSignalErrorScheme = t.Literal['ignore', 'prompt', 'raise']
     DuplicateLocalsScheme = t.Literal['exclusive', 'ignore', 'override']
     Func = t.Union[FunctionType, t.Callable]
-    # Func = FunctionType
-    # Func = t.Callable
     FuncId = str
     Funcs = t.Dict[FuncId, Func]
 
 
-class _Config:  # DELETE
+class _Config:
+    circular_signal_error: T.CircularSignalErrorScheme = 'prompt'
     duplicate_locals_scheme: T.DuplicateLocalsScheme = 'override'
     # use_thread_pool: bool = False
+
+
+class _StopSignalEmission(Exception):
+    pass
 
 
 config = _Config()
 
 
 class Signal:
+    id: t.Tuple[str, int, str]
     _funcs: T.Funcs
-
+    
     def __class_getitem__(cls, *_: t.Any) -> t.Type['Signal']:
         """
         use square brackets to annotate a signal type.
@@ -36,36 +41,26 @@ class Signal:
         return cls
     
     def __init__(self, *_) -> None:
+        stack = extract_stack(limit=2)[0]
+        # self._id = 'Signal at {}:{} ("{}")'.format(
+        #     basename(stack.filename), stack.lineno, stack.line
+        # )
+        self.id = (stack.filename, stack.lineno, stack.line)
         self._funcs = {}
     
     def __bool__(self) -> bool:
         return bool(self._funcs)
-    
-    def __len__(self) -> int:
-        return len(self._funcs)
     
     # decorator
     def __call__(self, func: T.Func) -> T.Func:
         self.bind(func)
         return func
     
-    def emit(self, *_args, error_level: int = 1, **_kwargs) -> None:
-        """
-        error_level: see `_PropagationChain._error_level:comment`
-        """
-        if not self._funcs: return
-
-        # print(self._funcs, ':l')
-        with _prop_chain.locking(self, error_level):
-            f: T.Func
-            for f in tuple(self._funcs.values()):
-                if _prop_chain.check(f):
-                    try:
-                        f(*_args, **_kwargs)
-                    except Exception as e:
-                        print(':e', e)
-                # else:  # TODO: should we break here or use `config` to decide?
-                #     break
+    def __len__(self) -> int:
+        return len(self._funcs)
+    
+    def __str__(self) -> str:
+        return '<Signal object at {}:{}>'.format(self.id[0], self.id[1])
     
     # DELETE: param `name` may be removed in future.
     def bind(self, func: T.Func, name: str = None) -> T.FuncId:
@@ -77,6 +72,28 @@ class Signal:
             return id
         self._funcs[id] = func
         return id
+    
+    def emit(self, *args, **kwargs) -> None:
+        if not self._funcs: return
+        # print(self._funcs, ':l')
+        try:
+            with _prop_chain.locking(self):
+                f: T.Func
+                for f in tuple(self._funcs.values()):
+                    try:
+                        f(*args, **kwargs)
+                    except Exception as e:
+                        print(':e', e)
+        except _StopSignalEmission:
+            if config.circular_signal_error == 'prompt':
+                print(
+                    'signal is prevented because of '
+                    'circular emissions', ':p2vs'
+                )
+            elif config.circular_signal_error == 'raise':
+                raise _StopSignalEmission(
+                    '\n' + _prop_chain.describe_call_chain()
+                )
     
     def unbind(self, func_or_id: t.Union[T.Func, T.FuncId]) -> None:
         id = (
@@ -96,99 +113,70 @@ class _PropagationChain:
     a chain to check and avoid infinite loop, which may be caused by mutual -
     signal binding.
     """
-    
-    _chain: t.List[T.FuncId]
-    _error_level: int
-    #   0: no error print
-    #   1: brief error print
-    #   2: detailed error print
-    #   3: detailed error print and raise error
-    _is_locked: bool
-    _lock_owner: t.Optional[Signal]
+    _chain: t.List[Signal]
     
     def __init__(self) -> None:
         self._chain = []
-        self._error_level = 0
-        self._is_locked = False
-        self._lock_owner = None
     
     # @property
     # def chain(self) -> t.List[T.FuncId]:
     #     return self._chain
-
+    
+    @property
+    def is_locked(self) -> bool:
+        return bool(self._chain)
+    
     @property
     def lock_owner(self) -> t.Optional[Signal]:
-        return self._lock_owner
+        """ return current owner of the lock. """
+        return self._chain[0] if self._chain else None
     
     @contextmanager
-    def locking(self, owner: Signal, error_level: int = 1) -> t.Iterator[None]:
-        self.lock(owner, error_level)
+    def locking(self, owner: Signal) -> t.Iterator[None]:
+        self._lock(owner)
         yield
-        self.unlock(owner)
+        self._unlock(owner)
     
-    def check(self, func: T.Func) -> bool:
-        """
-        check if function already triggered in this propagation chain.
-        """
-        if (id := get_func_id(func)) not in self._chain:
-            self._chain.append(id)
-            return True
-        
-        def print_error_details() -> None:
-            chain = tuple(map(_pretty_id, self._chain))
-            if len(chain) == 1:
-                diagram = (
-                    '╭─▶ 1. {}'.format(chain[0]),
-                    '╰─x 2. {}'.format(chain[0]),
-                )
+    def _lock(self, signal: Signal) -> bool:
+        if self._chain:
+            if self._chain[0] is signal:
+                raise _StopSignalEmission
             else:
-                diagram = (
-                    '╭─▶ 1. {}'.format(chain[0]),
-                    *(
-                        '│   {}. {}'.format(i, x) 
-                        for i, x in enumerate(chain[1:], 2)
-                    ),
-                    '╰─x {}. {}'.format(len(chain) + 1, chain[0]),
-                )
-
-            print(textwrap.dedent('''
-                signal prevented because of circular emissions:
-                    {}
-            ''').format(
-                textwrap.indent('\n'.join(diagram), '    ').lstrip()
-            ), ':p3v4s')
-
-        def _pretty_id(func_id: T.FuncId) -> str:
-            a, b, c = re.fullmatch(r'(.+)\((.+):(.+)\)', func_id).groups()
-            b = re.split(r'[/\\]', b)[-1]
-            return f'{a} ({b}:{c})'
-
-        if self._error_level == 1:
-            print('signal prevented because of circular emissions', ':p2vs')
-        elif self._error_level == 2:
-            print_error_details()
-        elif self._error_level == 3:
-            print_error_details()
-            raise RecursionError('circular signal emissions')
-        return False
-    
-    def lock(self, owner: Signal, error_level: int = 1) -> bool:
-        if self._lock_owner:
+                self._chain.append(signal)
             return False
         # assert not self._chain
-        self._error_level = error_level
-        self._is_locked = True
-        self._lock_owner = owner
+        self._chain.append(signal)
         return True
     
-    def unlock(self, controller: Signal) -> bool:
-        if controller is not self._lock_owner:
+    def _unlock(self, signal: Signal) -> bool:
+        # assert self._chain
+        if signal is not self._chain[0]:
             return False
         self._chain.clear()
-        self._error_level = 0
-        self._is_locked = False
-        self._lock_owner = None
         return True
+    
+    def describe_call_chain(self) -> str:
+        # chain = tuple(map(str, self._chain))
+        chain = tuple(
+            'Signal object at "{}:{}" ({})'.format(
+                basename(x.id[0]), x.id[1], x.id[2]
+            ) for x in self._chain
+        )
+        if len(chain) == 1:
+            diagram = (
+                '╭─▶ 1. {}'.format(chain[0]),
+                '╰─x 2. {}'.format(chain[0]),
+            )
+        else:
+            diagram = (
+                '╭─▶ 1. {}'.format(chain[0]),
+                *(
+                    '│   {}. {}'.format(i, x)
+                    for i, x in enumerate(chain[1:], 2)
+                ),
+                '╰─x {}. {}'.format(len(chain) + 1, chain[0]),
+            )
+        return '\n'.join(diagram)
 
 
 # def get_func_args_count(func: FunctionType) -> int:
@@ -208,7 +196,7 @@ def get_func_id(func: T.Func) -> T.FuncId:
         # # return func.__qualname__
         return '{}({}:{})'.format(
             func.__qualname__,
-            func.__code__.co_filename, 
+            func.__code__.co_filename,
             func.__code__.co_firstlineno,
         )
 

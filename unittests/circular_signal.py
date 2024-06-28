@@ -1,21 +1,44 @@
-from lk_utils import Signal
+from argsense import cli
 
-a = Signal(str)
-b = Signal(str)
-
-
-@a
-def _(msg: str) -> None:
-    print("msg from a", msg)
-    b.emit("hello from b")
+from lk_utils.binding import Signal
+from lk_utils.binding import config
 
 
-@b
-def _(msg: str) -> None:
-    print("msg from b", msg)
-    a.emit("hello from a")
+@cli.cmd()
+def main(error_level: int = 1) -> None:
+    match error_level:
+        case 0:
+            config.circular_signal_error = 'ignore'
+        case 1:
+            config.circular_signal_error = 'prompt'
+        case 2:
+            config.circular_signal_error = 'raise'
+    
+    width_changed = Signal()
+    height_changed = Signal()
+    
+    width = 0
+    height = 0
+    
+    def increse_width() -> None:
+        nonlocal width
+        width += 1
+        width_changed.emit()
+    
+    def increse_height() -> None:
+        nonlocal height
+        height += 1
+        height_changed.emit()
+    
+    # make a circular signal chain
+    width_changed.bind(increse_height)
+    height_changed.bind(increse_width)
+    
+    increse_width()
 
 
-a.emit("hello world I", error_level=1)
-a.emit("hello world II", error_level=2)
-a.emit("hello world III", error_level=3)
+if __name__ == '__main__':
+    # pox unittests/circular_signal.py 0
+    # pox unittests/circular_signal.py 1
+    # pox unittests/circular_signal.py 2
+    cli.run(main)

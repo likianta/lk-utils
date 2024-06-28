@@ -55,7 +55,7 @@ class TimeIt:
         # get source line of the caller
         # ref: https://stackoverflow.com/a/72817601
         stack = traceback.extract_stack(limit=2)
-        line = stack[-2].line.lstrip()
+        line = stack[0].line.lstrip()
         if line.startswith('@'):
             return partial(self._wrap_func_with_timeit, label=label)
         elif line.startswith('with '):
