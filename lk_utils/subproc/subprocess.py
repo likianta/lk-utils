@@ -1,3 +1,4 @@
+import re
 import shlex
 import subprocess as sp
 
@@ -23,9 +24,10 @@ __all__ = [
     'run_command_line',
 ]
 
-
 # class SubprocessError(Exception):
 #     pass
+
+_ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
@@ -69,6 +71,7 @@ def run_command_args(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
+    remove_ansi_code: bool = True,
     _refmt_args: bool = True,
 ) -> t.Union[str, sp.Popen, None]:
     """
@@ -76,6 +79,10 @@ def run_command_args(
     -command-output-and-show-it-in-terminal-at-realtime
     
     params:
+        remove_ansi_code:
+            https://stackoverflow.com/questions/14693701
+            https://stackoverflow.com/questions/4324790
+            https://stackoverflow.com/questions/17480656
         _refmt_args: set to False is faster. this is for internal use.
     
     returns:
@@ -89,6 +96,10 @@ def run_command_args(
     
     memo:
         `sp.run` is blocking, `sp.Popen` is non-blocking.
+    
+    fix text color lost when using rich library:
+        https://github.com/Textualize/rich/issues/2622
+        https://rich.readthedocs.io/en/stable/console.html#terminal-detection
     """
     if _refmt_args:
         args = compose_command(*args, filter=filter)
@@ -105,21 +116,26 @@ def run_command_args(
         """
         stdout = ''
         for line in process.stdout:
-            # note: the line contains line break.
             if verbose:
-                # FIXME: how to catch '\r'?
+                # FIXME: the 'end=\r' doesn't work as expected.
                 bprint(line, end='')
             if not ignore_return:
-                stdout += line
+                if remove_ansi_code:
+                    stdout += _ansi_escape.sub('', line)
+                else:
+                    stdout += line
         stderr = ''
         for line in process.stderr:
             if verbose:
                 bprint(line, end='')
             if not ignore_return:
-                stderr += line
+                if remove_ansi_code:
+                    stdout += _ansi_escape.sub('', line)
+                else:
+                    stdout += line
         return stdout, stderr
     
-    def show_error() -> None:
+    def show_error(stdout: str, stderr: str) -> None:
         if verbose:  # we have printed the stdout, so do nothing.
             pass
         else:  # better to dump the stdout message to console.
@@ -155,10 +171,12 @@ def run_command_args(
     
     with sp.Popen(
         args,
+        stdout=sp.PIPE,
+        stderr=sp.PIPE,
+        # stdout=sys.stdout,
+        # stderr=sys.stderr,
         cwd=cwd,
         shell=shell,
-        stderr=sp.PIPE,
-        stdout=sp.PIPE,
         text=True,
     ) as process:
         if blocking:
@@ -167,7 +185,7 @@ def run_command_args(
                 if ignore_error:
                     return stderr
                 else:
-                    show_error()
+                    show_error(stdout, stderr)
                     sys.exit(retcode)
             else:
                 assert not stderr
