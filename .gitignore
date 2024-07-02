@@ -2,5 +2,6 @@
 /.idea/
 /deleted/
 /dist/
+/lib/
 __pycache__/
 .DS_Store

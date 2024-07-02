@@ -1,3 +1,4 @@
+import os
 import re
 import shlex
 import subprocess as sp
@@ -27,7 +28,8 @@ __all__ = [
 # class SubprocessError(Exception):
 #     pass
 
-_ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+_ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+_SUBPROC_SCHEME = os.getenv('LK_SUBPROCESS_SCHEME', 'default')
 
 
 def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
@@ -71,7 +73,7 @@ def run_command_args(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
-    remove_ansi_code: bool = True,
+    subprocess_scheme: str = _SUBPROC_SCHEME,
     _refmt_args: bool = True,
 ) -> t.Union[str, sp.Popen, None]:
     """
@@ -79,10 +81,22 @@ def run_command_args(
     -command-output-and-show-it-in-terminal-at-realtime
     
     params:
-        remove_ansi_code:
-            https://stackoverflow.com/questions/14693701
-            https://stackoverflow.com/questions/4324790
-            https://stackoverflow.com/questions/17480656
+        subprocess_scheme:
+            'default':
+                the most stable implementation. but lacks of:
+                    - the progress bar which uses `print(..., end='\r') will
+                        result into multiple lines.
+                    - text lost color effect when using `rich` library.
+            'progress_enhanced':
+                an experimental scheme to resolve progress bar issue.
+            'rich_colored_text':
+                an experimental scheme to resolve text color lost issue. it may
+                affect returned result.
+            'rich_and_progress':
+                apply both 'progress_enhanced' and 'rich_colored_text'.
+            'pty':
+                use pseudo-terminal to run the command. the cons are it changes
+                your terminal title and may flicker the window.
         _refmt_args: set to False is faster. this is for internal use.
     
     returns:
@@ -108,12 +122,33 @@ def run_command_args(
     if verbose:
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
-    def communicate(ignore_return: bool = False) -> t.Tuple[str, str]:
+    def communicate0(ignore_return: bool = False) -> t.Tuple[str, str]:
         """
         returns:
             if `ignore_return` is True, returns ('', '');
             else returns (stdout, stderr).
         """
+        stdout = ''
+        for line in process.stdout:
+            if verbose:
+                bprint(line, end='')
+            if not ignore_return:
+                stdout += line
+        stderr = ''
+        for line in process.stderr:
+            if verbose:
+                bprint(line, end='')
+            if not ignore_return:
+                stderr += line
+        return stdout, stderr
+    
+    def communicate1(
+        remove_ansi_code: bool = True,
+        #   https://stackoverflow.com/questions/14693701
+        #   https://stackoverflow.com/questions/4324790
+        #   https://stackoverflow.com/questions/17480656
+        ignore_return: bool = False
+    ) -> t.Tuple[str, str]:
         
         def readlines(source: t.IO) -> t.Iterator[str]:
             """
@@ -131,13 +166,6 @@ def run_command_args(
                 else:
                     break
             assert not temp
-            
-        # def readlines2(source: t.IO) -> t.Iterator[str]:
-        #     while True:
-        #         if x := source.read(10):
-        #             yield x.decode()
-        #         else:
-        #             break
         
         stdout = ''
         for line in readlines(process.stdout):
@@ -145,7 +173,7 @@ def run_command_args(
                 bprint(line, end='')
             if not ignore_return:
                 if remove_ansi_code:
-                    stdout += _ansi_escape.sub('', line)
+                    stdout += _ANSI_ESCAPE.sub('', line)
                 else:
                     stdout += line
         
@@ -155,7 +183,7 @@ def run_command_args(
                 bprint(line, end='')
             if not ignore_return:
                 if remove_ansi_code:
-                    stderr += _ansi_escape.sub('', line)
+                    stderr += _ANSI_ESCAPE.sub('', line)
                 else:
                     stderr += line
         
@@ -195,32 +223,80 @@ def run_command_args(
             ':v4'
         )
     
-    with sp.Popen(
-        args,
-        stdout=sp.PIPE,
-        stderr=sp.PIPE,
-        cwd=cwd,
-        shell=shell,
-        # text=True,
-    ) as process:
-        if blocking:
-            stdout, stderr = communicate(ignore_return)
-            if retcode := process.wait():
-                if ignore_error:
-                    return stderr
+    if subprocess_scheme == 'default':
+        with sp.Popen(
+            args,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+            cwd=cwd,
+            shell=shell,
+            text=True,
+        ) as process:
+            if blocking:
+                stdout, stderr = communicate0(ignore_return)
+                if retcode := process.wait():
+                    if ignore_error:
+                        return stderr
+                    else:
+                        show_error(stdout, stderr)
+                        sys.exit(retcode)
                 else:
-                    show_error(stdout, stderr)
-                    sys.exit(retcode)
+                    assert not stderr
+                    return stdout
             else:
-                assert not stderr
-                return stdout
-        else:
-            if verbose:
-                run_new_thread(communicate, kwargs={'ignore_return': True})
-            if ignore_return:
-                return None
+                if verbose:
+                    run_new_thread(communicate0, args=(True,))
+                if ignore_return:
+                    return None
+                else:
+                    return process
+    elif subprocess_scheme in (
+        'progress_enhanced',
+        'rich_colored_text',
+        'rich_and_progress',
+    ):
+        with sp.Popen(
+            args,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+            cwd=cwd,
+            shell=shell,
+            text=False,
+        ) as process:
+            if blocking:
+                stdout, stderr = communicate1(ignore_return=ignore_return)
+                if retcode := process.wait():
+                    if ignore_error:
+                        return stderr
+                    else:
+                        show_error(stdout, stderr)
+                        sys.exit(retcode)
+                else:
+                    assert not stderr
+                    return stdout
             else:
-                return process
+                if verbose:
+                    run_new_thread(communicate1, args=(False, True,))
+                if ignore_return:
+                    return None
+                else:
+                    return process
+    elif subprocess_scheme == 'pty':  # TODO
+        # if sys.platform == 'win32':
+        #     # pip install pywinpty
+        #     # https://github.com/andfoy/pywinpty
+        #     import winpty as pty
+        # else:
+        #     import pty
+        # p = pty.PtyProcess.spawn(
+        #     args, cwd=cwd, dimensions=(40, 100)
+        # )
+        # while p.isalive():
+        #     line = p.readline()
+        #     bprint(line)
+        raise NotImplementedError
+    else:
+        raise Exception(subprocess_scheme)
 
 
 def run_command_line(
