@@ -127,36 +127,35 @@ def run_command_args(
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
         ignore_return: bool = False
-    ) -> t.Tuple[str, str]:
-        """
-        returns:
-            if `ignore_return` is True, returns ('', '');
-            else returns (stdout, stderr).
-        """
+    ) -> t.Optional[str]:
         
         def readlines(source: t.IO) -> t.Iterator[str]:
-            a: bytes = b''
-            b: bytes
-            temp = b''
+            last: bytes = b''
+            curr: bytes
+            temp: bytes = b''
             while True:
-                if b := source.read(1):
-                    if b == b'\n':
-                        temp += b
-                        yield temp.decode()
-                        temp = b''
-                    elif a == b'\r':
-                        yield temp.decode()
-                        temp = b
+                try:
+                    if curr := source.read(1):
+                        if curr == b'\n':
+                            temp += curr
+                            yield temp.decode()
+                            temp = b''
+                        elif last == b'\r':
+                            yield temp.decode()
+                            temp = curr
+                        else:
+                            temp += curr
+                        last = curr
                     else:
-                        temp += b
-                    a = b
-                else:
+                        break
+                except Exception as e:
+                    print(':e', e)
                     break
-            if a == b'\r':
+            if last == b'\r':
                 # assert temp
                 yield (temp + b'\n').decode()
             else:
-                assert not temp
+                assert not temp, temp
         
         stdout = ''
         for line in readlines(process.stdout):
@@ -167,20 +166,10 @@ def run_command_args(
                     stdout += _ANSI_ESCAPE.sub('', line)
                 else:
                     stdout += line
-        
-        stderr = ''
-        for line, end in readlines(process.stderr):
-            if verbose:
-                bprint(line, end='')
-            if not ignore_return:
-                if remove_ansi_code:
-                    stderr += _ANSI_ESCAPE.sub('', line)
-                else:
-                    stderr += line
-        
-        return stdout, stderr
+        # if ignore_return: assert stdout == ''
+        return None if ignore_return else stdout.rstrip()  # strip '\r\n'
     
-    def show_error(stdout: str, stderr: str) -> None:
+    def show_error(stdout: str) -> None:
         if verbose:  # we have printed the stdout, so do nothing.
             pass
         else:  # better to dump the stdout message to console.
@@ -196,7 +185,6 @@ def run_command_args(
                     {}
                 each element is:
                     {}
-                additional error info from stderr: {}
                 ''',
                 lstrip=False,
             ).format(
@@ -209,7 +197,6 @@ def run_command_args(
                     ),
                     8,
                 ),
-                '\n' + indent(stderr) if stderr else '(none)'
             ),
             ':v4'
         )
@@ -230,35 +217,39 @@ def run_command_args(
             bprint(line)
             ...
     '''
-    with sp.Popen(
+    
+    # note: do not use `with sp.Popen(...) as process` statement, the child
+    # process may exit before communicating, which raises 'ValueError: read of
+    # closed file' or 'invalid arguments' error.
+    process = sp.Popen(
         args,
         stdout=sp.PIPE,
-        stderr=sp.PIPE,
+        stderr=sp.STDOUT,
         cwd=cwd,
         shell=shell,
         # set `text` to False. since `text` will translate all types of newline
         # chars ('\n', '\r', '\r\n') to '\n', which is not convenient for
         # printing progress bar.
         text=False,
-    ) as process:
-        if blocking:
-            stdout, stderr = communicate(ignore_return=ignore_return)
-            if retcode := process.wait():
-                if ignore_error:
-                    return stderr
-                else:
-                    show_error(stdout, stderr)
-                    sys.exit(retcode)
+    )
+    
+    if blocking:
+        result = communicate(ignore_return=ignore_return)
+        if retcode := process.wait():
+            if ignore_error:
+                return result
             else:
-                assert not stderr
-                return stdout
+                show_error(result)
+                sys.exit(retcode)
         else:
-            if verbose:
-                run_new_thread(communicate, args=(False, True,))
-            if ignore_return:
-                return None
-            else:
-                return process
+            return result
+    else:
+        if verbose:
+            run_new_thread(communicate, args=(False, True,))
+        if ignore_return:
+            return None
+        else:
+            return process
 
 
 def run_command_line(
