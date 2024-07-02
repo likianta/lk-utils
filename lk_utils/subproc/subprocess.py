@@ -2,9 +2,9 @@ import shlex
 import subprocess as sp
 
 import sys
-from lk_logger import bprint
 from rich.text import Text
 
+from lk_logger import bprint
 from .threading import run_new_thread
 from .. import common_typing as t
 from ..textwrap import indent
@@ -97,100 +97,88 @@ def run_command_args(
     if verbose:
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
-    if blocking:
-        try:
-            return sp.run(
-                args,
-                capture_output=verbose,
-                check=not ignore_error,
-                cwd=cwd,
-                shell=shell,
-                stderr=sp.PIPE,
-                stdout=sp.PIPE,
-                text=True,
-            ).stdout
-        except sp.CalledProcessError as e:
-            if ignore_error:
-                return e.stderr
-            else:
-                if e.stdout:
-                    print(
-                        ':s1r',
-                        '[red dim]original output from subprocess:[/]'
-                    )
-                    print(
-                        ':s1r1',
-                        Text.from_ansi(indent(e.stdout), style='red dim')
-                    )
-                print(':dv4s', 'subprocess error')
-                print(
-                    reindent(
-                        '''
-                        error happened with exit code {}.
-                        the origin run command is:
-                            {}
-                        each element is:
-                            {}
-                        subprocess stderr: {}
-                        ''',
-                        lstrip=False,
-                    ).format(
-                        e.returncode,
-                        ' '.join(args),
-                        join(
-                            (
-                                '{:<2}  {}'.format(i, x)
-                                for i, x in enumerate(args, 1)
-                            ),
-                            8,
-                        ),
-                        '\n' + indent(e.stderr) if e.stderr else '(no data)'
+    def communicate(ignore_return: bool = False) -> t.Tuple[str, str]:
+        """
+        returns:
+            if `ignore_return` is True, returns ('', '');
+            else returns (stdout, stderr).
+        """
+        stdout = ''
+        for line in process.stdout:
+            # note: the line contains line break.
+            if verbose:
+                # FIXME: how to catch '\r'?
+                bprint(line, end='')
+            if not ignore_return:
+                stdout += line
+        stderr = ''
+        for line in process.stderr:
+            if verbose:
+                bprint(line, end='')
+            if not ignore_return:
+                stderr += line
+        return stdout, stderr
+    
+    def show_error() -> None:
+        if verbose:  # we have printed the stdout, so do nothing.
+            pass
+        else:  # better to dump the stdout message to console.
+            if stdout:
+                print(':s1r', '[red dim]original output from subprocess:[/]')
+                print(':s1r1', Text.from_ansi(indent(stdout), style='red dim'))
+            print(':dv4s', 'subprocess error')
+        print(
+            reindent(
+                '''
+                error happened with exit code {}.
+                the origin run command is:
+                    {}
+                each element is:
+                    {}
+                subprocess stderr: {}
+                ''',
+                lstrip=False,
+            ).format(
+                retcode,
+                ' '.join(args),
+                join(
+                    (
+                        '{:<2}  {}'.format(i, x)
+                        for i, x in enumerate(args, 1)
                     ),
-                    ':v4'
-                )
-                sys.exit(e.returncode)
-                
-                # raise SubprocessError(reindent(
-                #     '''
-                #     error happened with exit code {}.
-                #     the origin run command is:
-                #         {}
-                #     each element is:
-                #         {}
-                #     subprocess response: {}
-                #     '''.format(
-                #         e.returncode,
-                #         ' '.join(args),
-                #         join(
-                #             (
-                #                 '{:<2}  {}'.format(i, x)
-                #                 for i, x in enumerate(args, 1)
-                #             ),
-                #             24,
-                #         ),
-                #         '\n' + indent(e.stderr or e.stdout, '    ')
-                #         if (e.stderr or e.stdout) else '(no data)'
-                #     ),
-                #     lstrip=False,
-                # ))
+                    8,
+                ),
+                '\n' + indent(stderr) if stderr else '(no data)'
+            ),
+            ':v4'
+        )
     
-    proc = sp.Popen(
-        args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell, cwd=cwd
-    )
-    
-    def communicate() -> t.Iterator[t.Tuple[str, int]]:
-        for line in proc.stdout:
+    with sp.Popen(
+        args,
+        cwd=cwd,
+        shell=shell,
+        stderr=sp.PIPE,
+        stdout=sp.PIPE,
+        text=True,
+    ) as process:
+        if blocking:
+            stdout, stderr = communicate(ignore_return)
+            if retcode := process.wait():
+                if ignore_error:
+                    return stderr
+                else:
+                    show_error()
+                    sys.exit(retcode)
+            else:
+                assert not stderr
+                return stdout
+        else:
             if verbose:
-                bprint(line)
-            yield line, 0
-        for line in proc.stderr:
-            if verbose:
-                bprint(line)
-            yield line, 1
-    
-    if verbose:
-        run_new_thread(lambda: [_ for _ in communicate()])
-    return None if ignore_return else proc
+                run_new_thread(communicate, kwargs={'ignore_return': True})
+            if ignore_return:
+                return None
+            else:
+                return process
 
 
 def run_command_line(
