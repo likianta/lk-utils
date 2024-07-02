@@ -7,6 +7,7 @@ from time import sleep
 
 import lk_logger
 from lk_utils import subproc as sp
+from lk_utils import track
 
 pyexe = sys.executable
 
@@ -86,7 +87,6 @@ def stdout_to_console(_user: bool = True) -> None:
         _rerun_in_subproc(verbose=True)
     else:
         print('hello world')
-        # FIXME: the color has no effect in subprocess.
         print('[bold cyan]hello world with colored effect[/] '
               '[dim](can you see the color?)[/]', ':r')
 
@@ -100,6 +100,10 @@ def show_progress(_user: bool = True) -> None:
             # FIXME: cannot catch '\r' in subprocess.
             print('update progress {:.2%}'.format((i + 1) / 10), end='\r')
             sleep(100e-3)
+        print('progress done', ':t')
+        
+        for _ in track(range(100), 'working...'):
+            sleep(20e-3)
         print('progress done', ':t')
 
 

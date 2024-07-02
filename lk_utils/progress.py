@@ -1,16 +1,23 @@
 """
 a wrapper for `rich.progress`.
 """
+import typing as t
 from contextlib import contextmanager
-from typing import Iterator
 
 import rich.progress
 
-track = rich.progress.track
+Item = t.TypeVar('Item', bound=t.Any)
+
+
+def track(
+    sequence: t.Union[t.Sequence[Item], t.Iterable[Item], t.Iterator[Item]],
+    description: str = 'working...'
+) -> t.Iterator[Item]:
+    yield from rich.progress.track(sequence, description)
 
 
 @contextmanager
-def spinner(desc: str = 'working...') -> Iterator:
+def spinner(desc: str = 'working...') -> t.Iterator:
     # fix showing time elapsed for indeterminate progress
     # https://github.com/Textualize/rich/issues/1054
     cols = rich.progress.Progress.get_default_columns()

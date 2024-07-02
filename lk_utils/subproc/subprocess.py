@@ -114,25 +114,51 @@ def run_command_args(
             if `ignore_return` is True, returns ('', '');
             else returns (stdout, stderr).
         """
+        
+        def readlines(source: t.IO) -> t.Iterator[str]:
+            """
+            yields: (line, ...)
+            """
+            b: bytes
+            temp = b''
+            while True:
+                if b := source.read(1):
+                    print(b, ':vi')
+                    temp += b
+                    if b == b'\n' or b == b'\r':
+                        yield temp.decode()
+                        temp = b''
+                else:
+                    break
+            assert not temp
+            
+        # def readlines2(source: t.IO) -> t.Iterator[str]:
+        #     while True:
+        #         if x := source.read(10):
+        #             yield x.decode()
+        #         else:
+        #             break
+        
         stdout = ''
-        for line in process.stdout:
+        for line in readlines(process.stdout):
             if verbose:
-                # FIXME: the 'end=\r' doesn't work as expected.
                 bprint(line, end='')
             if not ignore_return:
                 if remove_ansi_code:
                     stdout += _ansi_escape.sub('', line)
                 else:
                     stdout += line
+        
         stderr = ''
-        for line in process.stderr:
+        for line, end in readlines(process.stderr):
             if verbose:
                 bprint(line, end='')
             if not ignore_return:
                 if remove_ansi_code:
-                    stdout += _ansi_escape.sub('', line)
+                    stderr += _ansi_escape.sub('', line)
                 else:
-                    stdout += line
+                    stderr += line
+        
         return stdout, stderr
     
     def show_error(stdout: str, stderr: str) -> None:
@@ -173,11 +199,9 @@ def run_command_args(
         args,
         stdout=sp.PIPE,
         stderr=sp.PIPE,
-        # stdout=sys.stdout,
-        # stderr=sys.stderr,
         cwd=cwd,
         shell=shell,
-        text=True,
+        # text=True,
     ) as process:
         if blocking:
             stdout, stderr = communicate(ignore_return)
