@@ -1,12 +1,18 @@
 import shlex
 import subprocess as sp
 
+import sys
 from lk_logger import bprint
+from rich.text import Text
 
 from .threading import run_new_thread
 from .. import common_typing as t
+from ..textwrap import indent
+from ..textwrap import join
+from ..textwrap import reindent
 
 __all__ = [
+    # 'SubprocessError',
     'compose',
     'compose_cmd',
     'compose_command',
@@ -16,6 +22,10 @@ __all__ = [
     'run_cmd_line',
     'run_command_line',
 ]
+
+
+# class SubprocessError(Exception):
+#     pass
 
 
 def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
@@ -87,6 +97,83 @@ def run_command_args(
     if verbose:
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
+    if blocking:
+        try:
+            return sp.run(
+                args,
+                capture_output=verbose,
+                check=not ignore_error,
+                cwd=cwd,
+                shell=shell,
+                stderr=sp.PIPE,
+                stdout=sp.PIPE,
+                text=True,
+            ).stdout
+        except sp.CalledProcessError as e:
+            if ignore_error:
+                return e.stderr
+            else:
+                if e.stdout:
+                    print(
+                        ':s1r',
+                        '[red dim]original output from subprocess:[/]'
+                    )
+                    print(
+                        ':s1r1',
+                        Text.from_ansi(indent(e.stdout), style='red dim')
+                    )
+                print(':dv4s', 'subprocess error')
+                print(
+                    reindent(
+                        '''
+                        error happened with exit code {}.
+                        the origin run command is:
+                            {}
+                        each element is:
+                            {}
+                        subprocess stderr: {}
+                        ''',
+                        lstrip=False,
+                    ).format(
+                        e.returncode,
+                        ' '.join(args),
+                        join(
+                            (
+                                '{:<2}  {}'.format(i, x)
+                                for i, x in enumerate(args, 1)
+                            ),
+                            8,
+                        ),
+                        '\n' + indent(e.stderr) if e.stderr else '(no data)'
+                    ),
+                    ':v4'
+                )
+                sys.exit(e.returncode)
+                
+                # raise SubprocessError(reindent(
+                #     '''
+                #     error happened with exit code {}.
+                #     the origin run command is:
+                #         {}
+                #     each element is:
+                #         {}
+                #     subprocess response: {}
+                #     '''.format(
+                #         e.returncode,
+                #         ' '.join(args),
+                #         join(
+                #             (
+                #                 '{:<2}  {}'.format(i, x)
+                #                 for i, x in enumerate(args, 1)
+                #             ),
+                #             24,
+                #         ),
+                #         '\n' + indent(e.stderr or e.stdout, '    ')
+                #         if (e.stderr or e.stdout) else '(no data)'
+                #     ),
+                #     lstrip=False,
+                # ))
+    
     proc = sp.Popen(
         args, stdout=sp.PIPE, stderr=sp.PIPE, text=True, shell=shell, cwd=cwd
     )
@@ -94,43 +181,16 @@ def run_command_args(
     def communicate() -> t.Iterator[t.Tuple[str, int]]:
         for line in proc.stdout:
             if verbose:
-                bprint(line.rstrip())
-                # print(
-                #     '[dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
-                #     ':p2s1r',
-                # )
+                bprint(line)
             yield line, 0
         for line in proc.stderr:
             if verbose:
-                bprint(line.rstrip())
-                # print(
-                #     '[red dim]{}[/]'.format(line.rstrip().replace('[', '\\[')),
-                #     ':p2s1r',
-                # )
+                bprint(line)
             yield line, 1
     
-    if blocking:
-        out, err = '', ''
-        for line, code in communicate():
-            if ignore_return:
-                continue
-            if code == 0:
-                out += line
-            else:
-                err += line
-        
-        if (code := proc.wait()) != 0:
-            if not ignore_error:
-                if verbose:  # the error trace info was already printed
-                    exit(code)
-                else:
-                    raise E.SubprocessError(proc.args, err, code)
-        
-        return None if ignore_return else (out or err).lstrip('\n').rstrip()
-    else:
-        if verbose:
-            run_new_thread(lambda: [_ for _ in communicate()])
-        return None if ignore_return else proc
+    if verbose:
+        run_new_thread(lambda: [_ for _ in communicate()])
+    return None if ignore_return else proc
 
 
 def run_command_line(
@@ -155,36 +215,6 @@ def run_command_line(
         filter=filter,
         _refmt_args=False,
     )
-
-
-class E:
-    class SubprocessError(Exception):
-        def __init__(
-            self, args: t.Iterable[str], response: str, return_code: int = None
-        ):
-            self._args = ' '.join(args)
-            self._resp = response
-            self._code = str(return_code or 'null')
-        
-        def __str__(self):
-            from textwrap import dedent
-            from textwrap import indent
-            
-            return (
-                dedent('''
-                error happened with exit code {code}:
-                    args:
-                        {args}
-                    response:
-                        {response}
-            ''')
-                .format(
-                    code=self._code,
-                    args=self._args,
-                    response=indent(self._resp, ' ' * 8).lstrip(),
-                )
-                .strip()
-            )
 
 
 # alias

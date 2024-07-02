@@ -23,8 +23,8 @@ def indent(text: str, spaces: int = 4, rstrip: bool = True) -> str:
     return out.rstrip() if rstrip else out
 
 
-def reindent(text: str, spaces: int = 4) -> str:
-    return indent(dedent(text), spaces)
+def reindent(text: str, spaces: int = 4, **kwargs) -> str:
+    return indent(dedent(text, **kwargs), spaces)
 
 
 def join(
