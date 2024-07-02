@@ -97,7 +97,6 @@ def show_progress(_user: bool = True) -> None:
         _rerun_in_subproc(verbose=True, ignore_return=True)
     else:
         for i in range(10):
-            # FIXME: cannot catch '\r' in subprocess.
             print('update progress {:.2%}'.format((i + 1) / 10), end='\r')
             sleep(100e-3)
         print('progress done', ':t')

@@ -1,4 +1,3 @@
-import os
 import re
 import shlex
 import subprocess as sp
@@ -29,7 +28,6 @@ __all__ = [
 #     pass
 
 _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-_SUBPROC_SCHEME = os.getenv('LK_SUBPROCESS_SCHEME', 'default')
 
 
 def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
@@ -73,7 +71,8 @@ def run_command_args(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = True,
-    subprocess_scheme: str = _SUBPROC_SCHEME,
+    # subprocess_scheme: str = 'default',
+    # subprocess_scheme: str = os.getenv('LK_SUBPROCESS_SCHEME', 'default'),
     _refmt_args: bool = True,
 ) -> t.Union[str, sp.Popen, None]:
     """
@@ -81,7 +80,7 @@ def run_command_args(
     -command-output-and-show-it-in-terminal-at-realtime
     
     params:
-        subprocess_scheme:
+        ~~subprocess_scheme:~~
             'default':
                 the most stable implementation. but lacks of:
                     - the progress bar which uses `print(..., end='\r') will
@@ -122,50 +121,42 @@ def run_command_args(
     if verbose:
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
-    def communicate0(ignore_return: bool = False) -> t.Tuple[str, str]:
-        """
-        returns:
-            if `ignore_return` is True, returns ('', '');
-            else returns (stdout, stderr).
-        """
-        stdout = ''
-        for line in process.stdout:
-            if verbose:
-                bprint(line, end='')
-            if not ignore_return:
-                stdout += line
-        stderr = ''
-        for line in process.stderr:
-            if verbose:
-                bprint(line, end='')
-            if not ignore_return:
-                stderr += line
-        return stdout, stderr
-    
-    def communicate1(
+    def communicate(
         remove_ansi_code: bool = True,
         #   https://stackoverflow.com/questions/14693701
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
         ignore_return: bool = False
     ) -> t.Tuple[str, str]:
+        """
+        returns:
+            if `ignore_return` is True, returns ('', '');
+            else returns (stdout, stderr).
+        """
         
         def readlines(source: t.IO) -> t.Iterator[str]:
-            """
-            yields: (line, ...)
-            """
+            a: bytes = b''
             b: bytes
             temp = b''
             while True:
                 if b := source.read(1):
-                    print(b, ':vi')
-                    temp += b
-                    if b == b'\n' or b == b'\r':
+                    if b == b'\n':
+                        temp += b
                         yield temp.decode()
                         temp = b''
+                    elif a == b'\r':
+                        yield temp.decode()
+                        temp = b
+                    else:
+                        temp += b
+                    a = b
                 else:
                     break
-            assert not temp
+            if a == b'\r':
+                # assert temp
+                yield (temp + b'\n').decode()
+            else:
+                assert not temp
         
         stdout = ''
         for line in readlines(process.stdout):
@@ -205,7 +196,7 @@ def run_command_args(
                     {}
                 each element is:
                     {}
-                subprocess stderr: {}
+                additional error info from stderr: {}
                 ''',
                 lstrip=False,
             ).format(
@@ -218,85 +209,56 @@ def run_command_args(
                     ),
                     8,
                 ),
-                '\n' + indent(stderr) if stderr else '(no data)'
+                '\n' + indent(stderr) if stderr else '(none)'
             ),
             ':v4'
         )
     
-    if subprocess_scheme == 'default':
-        with sp.Popen(
-            args,
-            stdout=sp.PIPE,
-            stderr=sp.PIPE,
-            cwd=cwd,
-            shell=shell,
-            text=True,
-        ) as process:
-            if blocking:
-                stdout, stderr = communicate0(ignore_return)
-                if retcode := process.wait():
-                    if ignore_error:
-                        return stderr
-                    else:
-                        show_error(stdout, stderr)
-                        sys.exit(retcode)
+    '''
+    backup: the 'pty' scheme:
+        if sys.platform == 'win32':
+            # pip install pywinpty
+            # https://github.com/andfoy/pywinpty
+            import winpty as pty
+        else:
+            import pty
+        p = pty.PtyProcess.spawn(
+            args, cwd=cwd, dimensions=(40, 100)
+        )
+        while p.isalive():
+            line = p.readline()
+            bprint(line)
+            ...
+    '''
+    with sp.Popen(
+        args,
+        stdout=sp.PIPE,
+        stderr=sp.PIPE,
+        cwd=cwd,
+        shell=shell,
+        # set `text` to False. since `text` will translate all types of newline
+        # chars ('\n', '\r', '\r\n') to '\n', which is not convenient for
+        # printing progress bar.
+        text=False,
+    ) as process:
+        if blocking:
+            stdout, stderr = communicate(ignore_return=ignore_return)
+            if retcode := process.wait():
+                if ignore_error:
+                    return stderr
                 else:
-                    assert not stderr
-                    return stdout
+                    show_error(stdout, stderr)
+                    sys.exit(retcode)
             else:
-                if verbose:
-                    run_new_thread(communicate0, args=(True,))
-                if ignore_return:
-                    return None
-                else:
-                    return process
-    elif subprocess_scheme in (
-        'progress_enhanced',
-        'rich_colored_text',
-        'rich_and_progress',
-    ):
-        with sp.Popen(
-            args,
-            stdout=sp.PIPE,
-            stderr=sp.PIPE,
-            cwd=cwd,
-            shell=shell,
-            text=False,
-        ) as process:
-            if blocking:
-                stdout, stderr = communicate1(ignore_return=ignore_return)
-                if retcode := process.wait():
-                    if ignore_error:
-                        return stderr
-                    else:
-                        show_error(stdout, stderr)
-                        sys.exit(retcode)
-                else:
-                    assert not stderr
-                    return stdout
+                assert not stderr
+                return stdout
+        else:
+            if verbose:
+                run_new_thread(communicate, args=(False, True,))
+            if ignore_return:
+                return None
             else:
-                if verbose:
-                    run_new_thread(communicate1, args=(False, True,))
-                if ignore_return:
-                    return None
-                else:
-                    return process
-    elif subprocess_scheme == 'pty':  # TODO
-        # if sys.platform == 'win32':
-        #     # pip install pywinpty
-        #     # https://github.com/andfoy/pywinpty
-        #     import winpty as pty
-        # else:
-        #     import pty
-        # p = pty.PtyProcess.spawn(
-        #     args, cwd=cwd, dimensions=(40, 100)
-        # )
-        # while p.isalive():
-        #     line = p.readline()
-        #     bprint(line)
-        raise NotImplementedError
-    else:
-        raise Exception(subprocess_scheme)
+                return process
 
 
 def run_command_line(
