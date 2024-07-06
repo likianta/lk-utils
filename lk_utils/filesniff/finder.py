@@ -63,17 +63,7 @@ class T:
     
     Prefix = t.Union[str, t.Tuple[str, ...]]
     Suffix = t.Union[str, t.Tuple[str, ...]]
-    #   DELETE: suffix supported formats:
-    #       'png'
-    #       '.png'
-    #       '*.png'
-    #       'png jpg'
-    #       '.png .jpg'
-    #       '*.png *.jpg'
-    #       ('png', 'jpg', ...)
-    #       ('.png', '.jpg', ...)
-    #       ('*.png', '*.jpg', ...)
-    #   (new) suffix supported formats:
+    #   suffix supported formats:
     #       '.png'
     #       ('.png', '.jpg')
     
@@ -87,7 +77,7 @@ def _find_paths(
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
     sort_by: T.SortBy = None,
-    enable_filter: bool = True,
+    auto_filter: bool = False,
 ) -> T.FinderResult:
     """
     args:
@@ -99,7 +89,7 @@ def _find_paths(
     """
     dirpath = normpath(dirpath, force_abspath=True)
     filter = (
-        None if not enable_filter else
+        None if not auto_filter else
         _default_filter.filter_file if path_type == PathType.FILE else
         _default_filter.filter_dir
     )
@@ -148,8 +138,12 @@ def _find_paths(
 
 
 class _DefaultFilter:
+    """
+    WARNING: experimental feature.
+    """
+    
     def __init__(self) -> None:
-        self._whitelist = set()  # DELETE
+        self._whitelist = set()
         self._blacklist = set()
     
     def reset(self) -> None:
@@ -176,7 +170,7 @@ class _DefaultFilter:
     def filter_dir(self, dirpath: str, dirname: str, **_) -> bool:
         if dirpath in self._blacklist:
             return False
-        if dirname.startswith(('.', '~', '__')):
+        if dirname == '__pycache__' or dirname.startswith(('~',)):
             self._blacklist.add(dirpath)
             return False
         return True
