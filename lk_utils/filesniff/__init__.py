@@ -5,6 +5,5 @@ from .main import *
 from .shutil import *
 
 # for convenience
-from .main import xpath as p
 from ..io import load  # noqa
 from ..io import dump  # noqa

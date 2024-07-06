@@ -19,9 +19,7 @@ __all__ = [
     'filesize',
     'get_current_dir',
     'isdir',
-    'isdirlike',
     'isfile',
-    'isfilelike',
     'islink',
     'normpath',
     'not_empty',
@@ -139,63 +137,33 @@ def barename(path: T.Path, strict: bool = False) -> str:
 
 # ------------------------------------------------------------------------------
 
-def isfile(filepath: T.Path) -> bool:
-    """ Unsafe method judging path-like string.
-
-    TLDR: If `filepath` looks like a filepath, will return True; otherwise
-        return False.
-
-    Judgement based:
-        - Does it end with '/'? -> False
-        - Does it really exist on system? -> True
-        - Does it contain a dot ("xxx.xxx")? -> True
-
-    Positive cases:
-        print(isfile('D:/myprj/README.md'))  # -> True (no matter exists or not)
-        print(isfile('D:/myprj/README'))  # -> True (if it really exists)
-        print(isfile('D:/myprj/README'))  # -> False (if it really not exists)
-
-    Negative cases: (the function judges seems not that good)
-        print(isfile('D:/myprj/.idea'))  # -> True (it should be False)
-        print(isfile('D:/!@#$%^&*/README.md'))  # -> True (it should be False)
-    """
-    if filepath == '':
-        return False
-    if filepath.endswith('/'):
-        return False
-    if ospath.isfile(filepath):
+def isfile(path: T.Path) -> bool:
+    if ospath.isfile(path):
         return True
-    if '.' in filepath.rsplit('/', 1)[-1]:
-        return True
-    else:
+    if ospath.isdir(path):
         return False
-
-
-isfilelike = isfile
-
-
-def isdir(dirpath: T.Path) -> bool:
-    """ Unsafe method judging dirpath-like string.
-
-    TLDR: If `dirpath` looks like a dirpath, will return True; otherwise return
-        False.
-
-    Judgement based:
-        - Is it a dot/dot-slash/slash? -> True
-        - Does it really exist on system? -> True
-        - Does it end with '/'? -> False
-    """
-    if dirpath == '':
+    if ospath.islink(path):
+        path = ospath.realpath(path)
+        return isfile(path)
+    if path.endswith('/') or path.strip('.') == '':
         return False
-    if dirpath in ('.', './', '/'):
+    raise Exception('unknown path type', path)
+
+
+def isdir(path: T.Path) -> bool:
+    if path.strip('.') == '':
         return True
-    if ospath.isdir(dirpath):
+    if ospath.isdir(path):
         return True
-    else:
+    if ospath.isfile(path):
         return False
+    if ospath.islink(path):
+        path = ospath.realpath(path)
+        return isdir(path)
+    if path.endswith('/'):
+        return True
+    raise Exception('unknown path type', path)
 
-
-isdirlike = isdir
 
 islink = ospath.islink
 
