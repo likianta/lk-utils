@@ -40,4 +40,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.10.4'
+__version__ = '2.10.5'
