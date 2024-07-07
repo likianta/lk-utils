@@ -147,7 +147,8 @@ def isfile(path: T.Path) -> bool:
         return isfile(path)
     if path.endswith('/') or path.strip('.') == '':
         return False
-    raise Exception('unknown path type', path)
+    # raise Exception('unknown path type', path)
+    return False
 
 
 def isdir(path: T.Path) -> bool:
@@ -162,7 +163,8 @@ def isdir(path: T.Path) -> bool:
         return isdir(path)
     if path.endswith('/'):
         return True
-    raise Exception('unknown path type', path)
+    # raise Exception('unknown path type', path)
+    return False
 
 
 islink = ospath.islink
