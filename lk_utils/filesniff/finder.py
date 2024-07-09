@@ -2,13 +2,16 @@
 design guide: docs/filename-extension-form-in-design-thinking.zh.md
 """
 import os
+import re
 from dataclasses import dataclass
 
 from .main import normpath
 from .. import common_typing as t
 
 __all__ = [
+    'Filter',
     'Path',
+    'default_filter',
     'find_dir_names',
     'find_dir_paths',
     'find_dirs',
@@ -58,6 +61,7 @@ class T:
     _Path = Path
     
     DirPath = str
+    Filter = t.Union[None, True, t.Iterable[str], 'Filter']
     FinderResult = t.Iterator[_Path]
     PathType = int
     
@@ -77,22 +81,34 @@ def _find_paths(
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
     sort_by: T.SortBy = None,
-    auto_filter: bool = False,
+    filter: T.Filter = None,
 ) -> T.FinderResult:
     """
-    args:
+    params:
         path_type: 0: file, 1: dir. see also `[class] PathType`.
         suffix:
             1. each item must be string start with '.' ('.jpg', '.txt', etc.)
             2. case insensitive.
             3. param type is str or tuple[str], cannot be list[str].
+        filter:
+            None: no filter.
+            True: use default filter. it is equivalent to pass `default_filter`.
+            Iterable[str]: will construct a Filter object.
+            Filter: use the given Filter object.
+            we usually use `None` or `True` for convenience.
     """
     dirpath = normpath(dirpath, force_abspath=True)
-    filter = (
-        None if not auto_filter else
-        _default_filter.filter_file if path_type == PathType.FILE else
-        _default_filter.filter_dir
-    )
+    if filter:
+        if filter is True:
+            filter = default_filter
+        elif isinstance(filter, Filter):
+            pass
+        else:
+            filter = Filter(filter)
+        if path_type == PathType.FILE:
+            filter = filter.filter_file
+        else:
+            filter = filter.filter_dir
     
     def main() -> T.FinderResult:
         for root, dirs, files in os.walk(dirpath, followlinks=True):
@@ -105,8 +121,7 @@ def _find_paths(
             
             for n in names:
                 p = f'{root}/{n}'
-                # noinspection PyArgumentList
-                if filter and filter(p, n, is_root=(root == dirpath)) is False:
+                if filter and filter(p, n, is_root=(root == dirpath)):
                     continue
                 if prefix and not n.startswith(prefix):
                     continue
@@ -137,46 +152,59 @@ def _find_paths(
         raise ValueError(sort_by)
 
 
-class _DefaultFilter:
-    """
-    WARNING: experimental feature.
-    """
-    
-    def __init__(self) -> None:
-        self._whitelist = set()
-        self._blacklist = set()
-    
-    def reset(self) -> None:
-        self._whitelist.clear()
-        self._blacklist.clear()
-    
-    """
-    filter returns:
-        True means accepted, False means rejected. (this is different with -
-        python's built-in `filter` function)
-    """
-    
+class Filter:
+    def __init__(self, exclusions: t.Iterable[str]) -> None:
+        """
+        exclusions:
+            use '^...' to create a regular expression.
+        """
+        regexes = set()
+        statics = set()
+        for rule in exclusions:
+            if rule.startswith('^'):
+                regexes.add(re.compile(rule[1:]))
+            else:
+                statics.add(rule)
+        self._regexes = regexes
+        # self._statics = tuple(statics)
+        self._statics = statics
+        self._blocked = set()
+        self._allowed = set()
+        
     def filter_file(self, filepath: str, filename: str, is_root: bool) -> bool:
-        if filename.startswith(('.', '~')) or filepath.endswith('~'):
-            #   e.g. '/path/to/file.py~'
+        if filename in self._statics:
+            return True
+        for regex in self._regexes:
+            if regex.match(filename):
+                return True
+        if is_root:
             return False
-        if not is_root:
+        else:
             dirpath = filepath[: -(len(filename) + 1)]
             dirname = dirpath.rsplit('/', 1)[-1]
-            if self.filter_dir(dirpath, dirname) is False:
-                return False
-        return True
+            return self.filter_dir(dirpath, dirname)
     
     def filter_dir(self, dirpath: str, dirname: str, **_) -> bool:
-        if dirpath in self._blacklist:
+        if dirpath in self._blocked:
+            return True
+        if dirpath in self._allowed:
             return False
-        if dirname == '__pycache__' or dirname.startswith(('~',)):
-            self._blacklist.add(dirpath)
-            return False
-        return True
+        if dirname + '/' in self._statics:
+            self._blocked.add(dirpath)
+            return True
+        for regex in self._regexes:
+            if regex.match(dirname + '/'):
+                self._blocked.add(dirpath)
+                return True
+        self._allowed.add(dirpath)
+        return False
 
 
-_default_filter = _DefaultFilter()
+default_filter = Filter((
+    '.idea/', '.git/', '.vscode/', '__pycache__/',
+    '.DS_Store', '.gitkeep',
+    '^~.+', '^.+~'
+))
 
 
 # -----------------------------------------------------------------------------
