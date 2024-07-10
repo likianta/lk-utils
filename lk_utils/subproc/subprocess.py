@@ -1,7 +1,9 @@
+import atexit
 import re
 import shlex
 import subprocess as sp
 
+import psutil
 import sys
 from rich.text import Text
 
@@ -12,22 +14,35 @@ from ..textwrap import indent
 from ..textwrap import join
 from ..textwrap import reindent
 
-__all__ = [
-    # 'SubprocessError',
-    'compose',
-    'compose_cmd',
-    'compose_command',
-    'run',
-    'run_cmd_args',
-    'run_command_args',
-    'run_cmd_line',
-    'run_command_line',
-]
+_ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+
+class Popen(sp.Popen):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        atexit.register(self.kill)
+    
+    def kill(self) -> None:
+        """
+        kill self and child processes.
+        """
+        if self.poll() is not None:
+            return
+        pid = self.pid
+        parent = psutil.Process(pid)
+        print(':r', '[red dim]kill process: {} ({})[/]'.format(
+            pid, parent.name()
+        ))
+        for child in parent.children(recursive=True):
+            print(':r', '[red dim]|- kill child process: {} ({})[/]'.format(
+                child.pid, child.name0()
+            ))
+            child.kill()
+        parent.kill()
+
 
 # class SubprocessError(Exception):
 #     pass
-
-_ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
@@ -74,7 +89,7 @@ def run_command_args(
     # subprocess_scheme: str = 'default',
     # subprocess_scheme: str = os.getenv('LK_SUBPROCESS_SCHEME', 'default'),
     _refmt_args: bool = True,
-) -> t.Union[str, sp.Popen, None]:
+) -> t.Union[str, Popen, None]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
     -command-output-and-show-it-in-terminal-at-realtime
@@ -221,7 +236,7 @@ def run_command_args(
     # note: do not use `with sp.Popen(...) as process` statement, the child
     # process may exit before communicating, which raises 'ValueError: read of
     # closed file' or 'invalid arguments' error.
-    process = sp.Popen(
+    process = Popen(
         args,
         stdout=sp.PIPE,
         stderr=sp.STDOUT,
@@ -262,7 +277,7 @@ def run_command_line(
     ignore_error: bool = False,
     ignore_return: bool = False,
     filter: bool = False,  # notice this differs
-) -> t.Union[str, sp.Popen, None]:
+) -> t.Union[str, Popen, None]:
     return run_command_args(
         *shlex.split(cmd),
         verbose=verbose,

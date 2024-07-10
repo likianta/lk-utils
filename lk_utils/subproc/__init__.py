@@ -2,6 +2,7 @@ from . import subprocess
 # from .multi_process import new_process
 from .promise import Promise
 from .promise import defer
+from .subprocess import Popen
 from .subprocess import compose_cmd
 from .subprocess import run_cmd_args
 from .subprocess import run_cmd_line

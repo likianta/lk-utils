@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "2.10.6b5"
+version = "2.10.6b6"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -9,7 +9,9 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = "^0.5.8"
-lk-logger = "^5.7.5"
+# lk-logger = "^5.7.5"
+lk-logger = { version = "^5.7.6a2", source = "likianta-host" }
+psutil = "^6.0.0"
 pyyaml = "^6.0.0"
 rich = "^13.0.0"
 typing-extensions = "^4.0.0"
@@ -21,6 +23,11 @@ pywinpty = { version = "^2.0.13", platform = "win32" }
 name = "tsinghua"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 priority = "primary"
+
+[[tool.poetry.source]]
+name = "likianta-host"
+url = "http://likianta.pro:2006/"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry"]
