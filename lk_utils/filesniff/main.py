@@ -138,6 +138,8 @@ def barename(path: T.Path, strict: bool = False) -> str:
 # ------------------------------------------------------------------------------
 
 def isfile(path: T.Path) -> bool:
+    if path.strip('./') == '':
+        return False
     if ospath.isfile(path):
         return True
     if ospath.isdir(path):
@@ -145,14 +147,12 @@ def isfile(path: T.Path) -> bool:
     if ospath.islink(path):
         path = ospath.realpath(path)
         return isfile(path)
-    if path.endswith('/') or path.strip('.') == '':
-        return False
     # raise Exception('unknown path type', path)
     return False
 
 
 def isdir(path: T.Path) -> bool:
-    if path.strip('.') == '':
+    if path.strip('./') == '':
         return True
     if ospath.isdir(path):
         return True
@@ -161,8 +161,6 @@ def isdir(path: T.Path) -> bool:
     if ospath.islink(path):
         path = ospath.realpath(path)
         return isdir(path)
-    if path.endswith('/'):
-        return True
     # raise Exception('unknown path type', path)
     return False
 

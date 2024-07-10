@@ -146,8 +146,9 @@ def _find_paths(
     elif sort_by == 'path':
         yield from sorted(main(), key=lambda x: x.path)
     elif sort_by == 'time':
-        yield from sorted(main(), key=lambda x: os.path.getmtime(x.path),
-                          reverse=True)  # fmt:skip
+        yield from sorted(
+            main(), key=lambda x: os.path.getmtime(x.path), reverse=True
+        )
     else:
         raise ValueError(sort_by)
 
@@ -201,9 +202,9 @@ class Filter:
 
 
 default_filter = Filter((
-    '.idea/', '.git/', '.vscode/', '__pycache__/',
+    '.git/', '.idea/', '.vscode/', '__pycache__/',
     '.DS_Store', '.gitkeep',
-    '^~.+', '^.+~'
+    '^~.+', '^.+~$'
 ))
 
 
