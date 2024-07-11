@@ -1,13 +1,15 @@
-import atexit
 import re
 import shlex
 import subprocess as sp
 
+import atexit
 import psutil
 import sys
 from rich.text import Text
+from time import sleep
 
 from lk_logger import bprint
+from .threading import new_thread
 from .threading import run_new_thread
 from .. import common_typing as t
 from ..textwrap import indent
@@ -18,27 +20,45 @@ _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 class Popen(sp.Popen):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self._introspection = False
         atexit.register(self.kill)
+        if keep_alive:
+            self._watch_self_status()
+    
+    @property
+    def is_running(self) -> bool:
+        return self.poll() is None
     
     def kill(self) -> None:
         """
         kill self and child processes.
         """
-        if self.poll() is not None:
-            return
+        if not self.is_running: return
         pid = self.pid
         parent = psutil.Process(pid)
         print(':r', '[red dim]kill process: {} ({})[/]'.format(
             pid, parent.name()
         ))
+        self._introspection = False
         for child in parent.children(recursive=True):
             print(':r', '[red dim]|- kill child process: {} ({})[/]'.format(
-                child.pid, child.name0()
+                child.pid, child.name()
             ))
             child.kill()
         parent.kill()
+    
+    @new_thread()
+    def _watch_self_status(self) -> None:
+        self._introspection = True
+        while self._introspection:
+            if self.is_running:
+                sleep(1)
+            else:
+                print(':v4', 'process has exited unexpectly.')
+                self._introspection = False
+                return
 
 
 # class SubprocessError(Exception):
