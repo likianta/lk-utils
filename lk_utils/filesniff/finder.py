@@ -60,8 +60,8 @@ class PathType:
 class T:
     _Path = Path
     
+    AnyFilter = t.Union[None, True, t.Iterable[str], 'Filter']
     DirPath = str
-    Filter = t.Union[None, True, t.Iterable[str], 'Filter']
     FinderResult = t.Iterator[_Path]
     PathType = int
     
@@ -81,7 +81,7 @@ def _find_paths(
     prefix: T.Prefix = None,
     suffix: T.Suffix = None,
     sort_by: T.SortBy = None,
-    filter: T.Filter = None,
+    filter: T.AnyFilter = True,
 ) -> T.FinderResult:
     """
     params:
@@ -100,28 +100,34 @@ def _find_paths(
     dirpath = normpath(dirpath, force_abspath=True)
     if filter:
         if filter is True:
-            filter = default_filter
+            filter0 = default_filter
         elif isinstance(filter, Filter):
-            pass
+            filter0 = filter
         else:
-            filter = Filter(filter)
-        if path_type == PathType.FILE:
-            filter = filter.filter_file
-        else:
-            filter = filter.filter_dir
+            filter0 = Filter(filter)
+        filter1 = (
+            filter0.filter_file if path_type == PathType.FILE else
+            filter0.filter_dir
+        )
+    else:
+        filter0 = None
+        filter1 = None
+    # del filter
     
     def main() -> T.FinderResult:
         for root, dirs, files in os.walk(dirpath, followlinks=True):
             root = normpath(root)
             
-            if path_type == PathType.FILE:
-                names = files
-            else:
-                names = dirs
+            if root != dirpath and (
+                filter0 and filter0.filter_dir(root, root.rsplit('/', 1)[-1])
+            ):
+                continue
             
+            names = files if path_type == PathType.FILE else dirs
             for n in names:
                 p = f'{root}/{n}'
-                if filter and filter(p, n, is_root=(root == dirpath)):
+                # noinspection PyArgumentList
+                if filter1 and filter1(p, n):
                     continue
                 if prefix and not n.startswith(prefix):
                     continue
@@ -166,38 +172,36 @@ class Filter:
                 regexes.add(re.compile(rule[1:]))
             else:
                 statics.add(rule)
-        self._regexes = regexes
-        # self._statics = tuple(statics)
-        self._statics = statics
+        self._regexes = tuple(regexes)
+        self._statics = frozenset(statics)
         self._blocked = set()
         self._allowed = set()
-        
-    def filter_file(self, filepath: str, filename: str, is_root: bool) -> bool:
-        if filename in self._statics:
-            return True
-        for regex in self._regexes:
-            if regex.match(filename):
-                return True
-        if is_root:
-            return False
-        else:
-            dirpath = filepath[: -(len(filename) + 1)]
-            dirname = dirpath.rsplit('/', 1)[-1]
-            return self.filter_dir(dirpath, dirname)
     
-    def filter_dir(self, dirpath: str, dirname: str, **_) -> bool:
-        if dirpath in self._blocked:
-            return True
-        if dirpath in self._allowed:
-            return False
-        if dirname + '/' in self._statics:
-            self._blocked.add(dirpath)
+    # noinspection PyUnusedLocal
+    def filter_file(self, path: str, name: str) -> bool:
+        if name in self._statics:
             return True
         for regex in self._regexes:
-            if regex.match(dirname + '/'):
-                self._blocked.add(dirpath)
+            if regex.match(name):
                 return True
-        self._allowed.add(dirpath)
+        return False
+    
+    def filter_dir(self, path: str, name: str) -> bool:
+        if path in self._blocked:
+            return True
+        if path.rsplit('/', 1)[0] in self._blocked:
+            self._blocked.add(path)
+            return True
+        if path in self._allowed:
+            return False
+        if name + '/' in self._statics:
+            self._blocked.add(path)
+            return True
+        for regex in self._regexes:
+            if regex.match(name):
+                self._blocked.add(path)
+                return True
+        self._allowed.add(path)
         return False
 
 
