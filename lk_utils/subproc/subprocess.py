@@ -1,6 +1,8 @@
+import os
 import re
 import shlex
 import subprocess as sp
+import typing as t
 
 import atexit
 import psutil
@@ -144,6 +146,11 @@ def run_command_args(
     
     memo:
         `sp.run` is blocking, `sp.Popen` is non-blocking.
+        
+        the print in subprocess has no text color code *by default*; but you
+        can set os.environ['LK_LOGGER_FORCE_COLOR'] to '1' to enable it. be
+        noted that this is an experimental feature in lk-logger >= 5.6.2, it
+        may result grumble code in some old terminal on windows.
     
     fix text color lost when using rich library:
         https://github.com/Textualize/rich/issues/2622
@@ -157,7 +164,7 @@ def run_command_args(
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
     
     def communicate(
-        remove_ansi_code: bool = True,
+        remove_ansi_code: t.Optional[bool] = None,
         #   https://stackoverflow.com/questions/14693701
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
@@ -173,10 +180,10 @@ def run_command_args(
                     if curr := source.read(1):
                         if curr == b'\n':
                             temp += curr
-                            yield temp.decode()
+                            yield temp.decode(errors='ignore')
                             temp = b''
                         elif last == b'\r':
-                            yield temp.decode()
+                            yield temp.decode(errors='ignore')
                             temp = curr
                         else:
                             temp += curr
@@ -186,11 +193,8 @@ def run_command_args(
                 except Exception as e:
                     print(':e', e)
                     break
-            if last == b'\r':
-                # assert temp
-                yield (temp + b'\n').decode()
-            else:
-                assert not temp, temp
+            if temp:
+                yield (temp + b'\n').decode(errors='ignore')
         
         stdout = ''
         for line in readlines(process.stdout):
@@ -269,7 +273,12 @@ def run_command_args(
     )
     
     if blocking:
-        result = communicate(ignore_return=ignore_return)
+        result = communicate(
+            remove_ansi_code=(
+                True if os.getenv('LK_LOGGER_FORCE_COLOR') == '1' else None
+            ),
+            ignore_return=ignore_return
+        )
         if retcode := process.wait():
             if ignore_error:
                 return result
@@ -280,7 +289,7 @@ def run_command_args(
             return result
     else:
         if verbose:
-            run_new_thread(communicate, args=(False, True,))
+            run_new_thread(communicate, args=(False, True))
         if ignore_return:
             return None
         else:
