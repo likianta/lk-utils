@@ -59,7 +59,7 @@ def seconds_to_hms(second: int) -> str:
     return hms
 
 
-def timestamp(style: str = 'y-m-d h:n:s', ctime: float = 0.0) -> str:
+def timestamp(style: str = 'y-m-d h:n:s', time_sec: float = None) -> str:
     """
     generate a timestamp string.
     e.g. 'y-m-d h:n:s' -> '2018-12-27 15:13:45'
@@ -69,10 +69,11 @@ def timestamp(style: str = 'y-m-d h:n:s', ctime: float = 0.0) -> str:
         .replace('y', '%Y').replace('m', '%m').replace('d', '%d')
         .replace('h', '%H').replace('n', '%M').replace('s', '%S')
     )
-    if ctime:
-        return time.strftime(style, time.localtime(ctime))
-    else:
+    if time_sec is None:
         return time.strftime(style)
+    else:
+        assert time_sec >= 0
+        return time.strftime(style, time.localtime(time_sec))
 
 
 def wait(timeout: float, interval: float = 1) -> t.Iterator[int]:
