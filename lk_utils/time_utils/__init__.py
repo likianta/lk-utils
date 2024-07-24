@@ -1,7 +1,6 @@
-# from . import time
-# from . import timeit
-from .time import get_file_created_time
-from .time import get_file_modified_time
+from .time import get_ctime
+from .time import get_mtime
+from .time import pretty_time
 from .time import timestamp
 from .time import wait
 from .timeit import timeit

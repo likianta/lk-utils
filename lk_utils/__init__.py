@@ -48,4 +48,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.10.7'
+__version__ = '2.10.8'
