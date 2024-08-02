@@ -107,6 +107,7 @@ def run_command_args(
     blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
+    force_term_color: bool = False,
     filter: bool = True,
     # subprocess_scheme: str = 'default',
     # subprocess_scheme: str = os.getenv('LK_SUBPROCESS_SCHEME', 'default'),
@@ -117,22 +118,19 @@ def run_command_args(
     -command-output-and-show-it-in-terminal-at-realtime
     
     params:
-        ~~subprocess_scheme:~~
-            'default':
-                the most stable implementation. but lacks of:
-                    - the progress bar which uses `print(..., end='\r') will
-                        result into multiple lines.
-                    - text lost color effect when using `rich` library.
-            'progress_enhanced':
-                an experimental scheme to resolve progress bar issue.
-            'rich_colored_text':
-                an experimental scheme to resolve text color lost issue. it may
-                affect returned result.
-            'rich_and_progress':
-                apply both 'progress_enhanced' and 'rich_colored_text'.
-            'pty':
-                use pseudo-terminal to run the command. the cons are it changes
-                your terminal title and may flicker the window.
+        force_term_color:
+            by default (force_term_color=False), the prints from subprocess
+            don't render ansi color code.
+            if you need to keep the color effect, set it true.
+            warning:
+                - this is an experimental feature.
+                - requires dependency lk-logger >= 5.6.2.
+                - it may result grumble code in some old terminals on windows.
+            related:
+                fix text color lost when using rich library:
+                    https://github.com/Textualize/rich/issues/2622
+                    https://rich.readthedocs.io/en/stable/console.html#terminal
+                    -detection
         _refmt_args: set to False is faster. this is for internal use.
     
     returns:
@@ -146,15 +144,6 @@ def run_command_args(
     
     memo:
         `sp.run` is blocking, `sp.Popen` is non-blocking.
-        
-        the print in subprocess has no text color code *by default*; but you
-        can set os.environ['LK_LOGGER_FORCE_COLOR'] to '1' to enable it. be
-        noted that this is an experimental feature in lk-logger >= 5.6.2, it
-        may result grumble code in some old terminal on windows.
-    
-    fix text color lost when using rich library:
-        https://github.com/Textualize/rich/issues/2622
-        https://rich.readthedocs.io/en/stable/console.html#terminal-detection
     """
     if _refmt_args:
         args = compose_command(*args, filter=filter)
@@ -257,6 +246,11 @@ def run_command_args(
             ...
     '''
     
+    if force_term_color:
+        env = os.environ.copy()
+        env['LK_LOGGER_FORCE_COLOR'] = '1'
+    else:
+        env = os.environ
     # note: do not use `with sp.Popen(...) as process` statement, the child
     # process may exit before communicating, which raises 'ValueError: read of
     # closed file' or 'invalid arguments' error.
@@ -270,13 +264,12 @@ def run_command_args(
         # chars ('\n', '\r', '\r\n') to '\n', which is not convenient for
         # printing progress bar.
         text=False,
+        env=env,
     )
     
     if blocking:
         result = communicate(
-            remove_ansi_code=(
-                True if os.getenv('LK_LOGGER_FORCE_COLOR') == '1' else None
-            ),
+            remove_ansi_code=force_term_color,
             ignore_return=ignore_return
         )
         if retcode := process.wait():
@@ -296,27 +289,9 @@ def run_command_args(
             return process
 
 
-def run_command_line(
-    cmd: str,
-    *,
-    verbose: bool = False,
-    shell: bool = False,
-    cwd: str = None,
-    blocking: bool = True,
-    ignore_error: bool = False,
-    ignore_return: bool = False,
-    filter: bool = False,  # notice this differs
-) -> t.Union[str, Popen, None]:
+def run_command_line(cmd: str, **kwargs) -> t.Union[str, Popen, None]:
     return run_command_args(
-        *shlex.split(cmd),
-        verbose=verbose,
-        shell=shell,
-        cwd=cwd,
-        blocking=blocking,
-        ignore_error=ignore_error,
-        ignore_return=ignore_return,
-        filter=filter,
-        _refmt_args=False,
+        *shlex.split(cmd), **kwargs, filter=False, _refmt_args=False
     )
 
 
