@@ -1,14 +1,6 @@
 if 1:
     import lk_logger
     lk_logger.setup(quiet=True, show_funcname=False, show_varnames=False)
-    # import os
-    # if 'LK_LOGGER_FORCE_COLOR' not in os.environ:
-    #     os.environ['LK_LOGGER_FORCE_COLOR'] = '1'
-    #   related:
-    #       `lk_utils.subproc.subprocess.run_command_args:docstring`
-    #       `lk_utils.subproc.subprocess.run_command_args:communicate:remove
-    #       _ansi_code`
-    #       `test/subproc_test.py:stdout_to_console`
 
 from . import binding
 from . import common_typing as t
