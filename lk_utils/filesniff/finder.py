@@ -60,7 +60,7 @@ class PathType:
 class T:
     _Path = Path
     
-    AnyFilter = t.Union[None, True, t.Iterable[str], 'Filter']
+    AnyFilter = t.Union[None, bool, t.Iterable[str], 'Filter']
     DirPath = str
     FinderResult = t.Iterator[_Path]
     PathType = int
