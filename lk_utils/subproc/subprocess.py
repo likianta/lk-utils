@@ -104,6 +104,7 @@ def run_command_args(
     verbose: bool = False,
     shell: bool = False,
     cwd: str = None,
+    env: t.Dict[str, str] = None,
     blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
@@ -246,11 +247,15 @@ def run_command_args(
             ...
     '''
     
-    if force_term_color:
-        env = os.environ.copy()
-        env['LK_LOGGER_FORCE_COLOR'] = '1'
+    if env is None:
+        if force_term_color:
+            env = os.environ.copy()
+            env['LK_LOGGER_FORCE_COLOR'] = '1'
+        else:
+            env = os.environ
     else:
-        env = os.environ
+        if force_term_color:
+            env['LK_LOGGER_FORCE_COLOR'] = '1'
     # note: do not use `with sp.Popen(...) as process` statement, the child
     # process may exit before communicating, which raises 'ValueError: read of
     # closed file' or 'invalid arguments' error.
