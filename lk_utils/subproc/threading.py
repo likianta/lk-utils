@@ -38,6 +38,10 @@ class ThreadBroker:
     class Undefined:
         pass
     
+    class BrokenResult:
+        def __init__(self, e: Exception) -> None:
+            self.e = e
+    
     def __init__(
         self,
         target: T.Target,
@@ -103,6 +107,7 @@ class ThreadBroker:
                 except Exception as e:
                     self._illed = e
                     self._is_running = False
+                    self._result = ThreadBroker.BrokenResult(e)
                     raise e
                 if self._interruptible:
                     if isinstance(self._result, GeneratorType):
@@ -151,8 +156,10 @@ class ThreadBroker:
     def join(self, timeout: float = None) -> T.Result:
         if not self._is_executed:
             raise Exception('thread is never started!')
+        print(self._is_running, ':v')
         if self._is_running:
             self._thread.join(timeout)
+            assert self._is_running is False
         return self.result
     
     def kill(self) -> bool:
