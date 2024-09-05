@@ -53,9 +53,9 @@ class Task:
     def id(self) -> str:
         return self._id
     
-    @cached_property
-    def interruptible(self) -> bool:
-        return isinstance(self._func, GeneratorType)
+    # @cached_property
+    # def interruptible(self) -> bool:
+    #     return isinstance(self._func, GeneratorType)
     
     @property
     def result(self) -> t.Any:
@@ -84,18 +84,17 @@ class Task:
     
     def run(self) -> t.Iterator:
         self.reset()
-        
-        if self.interruptible:
+        # print(self._func, self._final_args, self._final_kwargs, ':vl')
+        pending_result = self._func(*self._final_args, **self._final_kwargs)
+        if isinstance(pending_result, GeneratorType):
             result = []
-            for x in self._func(*self._final_args, **self._final_kwargs):
+            for x in pending_result:
                 if x is not pause:
                     result.append(x)
                 yield x
             self._result = result
         else:
-            # print(self._func, self._final_args, self._final_kwargs, ':vl')
-            self._result = self._func(*self._final_args, **self._final_kwargs)
-        
+            self._result = pending_result
         self._running = False
         self._done = True
     
@@ -115,7 +114,8 @@ class Task:
 
 class CoroutineManager:
     _curr_task: t.Optional[Task]
-    _running_tasks: t.Dict[str, Task]
+    # _running_tasks: t.Dict[str, Task]
+    _running_tasks: t.Dict[str, t.Tuple[Task, t.Iterator]]
     _tasks: t.Dict[str, Task]
     # _timer: t.List[t.Tuple[float, str]]  # [(time_point, task_id), ...]
     # _timer: t.Dict[str, t.List[float]]  # {task_id: [time_point, ...], ...}
@@ -152,7 +152,7 @@ class CoroutineManager:
         if reuse and task.id in _self._running_tasks:
             return
         task.finalize(*args, **kwargs)
-        _self._running_tasks[task.id] = task
+        _self._running_tasks[task.id] = (task, task.run())
     
     def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
         """
@@ -210,23 +210,26 @@ class CoroutineManager:
         while True:
             if not self._running_tasks:
                 sleep(1e-3)
+                continue
             
             finished_ids.clear()
             self._curr_task = None
             
-            for id, task in self._running_tasks.items():
+            for id, (task, iter) in self._running_tasks.items():
+                print(id, task, task.done, iter, id in self._timer, ':lv')
                 if task.done:
                     finished_ids.append(id)
                     continue
                 
                 if s := self._timer.get(id):
+                    sleep(1e-3)
                     if time() < s:
                         continue
                     del self._timer[id]
                 
                 self._curr_task = task
                 try:
-                    for x in task.run():
+                    for x in iter:
                         if x is pause:
                             break
                 
