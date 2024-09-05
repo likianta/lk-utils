@@ -83,8 +83,7 @@ class Task:
             {**self._partial_kwargs, **kwargs}
     
     def run(self) -> t.Iterator:
-        self.reset()
-        # print(self._func, self._final_args, self._final_kwargs, ':vl')
+        # self.reset_status()
         pending_result = self._func(*self._final_args, **self._final_kwargs)
         if isinstance(pending_result, GeneratorType):
             result = []
@@ -105,7 +104,7 @@ class Task:
         self._done = True
         self._running = False
     
-    def reset(self) -> None:
+    def reset_status(self) -> None:
         self.error.clear()
         self.success.clear()
         self._done = False
@@ -115,11 +114,8 @@ class Task:
 
 class CoroutineManager:
     _curr_task: t.Optional[Task]
-    # _running_tasks: t.Dict[str, Task]
     _running_tasks: t.Dict[str, t.Tuple[Task, t.Iterator]]
     _tasks: t.Dict[str, Task]
-    # _timer: t.List[t.Tuple[float, str]]  # [(time_point, task_id), ...]
-    # _timer: t.Dict[str, t.List[float]]  # {task_id: [time_point, ...], ...}
     _timer: t.Dict[str, float]  # {task_id: time_point, ...}
     
     def __init__(self) -> None:
@@ -154,7 +150,9 @@ class CoroutineManager:
     def run(_self, task: Task, *args, reuse: bool = False, **kwargs) -> None:
         if reuse and task.id in _self._running_tasks:
             return
+        print('run task', task, ':p')
         task.finalize(*args, **kwargs)
+        task.reset_status()
         _self._running_tasks[task.id] = (task, task.run())
     
     def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
@@ -212,7 +210,7 @@ class CoroutineManager:
         
         while True:
             if not self._running_tasks:
-                await asyncio.sleep(1e-3)
+                await asyncio.sleep(10e-3)
                 continue
             
             finished_ids.clear()
@@ -225,8 +223,8 @@ class CoroutineManager:
                     continue
                 
                 if s := self._timer.get(id):
-                    await asyncio.sleep(1e-3)
-                    # await asyncio.sleep(1)  # TEST
+                    # await asyncio.sleep(1e-3)
+                    await asyncio.sleep(1)  # TEST
                     if time() < s:
                         continue
                     del self._timer[id]
