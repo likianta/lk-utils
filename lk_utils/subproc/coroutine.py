@@ -7,6 +7,7 @@ from time import time
 from types import FunctionType
 from types import GeneratorType
 
+from ..binding import Signal
 
 class _Pause:
     pass
@@ -23,6 +24,8 @@ _unfinish = _Unfinish()
 
 class Task:
     def __init__(self, id: str, func: FunctionType, singleton: bool) -> None:
+        self.success = Signal()
+        self.error = Signal()
         self._id = id
         self._func = func
         self._singleton = singleton
@@ -34,15 +37,14 @@ class Task:
         self._final_args = ()
         self._final_kwargs = {}
     
+    # DELETE: deprecate. use `coro_mgr.run(<task>)` instead.
     def __call__(self, *args, **kwargs) -> None:
         if self._singleton and self._running:
             # FIXME: what if params changed?
             return
-        self._final_args = self._partial_args + args
-        self._final_kwargs = kwargs if not self._partial_kwargs else \
-            {**self._partial_kwargs, **kwargs}
+        self.finalize(*args, **kwargs)
         coro_mgr.run(self)
-    
+        
     @property
     def done(self) -> bool:
         return self._done
@@ -75,10 +77,13 @@ class Task:
         self._partial_kwargs = kwargs
         return self
     
+    def finalize(self, *args, **kwargs) -> None:
+        self._final_args = self._partial_args + args
+        self._final_kwargs = kwargs if not self._partial_kwargs else \
+            {**self._partial_kwargs, **kwargs}
+    
     def run(self) -> t.Iterator:
-        self._done = False
-        self._running = True
-        self._result = _unfinish
+        self.reset()
         
         if self.interruptible:
             result = []
@@ -88,14 +93,24 @@ class Task:
                 yield x
             self._result = result
         else:
+            # print(self._func, self._final_args, self._final_kwargs, ':vl')
             self._result = self._func(*self._final_args, **self._final_kwargs)
         
         self._running = False
         self._done = True
     
     def force_stop(self) -> None:
-        self._running = False
+        self.error.clear()
+        self.success.clear()
         self._done = True
+        self._running = False
+        
+    def reset(self) -> None:
+        self.error.clear()
+        self.success.clear()
+        self._done = True
+        self._result = _unfinish
+        self._running = False
 
 
 class CoroutineManager:
@@ -117,7 +132,7 @@ class CoroutineManager:
         self,
         name: str = None,
         singleton: bool = True,
-        # reusable: bool = False,
+        #   TODO: should we use `singleton` or `run(..., reuse=True)`?
     ) -> t.Callable[[FunctionType], Task]:
         def decorator(func: FunctionType) -> Task:
             nonlocal name
@@ -132,8 +147,12 @@ class CoroutineManager:
     def pause(self) -> _Pause:
         return pause
     
-    def run(self, task: Task) -> None:
-        self._running_tasks[task.id] = task
+    # noinspection PyMethodParameters
+    def run(_self, task: Task, *args, reuse: bool = False, **kwargs) -> None:
+        if reuse and task.id in _self._running_tasks:
+            return
+        task.finalize(*args, **kwargs)
+        _self._running_tasks[task.id] = task
     
     def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
         """
@@ -179,7 +198,7 @@ class CoroutineManager:
         # mimic: `lk_utils.binding.signal._get_func_id`
         if isinstance(func, partial):
             func = func.func
-        return '{}({}:{})'.format(
+        return '<{} at {}:{}>'.format(
             func.__qualname__,
             func.__code__.co_filename,
             func.__code__.co_firstlineno,
@@ -191,6 +210,9 @@ class CoroutineManager:
         while True:
             if not self._running_tasks:
                 sleep(1e-3)
+            
+            finished_ids.clear()
+            self._curr_task = None
             
             for id, task in self._running_tasks.items():
                 if task.done:
@@ -213,8 +235,7 @@ class CoroutineManager:
                     print(':v4', 'task broken!', task.id)
                     task.force_stop()
                     finished_ids.append(id)
-            
-            self._curr_task = None
+                    
             for id in finished_ids:
                 del self._running_tasks[id]
 
