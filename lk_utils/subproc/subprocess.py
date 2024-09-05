@@ -25,13 +25,18 @@ class Popen(sp.Popen):
     def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._introspection = False
+        self._confirmed_dead = False  # see `self.kill` comment
         atexit.register(self.kill)
         if keep_alive:
             self._watch_self_status()
     
     @property
     def is_running(self) -> bool:
-        return self.poll() is None
+        # FIXME: `self.poll` may raise error in atexit if we have already
+        #   killed it manually. not sure why this happens. we use
+        #   `self._confirmed_dead` as a workaround.
+        # return self.poll() is None
+        return False if self._confirmed_dead else self.poll() is None
     
     def kill(self) -> None:
         """
@@ -50,6 +55,7 @@ class Popen(sp.Popen):
             ))
             child.kill()
         parent.kill()
+        self._confirmed_dead = True
     
     @new_thread()
     def _watch_self_status(self) -> None:
