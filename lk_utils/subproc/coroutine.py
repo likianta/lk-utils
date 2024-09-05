@@ -1,13 +1,13 @@
+import asyncio
 import typing as t
-from functools import cached_property
 from functools import partial
 from threading import Thread
-from time import sleep
 from time import time
 from types import FunctionType
 from types import GeneratorType
 
 from ..binding import Signal
+
 
 class _Pause:
     pass
@@ -24,7 +24,7 @@ _unfinish = _Unfinish()
 
 class Task:
     def __init__(self, id: str, func: FunctionType, singleton: bool) -> None:
-        self.success = Signal()
+        self.success = Signal()  # DELETE?
         self.error = Signal()
         self._id = id
         self._func = func
@@ -44,7 +44,7 @@ class Task:
             return
         self.finalize(*args, **kwargs)
         coro_mgr.run(self)
-        
+    
     @property
     def done(self) -> bool:
         return self._done
@@ -97,17 +97,18 @@ class Task:
             self._result = pending_result
         self._running = False
         self._done = True
+        # print('task done')
     
     def force_stop(self) -> None:
         self.error.clear()
         self.success.clear()
         self._done = True
         self._running = False
-        
+    
     def reset(self) -> None:
         self.error.clear()
         self.success.clear()
-        self._done = True
+        self._done = False
         self._result = _unfinish
         self._running = False
 
@@ -126,7 +127,9 @@ class CoroutineManager:
         self._running_tasks = {}
         self._curr_task = None
         self._timer = {}
-        Thread(target=self._mainloop, daemon=True).start()
+        Thread(
+            target=asyncio.run, args=(self._mainloop(),), daemon=True
+        ).start()
     
     def __call__(
         self,
@@ -204,25 +207,26 @@ class CoroutineManager:
             func.__code__.co_firstlineno,
         )
     
-    def _mainloop(self) -> None:
+    async def _mainloop(self) -> None:
         finished_ids = []
         
         while True:
             if not self._running_tasks:
-                sleep(1e-3)
+                await asyncio.sleep(1e-3)
                 continue
             
             finished_ids.clear()
             self._curr_task = None
             
             for id, (task, iter) in self._running_tasks.items():
-                print(id, task, task.done, iter, id in self._timer, ':lv')
+                # print(id, task, task.done, iter, id in self._timer, ':lv')
                 if task.done:
                     finished_ids.append(id)
                     continue
                 
                 if s := self._timer.get(id):
-                    sleep(1e-3)
+                    await asyncio.sleep(1e-3)
+                    # await asyncio.sleep(1)  # TEST
                     if time() < s:
                         continue
                     del self._timer[id]
@@ -238,7 +242,7 @@ class CoroutineManager:
                     print(':v4', 'task broken!', task.id)
                     task.force_stop()
                     finished_ids.append(id)
-                    
+            
             for id in finished_ids:
                 del self._running_tasks[id]
 
