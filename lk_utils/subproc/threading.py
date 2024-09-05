@@ -156,7 +156,6 @@ class ThreadBroker:
     def join(self, timeout: float = None) -> T.Result:
         if not self._is_executed:
             raise Exception('thread is never started!')
-        print(self._is_running, ':v')
         if self._is_running:
             self._thread.join(timeout)
             assert self._is_running is False
