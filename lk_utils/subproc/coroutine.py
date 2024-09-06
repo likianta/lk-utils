@@ -37,14 +37,6 @@ class Task:
         self._final_args = ()
         self._final_kwargs = {}
     
-    # DELETE: deprecate. use `coro_mgr.run(<task>)` instead.
-    def __call__(self, *args, **kwargs) -> None:
-        if self._singleton and self._running:
-            # FIXME: what if params changed?
-            return
-        self.finalize(*args, **kwargs)
-        coro_mgr.run(self)
-    
     @property
     def done(self) -> bool:
         return self._done
@@ -65,6 +57,50 @@ class Task:
     def running(self) -> bool:
         return self._running
     
+    # -------------------------------------------------------------------------
+    # life cycle
+    
+    # callbacks holder
+    _started_callbacks: t.List[FunctionType]
+    _updated_callbacks: t.List[FunctionType]
+    _finished_callbacks: t.List[FunctionType]
+    _cancelled_callbacks: t.List[FunctionType]
+    _crashed_callbacks: t.List[FunctionType]
+    
+    # decorators
+    def started(self, callback: FunctionType) -> None:
+        pass
+    
+    def updated(self, callback: FunctionType) -> None:
+        pass
+    
+    def finished(self, callback: FunctionType) -> None:
+        pass
+    
+    def cancelled(self, callback: FunctionType) -> None:
+        pass
+    
+    def crashed(self, callback: FunctionType) -> None:
+        pass
+    
+    # methods
+    def start(self) -> None:
+        pass
+    
+    def update(self) -> None:
+        pass
+    
+    def finish(self) -> None:
+        pass
+    
+    def cancel(self) -> None:
+        pass
+    
+    def crash(self) -> None:
+        pass
+    
+    # -------------------------------------------------------------------------
+    
     def partial(self, *args, **kwargs) -> t.Self:
         """
         usage:
@@ -81,6 +117,12 @@ class Task:
         self._final_args = self._partial_args + args
         self._final_kwargs = kwargs if not self._partial_kwargs else \
             {**self._partial_kwargs, **kwargs}
+        
+    def call(self, *args, **kwargs):
+        self.finalize(*args, **kwargs)
+        pending_result = self._func(*self._final_args, **self._final_kwargs)
+        if isinstance(pending_result, GeneratorType):
+            pass
     
     def run(self) -> t.Iterator:
         # self.reset_status()
@@ -137,8 +179,8 @@ class CoroutineManager:
             nonlocal name
             if name is None:
                 name = self._get_func_id(func)
-            out = self._tasks[name] = Task(name, func, singleton)
-            return out
+            task = self._tasks[name] = Task(name, func, singleton)
+            return task
         
         return decorator
     
@@ -146,14 +188,14 @@ class CoroutineManager:
     def pause(self) -> _Pause:
         return pause
     
-    # noinspection PyMethodParameters
-    def run(_self, task: Task, *args, reuse: bool = False, **kwargs) -> None:
-        if reuse and task.id in _self._running_tasks:
+    def run(self, task: Task, *args, reuse: bool = False, **kwargs) -> None:
+        if reuse and task.id in self._running_tasks:
             return
         print('run task', task, ':p')
         task.finalize(*args, **kwargs)
         task.reset_status()
-        _self._running_tasks[task.id] = (task, task.run())
+        self._timer[task.id] = 0  # clear its timer
+        self._running_tasks[task.id] = (task, task.run())
     
     def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
         """
