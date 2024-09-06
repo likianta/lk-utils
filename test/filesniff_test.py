@@ -1,6 +1,6 @@
 import lk_logger
 
-from lk_utils import filesniff as fs
+from lk_utils import fs
 
 lk_logger.setup(show_varnames=True)
 
@@ -42,3 +42,8 @@ def test_listing_files():
     print(':i0')
     for fp, fn in fs.findall_dirs('../lk_utils'):
         print(':i', fp, fn)
+
+
+if __name__ == '__main__':
+    # py38 test/filesniff_test.py
+    test_listing_files()

@@ -31,8 +31,6 @@ from .io import dump
 from .io import dumps  # backward compatible
 from .io import load
 from .io import loads  # backward compatible
-from .progress import spinner
-from .progress import track
 from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
