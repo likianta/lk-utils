@@ -6,8 +6,6 @@ from time import time
 from types import FunctionType
 from types import GeneratorType
 
-from ..binding import Signal
-
 
 class _Pause:
     pass
@@ -24,30 +22,35 @@ _unfinish = _Unfinish()
 
 class Task:
     def __init__(self, id: str, func: FunctionType, singleton: bool) -> None:
-        self.success = Signal()  # DELETE?
-        self.error = Signal()
+        self._cancelled_callbacks = {}
+        self._crashed_callbacks = {}
+        self._finished_callbacks = {}
         self._id = id
-        self._func = func
-        self._singleton = singleton
-        self._result = _unfinish
-        self._running = False
-        self._done = False
+        self._over = False
         self._partial_args = ()
         self._partial_kwargs = None
-        self._final_args = ()
-        self._final_kwargs = {}
+        self._result = _unfinish  # DELETE
+        self._running = False
+        self._singleton = singleton
+        self._started_callbacks = {}
+        self._target_func = func
+        self._target_inst = None
+        self._updated_callbacks = {}
     
-    @property
-    def done(self) -> bool:
-        return self._done
+    def __call__(self, *args, **kwargs) -> None:
+        self.run(*args, **kwargs)
+    
+    def __get__(self, instance, owner) -> t.Self:
+        self._target_inst = instance
+        return self
     
     @property
     def id(self) -> str:
         return self._id
     
-    # @cached_property
-    # def interruptible(self) -> bool:
-    #     return isinstance(self._func, GeneratorType)
+    @property
+    def over(self) -> bool:
+        return self._over
     
     @property
     def result(self) -> t.Any:
@@ -60,44 +63,54 @@ class Task:
     # -------------------------------------------------------------------------
     # life cycle
     
-    # callbacks holder
-    _started_callbacks: t.List[FunctionType]
-    _updated_callbacks: t.List[FunctionType]
-    _finished_callbacks: t.List[FunctionType]
-    _cancelled_callbacks: t.List[FunctionType]
-    _crashed_callbacks: t.List[FunctionType]
-    
     # decorators
     def started(self, callback: FunctionType) -> None:
-        pass
+        self._started_callbacks[id(callback)] = callback
     
     def updated(self, callback: FunctionType) -> None:
-        pass
+        self._updated_callbacks[id(callback)] = callback
     
     def finished(self, callback: FunctionType) -> None:
-        pass
+        self._finished_callbacks[id(callback)] = callback
     
     def cancelled(self, callback: FunctionType) -> None:
-        pass
+        self._cancelled_callbacks[id(callback)] = callback
     
     def crashed(self, callback: FunctionType) -> None:
-        pass
+        self._crashed_callbacks[id(callback)] = callback
     
     # methods
     def start(self) -> None:
-        pass
+        self._over = False
+        self._running = True
+        for f in self._started_callbacks.values():
+            f()
     
-    def update(self) -> None:
-        pass
+    def update(self, datum: t.Any) -> None:
+        for f in self._updated_callbacks.values():
+            f(datum)
     
     def finish(self) -> None:
-        pass
+        self._over = True
+        self._running = False
+        for f in self._finished_callbacks.values():
+            f()
     
     def cancel(self) -> None:
-        pass
+        self._over = True
+        self._running = False
+        for f in self._cancelled_callbacks.values():
+            f()
     
-    def crash(self) -> None:
-        pass
+    def crash(self, error: Exception) -> None:
+        self._over = True
+        self._running = False
+        if self._crashed_callbacks:
+            for f in self._crashed_callbacks.values():
+                f(error)
+        else:
+            print(':e', error)
+            print(':v4', 'task broken!', self.id)
     
     # -------------------------------------------------------------------------
     
@@ -113,45 +126,42 @@ class Task:
         self._partial_kwargs = kwargs
         return self
     
-    def finalize(self, *args, **kwargs) -> None:
-        self._final_args = self._partial_args + args
-        self._final_kwargs = kwargs if not self._partial_kwargs else \
-            {**self._partial_kwargs, **kwargs}
-        
-    def call(self, *args, **kwargs):
-        self.finalize(*args, **kwargs)
-        pending_result = self._func(*self._final_args, **self._final_kwargs)
-        if isinstance(pending_result, GeneratorType):
-            pass
+    # def reset_status(self) -> None:
+    #     self._over = False
+    #     self._result = _unfinish
+    #     self._running = False
     
-    def run(self) -> t.Iterator:
+    def run(self, *args, **kwargs) -> None:
         # self.reset_status()
-        pending_result = self._func(*self._final_args, **self._final_kwargs)
+        self.start()
+        args, kwargs = self._finalize_arguments(*args, **kwargs)
+        try:
+            pending_result = self._target_func(*args, **kwargs)
+        except Exception as e:
+            self.crash(e)
+            return
         if isinstance(pending_result, GeneratorType):
-            result = []
-            for x in pending_result:
-                if x is not pause:
-                    result.append(x)
-                yield x
-            self._result = result
+            coro_mgr.add_to_running_loop(self, pending_result)
         else:
-            self._result = pending_result
-        self._running = False
-        self._done = True
-        # print('task done')
+            print(
+                '[yellow dim]task is not awaitable, '
+                'the result is returned immediately.[/]',
+                ':pr'
+            )
+            final_result = pending_result
+            self.update(final_result)
+            self.finish()
     
-    def force_stop(self) -> None:
-        self.error.clear()
-        self.success.clear()
-        self._done = True
-        self._running = False
-    
-    def reset_status(self) -> None:
-        self.error.clear()
-        self.success.clear()
-        self._done = False
-        self._result = _unfinish
-        self._running = False
+    def _finalize_arguments(self, *args, **kwargs) -> t.Tuple[tuple, dict]:
+        if self._target_inst:
+            final_args = (self._target_inst,) + self._partial_args + args
+        else:
+            final_args = self._partial_args + args
+        if self._partial_kwargs:
+            final_kwargs = {**self._partial_kwargs, **kwargs}
+        else:
+            final_kwargs = kwargs
+        return final_args, final_kwargs
 
 
 class CoroutineManager:
@@ -172,8 +182,7 @@ class CoroutineManager:
     def __call__(
         self,
         name: str = None,
-        singleton: bool = True,
-        #   TODO: should we use `singleton` or `run(..., reuse=True)`?
+        singleton: bool = True,  # TODO
     ) -> t.Callable[[FunctionType], Task]:
         def decorator(func: FunctionType) -> Task:
             nonlocal name
@@ -188,14 +197,9 @@ class CoroutineManager:
     def pause(self) -> _Pause:
         return pause
     
-    def run(self, task: Task, *args, reuse: bool = False, **kwargs) -> None:
-        if reuse and task.id in self._running_tasks:
-            return
-        print('run task', task, ':p')
-        task.finalize(*args, **kwargs)
-        task.reset_status()
+    def add_to_running_loop(self, task: Task, iterator: t.Iterator) -> None:
         self._timer[task.id] = 0  # clear its timer
-        self._running_tasks[task.id] = (task, task.run())
+        self._running_tasks[task.id] = (task, iterator)
     
     def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
         """
@@ -204,21 +208,13 @@ class CoroutineManager:
             False: the task is not running.
         """
         if isinstance(task_or_id, Task):
-            id = task_or_id.id
+            task = task_or_id
         else:
-            id = task_or_id
-        if id in self._running_tasks:
-            del self._running_tasks[id]
+            task = self._tasks[task_or_id]
+        if task.running:
+            task.cancel()
             return True
-        return self._tasks[id].done
-    
-    def wait(self, timeout: float, interval: float) -> t.Iterator[_Pause]:
-        # mimic: `lk_utils.time_utils.time.wait`
-        assert self._curr_task
-        count = int(timeout / interval)
-        for _ in range(count):
-            yield self.sleep(interval)
-        raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
+        return False
     
     def sleep(self, sec: float) -> _Pause:
         """
@@ -229,12 +225,22 @@ class CoroutineManager:
         """
         assert sec >= 1e-3, 'sleep time must be greater than 1ms'
         assert self._curr_task is not None
-        assert self._curr_task.id not in self._timer
+        assert not self._timer.get(self._curr_task.id)  # either 0 or None.
         #   if assertion error, you may not yield `coro_mgr.sleep` in your
         #   function.
         after_time = time() + sec
         self._timer[self._curr_task.id] = after_time
         return pause
+    
+    def wait(self, timeout: float, interval: float) -> t.Iterator[_Pause]:
+        # mimic: `lk_utils.time_utils.time.wait`
+        assert self._curr_task
+        count = int(timeout / interval)
+        for _ in range(count):
+            yield self.sleep(interval)
+        raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
+    
+    # -------------------------------------------------------------------------
     
     @staticmethod
     def _get_func_id(func: FunctionType) -> str:
@@ -260,13 +266,13 @@ class CoroutineManager:
             
             for id, (task, iter) in self._running_tasks.items():
                 # print(id, task, task.done, iter, id in self._timer, ':lv')
-                if task.done:
+                if task.over:
                     finished_ids.append(id)
                     continue
                 
                 if s := self._timer.get(id):
-                    # await asyncio.sleep(1e-3)
-                    await asyncio.sleep(1)  # TEST
+                    await asyncio.sleep(1e-3)
+                    # await asyncio.sleep(1)  # TEST
                     if time() < s:
                         continue
                     del self._timer[id]
@@ -276,11 +282,12 @@ class CoroutineManager:
                     for x in iter:
                         if x is pause:
                             break
-                
+                        else:
+                            task.update(x)
+                    else:
+                        task.finish()
                 except Exception as e:
-                    print(':e', e)
-                    print(':v4', 'task broken!', task.id)
-                    task.force_stop()
+                    task.crash(e)
                     finished_ids.append(id)
             
             for id in finished_ids:
