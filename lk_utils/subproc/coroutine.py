@@ -1,10 +1,12 @@
 import asyncio
+import time
 import typing as t
 from functools import partial
 from threading import Thread
-from time import time
 from types import FunctionType
 from types import GeneratorType
+
+from ..time_utils import wait as sync_wait
 
 
 class _Pause:
@@ -26,7 +28,7 @@ class Task:
         self._crashed_callbacks = {}
         self._finished_callbacks = {}
         self._id = id
-        self._over = False
+        self._over = None  # True, False, None
         self._partial_args = ()
         self._partial_kwargs = None
         self._result = _unfinish  # DELETE
@@ -37,8 +39,9 @@ class Task:
         self._target_inst = None
         self._updated_callbacks = {}
     
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args, **kwargs) -> t.Self:
         self.run(*args, **kwargs)
+        return self
     
     def __get__(self, instance, owner) -> t.Self:
         self._target_inst = instance
@@ -65,19 +68,19 @@ class Task:
     
     # decorators
     def started(self, callback: FunctionType) -> None:
-        self._started_callbacks[id(callback)] = callback
+        self._started_callbacks[_get_func_id(callback)] = callback
     
     def updated(self, callback: FunctionType) -> None:
-        self._updated_callbacks[id(callback)] = callback
+        self._updated_callbacks[_get_func_id(callback)] = callback
     
     def finished(self, callback: FunctionType) -> None:
-        self._finished_callbacks[id(callback)] = callback
+        self._finished_callbacks[_get_func_id(callback)] = callback
     
     def cancelled(self, callback: FunctionType) -> None:
-        self._cancelled_callbacks[id(callback)] = callback
+        self._cancelled_callbacks[_get_func_id(callback)] = callback
     
     def crashed(self, callback: FunctionType) -> None:
-        self._crashed_callbacks[id(callback)] = callback
+        self._crashed_callbacks[_get_func_id(callback)] = callback
     
     # methods
     def start(self) -> None:
@@ -113,6 +116,17 @@ class Task:
             print(':v4', 'task broken!', self.id)
     
     # -------------------------------------------------------------------------
+    
+    def join(self, timeout: float = 60, interval: float = 10e-3) -> None:
+        if self.over is None:
+            for _ in sync_wait(1, 10e-3):
+                if self.over is not None:
+                    break
+            else:
+                raise Exception('task never starts')
+        for _ in sync_wait(timeout, interval):
+            if self.over:
+                break
     
     def partial(self, *args, **kwargs) -> t.Self:
         """
@@ -151,6 +165,7 @@ class Task:
             final_result = pending_result
             self.update(final_result)
             self.finish()
+        # return self
     
     def _finalize_arguments(self, *args, **kwargs) -> t.Tuple[tuple, dict]:
         if self._target_inst:
@@ -166,18 +181,22 @@ class Task:
 
 class CoroutineManager:
     _curr_task: t.Optional[Task]
+    _mainloop_thread: Thread
+    _running: bool
     _running_tasks: t.Dict[str, t.Tuple[Task, t.Iterator]]
     _tasks: t.Dict[str, Task]
     _timer: t.Dict[str, float]  # {task_id: time_point, ...}
     
     def __init__(self) -> None:
         self._tasks = {}
+        self._running = False
         self._running_tasks = {}
         self._curr_task = None
         self._timer = {}
-        Thread(
+        self._mainloop_thread = Thread(
             target=asyncio.run, args=(self._mainloop(),), daemon=True
-        ).start()
+        )
+        self._mainloop_thread.start()
     
     def __call__(
         self,
@@ -187,7 +206,7 @@ class CoroutineManager:
         def decorator(func: FunctionType) -> Task:
             nonlocal name
             if name is None:
-                name = self._get_func_id(func)
+                name = _get_func_id(func)
             task = self._tasks[name] = Task(name, func, singleton)
             return task
         
@@ -216,6 +235,15 @@ class CoroutineManager:
             return True
         return False
     
+    @staticmethod
+    def join(task: Task) -> None:
+        task.join()
+        
+    def join_all(self) -> None:
+        self._running = False
+        self._mainloop_thread.join()
+        print(':tp', 'all tasks done')
+    
     def sleep(self, sec: float) -> _Pause:
         """
         usage:
@@ -228,7 +256,7 @@ class CoroutineManager:
         assert not self._timer.get(self._curr_task.id)  # either 0 or None.
         #   if assertion error, you may not yield `coro_mgr.sleep` in your
         #   function.
-        after_time = time() + sec
+        after_time = time.time() + sec
         self._timer[self._curr_task.id] = after_time
         return pause
     
@@ -241,25 +269,89 @@ class CoroutineManager:
         raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
     
     # -------------------------------------------------------------------------
+    # delegate task life cycle (decorators)
+    # fmt:off
     
     @staticmethod
-    def _get_func_id(func: FunctionType) -> str:
-        # mimic: `lk_utils.binding.signal._get_func_id`
-        if isinstance(func, partial):
-            func = func.func
-        return '<{} at {}:{}>'.format(
-            func.__qualname__,
-            func.__code__.co_filename,
-            func.__code__.co_firstlineno,
-        )
+    def on(
+        task: Task, handle_crash: bool = False
+    ) -> t.Callable[[FunctionType], FunctionType]:
+        # noinspection PyTypeChecker
+        def decorator(
+            func: t.Callable[[str, t.Any], t.Any]
+        ) -> t.Callable[[str, t.Any], t.Any]:
+            """
+            func:
+                def <func>(state: str, value) -> any:
+                    state: 'start' | 'update' | 'finish' | 'cancel' | 'crash'
+                    value: depend on the state:
+                        state   value
+                        ------  ---------
+                        start   None
+                        update  any
+                        finish  None
+                        cancel  None
+                        crash   Exception
+            """
+            task.started(partial(func, 'start', None))
+            task.updated(partial(func, 'update'))
+            task.finished(partial(func, 'finish', None))
+            task.cancelled(partial(func, 'cancel', None))
+            if handle_crash:
+                task.crashed(partial(func, 'crash'))
+            return func
+        # noinspection PyTypeChecker
+        return decorator
+    
+    @staticmethod
+    def on_start(task: Task) -> t.Callable[[FunctionType], FunctionType]:
+        def decorator(func: FunctionType) -> FunctionType:
+            task.started(func)
+            return func
+        return decorator
+    
+    @staticmethod
+    def on_update(task: Task) -> t.Callable[[FunctionType], FunctionType]:
+        def decorator(func: FunctionType) -> FunctionType:
+            task.updated(func)
+            return func
+        return decorator
+    
+    @staticmethod
+    def on_finish(task: Task) -> t.Callable[[FunctionType], FunctionType]:
+        def decorator(func: FunctionType) -> FunctionType:
+            task.finished(func)
+            return func
+        return decorator
+    
+    @staticmethod
+    def on_cancel(task: Task) -> t.Callable[[FunctionType], FunctionType]:
+        def decorator(func: FunctionType) -> FunctionType:
+            task.cancelled(func)
+            return func
+        return decorator
+    
+    @staticmethod
+    def on_crash(task: Task) -> t.Callable[[FunctionType], FunctionType]:
+        def decorator(func: FunctionType) -> FunctionType:
+            task.crashed(func)
+            return func
+        return decorator
+    
+    # fmt:on
+    # -------------------------------------------------------------------------
     
     async def _mainloop(self) -> None:
         finished_ids = []
         
+        self._running = True
         while True:
             if not self._running_tasks:
-                await asyncio.sleep(10e-3)
-                continue
+                if self._running:
+                    await asyncio.sleep(10e-3)
+                    continue
+                else:
+                    break
             
             finished_ids.clear()
             self._curr_task = None
@@ -273,7 +365,7 @@ class CoroutineManager:
                 if s := self._timer.get(id):
                     await asyncio.sleep(1e-3)
                     # await asyncio.sleep(1)  # TEST
-                    if time() < s:
+                    if time.time() < s:
                         continue
                     del self._timer[id]
                 
@@ -292,6 +384,17 @@ class CoroutineManager:
             
             for id in finished_ids:
                 del self._running_tasks[id]
+
+
+def _get_func_id(func: FunctionType) -> str:
+    # mimic: `lk_utils.binding.signal._get_func_id`
+    if isinstance(func, partial):
+        func = func.func
+    return '<{} at {}:{}>'.format(
+        func.__qualname__,
+        func.__code__.co_filename,
+        func.__code__.co_firstlineno,
+    )
 
 
 coro_mgr = CoroutineManager()
