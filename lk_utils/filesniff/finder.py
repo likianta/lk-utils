@@ -3,10 +3,10 @@ design guide: docs/filename-extension-form-in-design-thinking.zh.md
 """
 import os
 import re
+import typing as t
 from dataclasses import dataclass
 
 from .main import normpath
-from .. import common_typing as t
 
 __all__ = [
     'Filter',

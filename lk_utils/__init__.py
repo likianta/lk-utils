@@ -2,13 +2,19 @@ if 1:
     import lk_logger
     lk_logger.setup(quiet=True, show_funcname=False, show_varnames=False)
 
+if 2:
+    import sys
+    if sys.version_info[:2] < (3, 11):
+        # print('fix typing module compatibility', ':vs')
+        from . import common_typing
+        sys.modules['typing'] = common_typing
+
 from . import binding
-from . import common_typing as t
-from . import common_typing as typing
 from . import filesniff as fs
 from . import importer
 from . import io
 from . import io as rw  # alias
+from . import pycompatible
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?

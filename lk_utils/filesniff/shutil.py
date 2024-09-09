@@ -1,12 +1,12 @@
 import os
 import shutil
+import typing as t
 from os.path import exists
 from textwrap import dedent
 
 from .finder import findall_dirs
 from .main import IS_WINDOWS  # noqa
 from .main import xpath
-from .. import common_typing as t
 from ..subproc import run_cmd_args
 
 __all__ = [

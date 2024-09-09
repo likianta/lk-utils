@@ -13,7 +13,6 @@ from time import sleep
 from lk_logger import bprint
 from .threading import new_thread
 from .threading import run_new_thread
-from .. import common_typing as t
 from ..textwrap import indent
 from ..textwrap import join
 from ..textwrap import reindent

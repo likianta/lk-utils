@@ -1,8 +1,7 @@
+import typing as t
 from functools import wraps
 from multiprocessing import Process
 from types import FunctionType
-
-from .. import common_typing as t
 
 
 class T:

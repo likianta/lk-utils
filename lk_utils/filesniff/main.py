@@ -1,10 +1,9 @@
 import os
 import os.path as ospath
+import typing as t
 from functools import partial
 from inspect import currentframe
 from types import FrameType
-
-from .. import common_typing as t
 
 __all__ = [
     'abspath',
