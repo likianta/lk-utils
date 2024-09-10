@@ -181,18 +181,27 @@ class Task:
 
 class CoroutineManager:
     _curr_task: t.Optional[Task]
+    _killed: bool
+    # _mainloop_task: asyncio.Task
     _mainloop_thread: Thread
+    # _mainloop_thread: t.Coroutine
+    #   the main thread should be:
+    #       1. run at once
+    #       2. interruptible by ctrl-c
+    #       3. access class attributes
     _running: bool
     _running_tasks: t.Dict[str, t.Tuple[Task, t.Iterator]]
     _tasks: t.Dict[str, Task]
     _timer: t.Dict[str, float]  # {task_id: time_point, ...}
     
     def __init__(self) -> None:
-        self._tasks = {}
+        self._curr_task = None
+        self._killed = False
         self._running = False
         self._running_tasks = {}
-        self._curr_task = None
+        self._tasks = {}
         self._timer = {}
+        
         self._mainloop_thread = Thread(
             target=asyncio.run, args=(self._mainloop(),), daemon=True
         )
@@ -238,11 +247,34 @@ class CoroutineManager:
     @staticmethod
     def join(task: Task) -> None:
         task.join()
-        
+    
     def join_all(self) -> None:
         self._running = False
-        self._mainloop_thread.join()
+        # print(self._running)
+        """
+        how to use `ctrl+c` to stop a thread?
+            ref: https://stackoverflow.com/a/3788243/9695911
+            since thread cannot receive KeyboardInterrupt signal (by ctrl + c),
+            we must listen to the signal in main thread.
+            while `Thread.join()` blocks main thread, which prevent us to
+            switch to main thread to listen, we need to tell thread to "sleep"
+            so that main thread gets a breath.
+            the simple way to tell thread to "sleep" is:
+                while True:
+                    <thread>.join(<timeout>)
+            when timeout reaches, it briefly releases the lock.
+        """
+        while True:
+            self._mainloop_thread.join(10e-3)
+            if not self._mainloop_thread.is_alive():
+                break
         print(':tp', 'all tasks done')
+    
+    def kill(self, *args) -> None:
+        print(':v4s', 'force kill', args)
+        self._killed = True
+        self._mainloop_thread.join()
+        # raise SystemExit
     
     def sleep(self, sec: float) -> _Pause:
         """
@@ -342,10 +374,13 @@ class CoroutineManager:
     # -------------------------------------------------------------------------
     
     async def _mainloop(self) -> None:
+        # print(':dv')
         finished_ids = []
         
         self._running = True
         while True:
+            if self._killed:
+                break
             if not self._running_tasks:
                 if self._running:
                     await asyncio.sleep(10e-3)

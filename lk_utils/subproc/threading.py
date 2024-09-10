@@ -53,6 +53,7 @@ class ThreadBroker:
         self._tasks = deque()
         self._tasks.append((target, args, kwargs, False))
         self._daemon = daemon
+        self._illed = None
         self._interruptible = interruptible
         self._is_executed = False
         self._is_running = False
@@ -152,11 +153,28 @@ class ThreadBroker:
             self.mainloop()
         return self
     
-    def join(self, timeout: float = None) -> T.Result:
+    def join(self, timeout: t.Optional[float] = 10e-3) -> T.Result:
+        """
+        params:
+            timeout: None | float
+                None: blocks until the thread is finished.
+                    warning: the thread won't listen to KeyboardInterrupt
+                    signal, it means you may never stop it if the thread is
+                    run into a dead loop.
+                float: blocks until the thread is finished or user presses
+                    `ctrl + c`.
+                ref: https://stackoverflow.com/a/3788243/9695911
+        """
         if not self._is_executed:
             raise Exception('thread is never started!')
         if self._is_running:
-            self._thread.join(timeout)
+            if timeout is None:
+                self._thread.join()
+            else:
+                while True:
+                    self._thread.join(timeout)
+                    if not self._thread.is_alive():
+                        break
             assert self._is_running is False
         return self.result
     
