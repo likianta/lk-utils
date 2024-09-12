@@ -13,16 +13,43 @@ class _Pause:
     pass
 
 
-class _Unfinish:
-    def __bool__(self) -> bool:
-        return False
+# class _Unfinish:
+#     def __bool__(self) -> bool:
+#         return False
 
 
 pause = _Pause()
-_unfinish = _Unfinish()
+# _unfinish = _Unfinish()
 
 
 class Task:
+    class Result:
+        class _Unfinish:
+            def __bool__(self) -> bool:
+                return False
+            
+        unfinish = _Unfinish()
+        
+        def __init__(self) -> None:
+            self._list = []
+        
+        def get(self) -> t.Any:
+            if self._list:
+                if len(self._list) == 1:
+                    return self._list[0]
+                return self._list
+            # return None
+            return self.unfinish
+        
+        def put(self, value: t.Any) -> None:
+            self._list.append(value)
+        
+        # def set(self, value: t.Any) -> None:
+        #     self._list.append(value)
+        
+        def reset(self) -> None:
+            self._list.clear()
+    
     def __init__(self, id: str, func: FunctionType, singleton: bool) -> None:
         self._cancelled_callbacks = {}
         self._crashed_callbacks = {}
@@ -31,7 +58,7 @@ class Task:
         self._over = None  # True, False, None
         self._partial_args = ()
         self._partial_kwargs = None
-        self._result = _unfinish  # DELETE
+        self._result = Task.Result()
         self._running = False
         self._singleton = singleton
         self._started_callbacks = {}
@@ -57,7 +84,7 @@ class Task:
     
     @property
     def result(self) -> t.Any:
-        return self._result
+        return self._result.get()
     
     @property
     def running(self) -> bool:
@@ -86,10 +113,12 @@ class Task:
     def start(self) -> None:
         self._over = False
         self._running = True
+        self._result.reset()
         for f in self._started_callbacks.values():
             f()
     
     def update(self, datum: t.Any) -> None:
+        self._result.put(datum)
         for f in self._updated_callbacks.values():
             f(datum)
     
@@ -117,9 +146,9 @@ class Task:
     
     # -------------------------------------------------------------------------
     
-    def join(self, timeout: float = 60, interval: float = 10e-3) -> None:
+    def join(self, timeout: float = 60, interval: float = 10e-3) -> t.Any:
         if self.over is None:
-            for _ in sync_wait(1, 10e-3):
+            for _ in sync_wait(100e-3, 1e-3):
                 if self.over is not None:
                     break
             else:
@@ -127,6 +156,7 @@ class Task:
         for _ in sync_wait(timeout, interval):
             if self.over:
                 break
+        return self.result
     
     def partial(self, *args, **kwargs) -> t.Self:
         """
@@ -139,11 +169,6 @@ class Task:
         self._partial_args = args
         self._partial_kwargs = kwargs
         return self
-    
-    # def reset_status(self) -> None:
-    #     self._over = False
-    #     self._result = _unfinish
-    #     self._running = False
     
     def run(self, *args, **kwargs) -> None:
         # self.reset_status()
@@ -245,8 +270,8 @@ class CoroutineManager:
         return False
     
     @staticmethod
-    def join(task: Task) -> None:
-        task.join()
+    def join(task: Task) -> t.Any:
+        return task.join()
     
     def join_all(self) -> None:
         self._running = False
@@ -383,7 +408,8 @@ class CoroutineManager:
                 break
             if not self._running_tasks:
                 if self._running:
-                    await asyncio.sleep(10e-3)
+                    await asyncio.sleep(1e-3)
+                    # await asyncio.sleep(10e-3)
                     continue
                 else:
                     break
