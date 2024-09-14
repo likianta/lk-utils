@@ -114,32 +114,32 @@ class Task:
         self._over = False
         self._running = True
         self._result.reset()
-        for f in self._started_callbacks.values():
-            f()
+        for k in tuple(self._started_callbacks.keys()):
+            self._started_callbacks[k]()
     
     def update(self, datum: t.Any) -> None:
         self._result.put(datum)
-        for f in self._updated_callbacks.values():
-            f(datum)
+        for k in tuple(self._updated_callbacks.keys()):
+            self._updated_callbacks[k](datum)
     
     def finish(self) -> None:
         self._over = True
         self._running = False
-        for f in self._finished_callbacks.values():
-            f()
+        for k in tuple(self._finished_callbacks.keys()):
+            self._finished_callbacks[k]()
     
     def cancel(self) -> None:
         self._over = True
         self._running = False
-        for f in self._cancelled_callbacks.values():
-            f()
+        for k in tuple(self._cancelled_callbacks.keys()):
+            self._cancelled_callbacks[k]()
     
     def crash(self, error: Exception) -> None:
         self._over = True
         self._running = False
         if self._crashed_callbacks:
-            for f in self._crashed_callbacks.values():
-                f(error)
+            for k in tuple(self._crashed_callbacks.keys()):
+                self._crashed_callbacks[k](error)
         else:
             print(':e', error)
             print(':v4', 'task broken!', self.id)
