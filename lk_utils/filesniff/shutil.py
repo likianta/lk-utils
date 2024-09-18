@@ -20,6 +20,8 @@ __all__ = [
     'make_links',
     'make_shortcut',
     'move',
+    'move_file',
+    'move_tree',
     'remove',
     'remove_file',
     'remove_tree',
@@ -150,6 +152,10 @@ def move(src: str, dst: str, overwrite: bool = None) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
     shutil.move(src, dst)
+
+
+move_file = move
+move_tree = move
 
 
 def remove(dst: str) -> None:
