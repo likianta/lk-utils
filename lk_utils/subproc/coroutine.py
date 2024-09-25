@@ -1,6 +1,7 @@
 import asyncio
 import time
 import typing as t
+from collections import deque
 from functools import partial
 from threading import Thread
 from types import FunctionType
@@ -59,6 +60,7 @@ class Task:
         self._partial_args = ()
         self._partial_kwargs = None
         self._result = Task.Result()
+        self._rolls = deque()
         self._running = False
         self._singleton = singleton
         self._started_callbacks = {}
@@ -171,6 +173,19 @@ class Task:
         return self
     
     def run(self, *args, **kwargs) -> None:
+        if self._running:
+            # add fuel to self._rolls
+            args, kwargs = self._finalize_arguments(*args, **kwargs)
+            try:
+                pending_result = self._target_func(*args, **kwargs)
+            except Exception as e:
+                self.crash(e)
+            else:
+                assert isinstance(pending_result, GeneratorType)
+                self._rolls.append(pending_result)
+            finally:
+                return
+        
         # self.reset_status()
         self.start()
         args, kwargs = self._finalize_arguments(*args, **kwargs)
@@ -180,7 +195,8 @@ class Task:
             self.crash(e)
             return
         if isinstance(pending_result, GeneratorType):
-            coro_mgr.add_to_running_loop(self, pending_result)
+            self._rolls.append(pending_result)
+            coro_mgr.add_to_running_loop(self, self._rollup())
         else:
             print(
                 '[yellow dim]task is not awaitable, '
@@ -202,7 +218,12 @@ class Task:
         else:
             final_kwargs = kwargs
         return final_args, final_kwargs
-
+    
+    def _rollup(self) -> t.Iterator:
+        while self._rolls:
+            bucket = self._rolls.popleft()
+            yield from bucket
+    
 
 class CoroutineManager:
     _curr_task: t.Optional[Task]
