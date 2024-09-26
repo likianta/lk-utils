@@ -11,6 +11,7 @@ from rich.text import Text
 from time import sleep
 
 from lk_logger import bprint
+from .threading import Thread
 from .threading import new_thread
 from .threading import run_new_thread
 from ..textwrap import indent
@@ -21,8 +22,12 @@ _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 class Popen(sp.Popen):
+    communication_thread: t.Optional[Thread]
+    _introspection: bool
+    
     def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.communication_thread = None
         self._introspection = False
         atexit.register(self.kill)
         if keep_alive:
@@ -58,6 +63,8 @@ class Popen(sp.Popen):
             parent.kill()
         except psutil.NoSuchProcess:
             pass
+        if self.communication_thread:
+            self.communication_thread.kill()
     
     @new_thread()
     def _watch_self_status(self) -> None:
@@ -115,7 +122,7 @@ def run_command_args(
     env: t.Dict[str, str] = None,
     blocking: bool = True,
     ignore_error: bool = False,
-    ignore_return: bool = False,
+    # ignore_return: bool = False,
     force_term_color: bool = False,
     filter: bool = True,
     # subprocess_scheme: str = 'default',
@@ -166,8 +173,7 @@ def run_command_args(
         #   https://stackoverflow.com/questions/14693701
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
-        ignore_return: bool = False
-    ) -> t.Optional[str]:
+    ) -> t.Iterator[str]:
         
         def readlines(source: t.IO) -> t.Iterator[str]:
             last: bytes = b''
@@ -194,17 +200,13 @@ def run_command_args(
             if temp:
                 yield (temp + b'\n').decode(errors='ignore')
         
-        stdout = ''
         for line in readlines(process.stdout):
             if verbose:
                 bprint(line, end='')
-            if not ignore_return:
-                if remove_ansi_code:
-                    stdout += _ANSI_ESCAPE.sub('', line)
-                else:
-                    stdout += line
-        # if ignore_return: assert stdout == ''
-        return None if ignore_return else stdout.rstrip()  # strip '\r\n'
+            if remove_ansi_code:
+                yield _ANSI_ESCAPE.sub('', line)
+            else:
+                yield line.rstrip()
     
     def show_error(stdout: str) -> None:
         if verbose:  # we have printed the stdout, so do nothing.
@@ -281,25 +283,23 @@ def run_command_args(
     )
     
     if blocking:
-        result = communicate(
-            remove_ansi_code=force_term_color,
-            ignore_return=ignore_return
-        )
+        stdout = ''.join(
+            communicate(remove_ansi_code=force_term_color)
+        ).rstrip()  # strip '\r\n'
         if retcode := process.wait():
             if ignore_error:
-                return result
+                return stdout
             else:
-                show_error(result)
+                show_error(stdout)
                 sys.exit(retcode)
         else:
-            return result
+            return stdout
     else:
         if verbose:
-            run_new_thread(communicate, args=(False, True))
-        if ignore_return:
-            return None
-        else:
-            return process
+            process.communication_thread = run_new_thread(
+                communicate, args=(False,), interruptible=True
+            )
+        return process
 
 
 def run_command_line(cmd: str, **kwargs) -> t.Union[str, Popen, None]:

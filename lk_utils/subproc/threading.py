@@ -2,28 +2,26 @@ import typing as t
 from collections import defaultdict
 from collections import deque
 from functools import wraps
-from threading import Thread
+from threading import Thread as _Thread
 from types import GeneratorType
 
 
 class T:
+    _Inherit = bool
+    
+    Args = t.Optional[tuple]
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
-    Result = t.Any
-    
-    # ThreadBroker
-    Target = t.TypeVar('Target', bound=t.Callable)
-    Args = t.Optional[tuple]
     KwArgs = t.Optional[dict]
-    _Inherit = bool
-    Task = t.Tuple[Target, Args, KwArgs, _Inherit]
+    Result = t.Any
+    Target = t.TypeVar('Target', bound=t.Callable)
+    Thread = t.ForwardRef('Thread')
     
-    # ThreadPool
-    ThreadBroker = t.ForwardRef('ThreadBroker')
-    ThreadPool = t.Dict[Group, t.Dict[Id, ThreadBroker]]
+    Task = t.Tuple[Target, Args, KwArgs, _Inherit]
+    ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
 
 
-class ThreadBroker:
+class Thread:
     _daemon: bool
     _illed: t.Optional[Exception]
     _interruptible: bool
@@ -32,7 +30,7 @@ class ThreadBroker:
     _result: T.Result
     _target: T.Target
     _tasks: t.Deque[T.Task]
-    _thread: Thread
+    _thread: _Thread
     
     class Undefined:
         pass
@@ -57,7 +55,7 @@ class ThreadBroker:
         self._interruptible = interruptible
         self._is_executed = False
         self._is_running = False
-        self._result = ThreadBroker.Undefined
+        self._result = Thread.Undefined
         self._target = target
         if start_now:
             self.mainloop()
@@ -82,7 +80,7 @@ class ThreadBroker:
     
     @property
     def result(self) -> T.Result:
-        if self._result is ThreadBroker.Undefined:
+        if self._result is Thread.Undefined:
             raise RuntimeError('The result is not ready yet.')
         return self._result
     
@@ -107,7 +105,7 @@ class ThreadBroker:
                 except Exception as e:
                     self._illed = e
                     self._is_running = False
-                    self._result = ThreadBroker.BrokenResult(e)
+                    self._result = Thread.BrokenResult(e)
                     raise e
                 if self._interruptible:
                     if isinstance(self._result, GeneratorType):
@@ -129,7 +127,7 @@ class ThreadBroker:
                         )
             self._is_running = False
         
-        self._thread = Thread(target=loop)
+        self._thread = _Thread(target=loop)
         self._thread.daemon = self._daemon
         self._thread.start()
         self._is_executed = True
@@ -205,16 +203,16 @@ class ThreadManager:
         daemon: bool = True,
         singleton: bool = False,
         interruptible: bool = False,
-    ) -> t.Callable[[T.Target], t.Callable[[t.Any], ThreadBroker]]:
+    ) -> t.Callable[[T.Target], t.Callable[[t.Any], Thread]]:
         """a decorator wraps target function in a new thread."""
         
-        def decorator(func: T.Target) -> t.Callable[[t.Any], ThreadBroker]:
+        def decorator(func: T.Target) -> t.Callable[[t.Any], Thread]:
             nonlocal ident
             if ident is None:
                 ident = id(func)
             
             @wraps(func)
-            def wrapper(*args, **kwargs) -> ThreadBroker:
+            def wrapper(*args, **kwargs) -> Thread:
                 return self._create_thread_broker(
                     group,
                     ident,
@@ -237,7 +235,7 @@ class ThreadManager:
         kwargs: T.KwArgs = None,
         daemon: bool = True,
         interruptible: bool = False,
-    ) -> ThreadBroker:
+    ) -> Thread:
         """run function in a new thread at once."""
         # # assert id(target) not in __thread_pool  # should i check it?
         return self._create_thread_broker(
@@ -261,12 +259,12 @@ class ThreadManager:
         daemon: bool = True,
         singleton: bool = False,
         interruptible: bool = False,
-    ) -> ThreadBroker:
+    ) -> Thread:
         if singleton:
             if t := self.thread_pool[group].get(ident):
                 t.add_task(args, kwargs)
                 return t
-        broker = self.thread_pool[group][ident] = ThreadBroker(
+        broker = self.thread_pool[group][ident] = Thread(
             target=target,
             args=args,
             kwargs=kwargs,
@@ -278,13 +276,13 @@ class ThreadManager:
     # -------------------------------------------------------------------------
     
     class Delegate:
-        def __init__(self, *threads: ThreadBroker):
+        def __init__(self, *threads: Thread):
             self.threads = threads
         
         def __len__(self) -> int:
             return len(self.threads)
         
-        def fetch_one(self, index=0) -> t.Optional[ThreadBroker]:
+        def fetch_one(self, index=0) -> t.Optional[Thread]:
             if self.threads:
                 return self.threads[index]
             else:
@@ -296,7 +294,7 @@ class ThreadManager:
     
     def retrieve_thread(
         self, ident: T.Id, group: T.Group = 'default'
-    ) -> t.Optional[ThreadBroker]:
+    ) -> t.Optional[Thread]:
         return self.thread_pool[group].get(ident)
     
     def retrieve_threads(
