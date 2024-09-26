@@ -64,6 +64,7 @@ class Popen(sp.Popen):
         except psutil.NoSuchProcess:
             pass
         if self.communication_thread:
+            print('[red dim]cut off subprocess printing.[/]', ':r')
             self.communication_thread.kill()
     
     @new_thread()

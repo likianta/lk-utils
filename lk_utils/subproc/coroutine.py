@@ -275,16 +275,12 @@ class CoroutineManager:
         self._timer[task.id] = 0  # clear its timer
         self._running_tasks[task.id] = (task, iterator)
     
-    def cancel(self, task_or_id: t.Union[Task, str]) -> bool:
+    def cancel(self, task: Task) -> bool:
         """
         returns:
             True: the task is running or run over, then be canceled.
             False: the task is not running.
         """
-        if isinstance(task_or_id, Task):
-            task = task_or_id
-        else:
-            task = self._tasks[task_or_id]
         if task.running:
             task.cancel()
             return True
@@ -352,7 +348,7 @@ class CoroutineManager:
     
     @staticmethod
     def on(
-        task: Task, handle_crash: bool = False
+        task: Task, handle_cancel: bool = True, handle_crash: bool = False
     ) -> t.Callable[[FunctionType], FunctionType]:
         # noinspection PyTypeChecker
         def decorator(
@@ -374,7 +370,8 @@ class CoroutineManager:
             task.started(partial(func, 'start', None))
             task.updated(partial(func, 'update'))
             task.finished(partial(func, 'finish', None))
-            task.cancelled(partial(func, 'cancel', None))
+            if handle_cancel:
+                task.cancelled(partial(func, 'cancel', None))
             if handle_crash:
                 task.crashed(partial(func, 'crash'))
             return func
