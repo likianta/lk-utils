@@ -45,4 +45,4 @@ from .subproc import run_new_thread
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '2.11.0'
+__version__ = '3.0.0'
