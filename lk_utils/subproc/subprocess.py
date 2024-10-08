@@ -175,6 +175,9 @@ def run_command_args(
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
     ) -> t.Iterator[str]:
+        """
+        yield: line, without '\n' at the end.
+        """
         
         def readlines(source: t.IO) -> t.Iterator[str]:
             last: bytes = b''
@@ -284,9 +287,9 @@ def run_command_args(
     )
     
     if blocking:
-        stdout = ''.join(
+        stdout = '\n'.join(
             communicate(remove_ansi_code=force_term_color)
-        ).rstrip()  # strip '\r\n'
+        )
         if retcode := process.wait():
             if ignore_error:
                 return stdout
