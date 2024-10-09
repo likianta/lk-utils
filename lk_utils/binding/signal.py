@@ -20,7 +20,7 @@ class _Config:
     # use_thread_pool: bool = False
 
 
-class _StopSignalEmission(Exception):
+class StopSignalEmission(Exception):
     pass
 
 
@@ -77,22 +77,22 @@ class Signal:
         if not self._funcs: return
         # print(self._funcs, ':l')
         try:
-            with _prop_chain.locking(self):
+            with prop_chain.locking(self):
                 f: T.Func
                 for f in tuple(self._funcs.values()):
                     try:
                         f(*args, **kwargs)
                     except Exception as e:
                         print(':e', e)
-        except _StopSignalEmission:
+        except StopSignalEmission:
             if config.circular_signal_error == 'prompt':
                 print(
                     'signal is prevented because of '
                     'circular emissions', ':p2vs'
                 )
             elif config.circular_signal_error == 'raise':
-                raise _StopSignalEmission(
-                    '\n' + _prop_chain.describe_call_chain()
+                raise StopSignalEmission(
+                    '\n' + prop_chain.describe_call_chain()
                 )
     
     def unbind(self, func_or_id: t.Union[T.Func, T.FuncId]) -> None:
@@ -140,7 +140,7 @@ class _PropagationChain:
     def _lock(self, signal: Signal) -> bool:
         if self._chain:
             if self._chain[0] is signal:
-                raise _StopSignalEmission
+                raise StopSignalEmission
             else:
                 self._chain.append(signal)
             return False
@@ -201,4 +201,4 @@ def get_func_id(func: T.Func) -> T.FuncId:
         )
 
 
-_prop_chain = _PropagationChain()
+prop_chain = _PropagationChain()

@@ -18,6 +18,7 @@ from . import pycompatible
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
+from .binding import Reactive
 from .binding import Signal
 from .binding import bind_with
 from .binding import call_once
