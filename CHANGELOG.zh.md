@@ -4,6 +4,7 @@
 
 - 自定义的协程管理器
 - 响应式变量 reactive
+- 更加实用的计时器
 - 优化 threading 传参形式
 - 修复 typing 模块在低版本 python 上的问题
 
