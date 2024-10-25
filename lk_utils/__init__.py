@@ -35,9 +35,7 @@ from .filesniff import xpath
 from .filesniff import xpath as p
 from .filesniff import xpath as relpath  # backward compatible
 from .io import dump
-from .io import dumps  # backward compatible
 from .io import load
-from .io import loads  # backward compatible
 from .subproc import coro_mgr as coro
 from .subproc import new_thread
 from .subproc import run_cmd_args

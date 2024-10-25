@@ -334,12 +334,14 @@ class CoroutineManager:
         self._timer[self._curr_task.id] = after_time
         return pause
     
-    def wait(self, timeout: float, interval: float) -> t.Iterator[_Pause]:
+    def wait(self, timeout: float, interval: float) -> t.Iterator[float]:
         # mimic: `lk_utils.time_utils.time.wait`
         assert self._curr_task
         count = int(timeout / interval)
-        for _ in range(count):
-            yield self.sleep(interval)
+        for i in range(count):
+            self.sleep(interval)
+            # yield i
+            yield (i + 1) / count
         raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
     
     # -------------------------------------------------------------------------

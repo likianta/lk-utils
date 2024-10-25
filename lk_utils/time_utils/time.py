@@ -76,9 +76,10 @@ def timestamp(style: str = 'y-m-d h:n:s', time_sec: float = None) -> str:
         return time.strftime(style, time.localtime(time_sec))
 
 
-def wait(timeout: float, interval: float = 1) -> t.Iterator[int]:
+def wait(timeout: float, interval: float = 1) -> t.Iterator[float]:
     count = int(timeout / interval)
     for i in range(count):
-        yield i
+        # yield i
+        yield (i + 1) / count
         time.sleep(interval)
     raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')

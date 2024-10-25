@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-def clone_tree(src: str, dst: str, overwrite: bool = None) -> None:
+def clone_tree(src: str, dst: str, overwrite: t.Optional[bool] = None) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
     if not exists(dst):
@@ -39,14 +39,17 @@ def clone_tree(src: str, dst: str, overwrite: bool = None) -> None:
             os.mkdir(dp_o)
 
 
-def copy_file(src: str, dst: str, overwrite: bool = None) -> None:
+def copy_file(src: str, dst: str, overwrite: t.Optional[bool] = None) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
     shutil.copyfile(src, dst)
 
 
 def copy_tree(
-    src: str, dst: str, overwrite: bool = None, symlinks: bool = False
+    src: str,
+    dst: str,
+    overwrite: t.Optional[bool] = None,
+    symlinks: bool = False
 ) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
@@ -66,7 +69,7 @@ def make_file(dst: str) -> None:
     open(dst, 'w').close()
 
 
-def make_link(src: str, dst: str, overwrite: bool = None) -> str:
+def make_link(src: str, dst: str, overwrite: t.Optional[bool] = None) -> str:
     """
     args:
         overwrite:
@@ -95,7 +98,10 @@ def make_link(src: str, dst: str, overwrite: bool = None) -> str:
 
 
 def make_links(
-    src: str, dst: str, names: t.List[str] = None, overwrite: bool = None
+    src: str,
+    dst: str,
+    names: t.List[str] = None,
+    overwrite: t.Optional[bool] = None
 ) -> t.List[str]:
     out = []
     for n in names or os.listdir(src):
@@ -103,7 +109,11 @@ def make_links(
     return out
 
 
-def make_shortcut(src: str, dst: str = None, overwrite: bool = None) -> None:
+def make_shortcut(
+    src: str,
+    dst: str = None,
+    overwrite: t.Optional[bool] = None
+) -> None:
     """
     use batch script to create shortcut, no pywin32 required.
     
@@ -148,7 +158,17 @@ def make_shortcut(src: str, dst: str = None, overwrite: bool = None) -> None:
     os.remove(vbs)
 
 
-def move(src: str, dst: str, overwrite: bool = None) -> None:
+# def merge_tree(src: str, dst: str, overwrite: bool = False) -> None:
+#     if overwrite:  # TODO
+#         raise NotImplementedError
+#     src_dirs = frozenset(x.relpath for x in findall_dirs(src))
+#     src_files = frozenset(x.relpath for x in findall_files(src))
+#     dst_dirs = frozenset(x.relpath for x in findall_dirs(dst))
+#     dst_files = frozenset(x.relpath for x in findall_files(dst))
+#     # TODO
+
+
+def move(src: str, dst: str, overwrite: t.Optional[bool] = None) -> None:
     if exists(dst):
         if _overwrite(dst, overwrite) is False: return
     shutil.move(src, dst)
