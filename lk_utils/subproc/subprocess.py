@@ -6,7 +6,6 @@ import typing as t
 
 import atexit
 import psutil
-import sys
 from rich.text import Text
 from time import sleep
 
@@ -74,7 +73,7 @@ class Popen(sp.Popen):
             if self.is_running:
                 sleep(1)
             else:
-                print(':v4', 'process has exited unexpectly.')
+                print(':v8', 'process has exited unexpectly.')
                 self._introspection = False
                 return
 
@@ -212,36 +211,33 @@ def run_command_args(
             else:
                 yield line.rstrip()
     
-    def show_error(stdout: str) -> None:
+    def format_error(stdout: str) -> str:
         if verbose:  # we have printed the stdout, so do nothing.
             pass
         else:  # better to dump the stdout message to console.
             if stdout:
                 print(':s1r', '[red dim]original output from subprocess:[/]')
                 print(':s1r1', Text.from_ansi(indent(stdout), style='red dim'))
-            print(':dv4s', 'subprocess error')
-        print(
-            reindent(
-                '''
-                error happened with exit code {}.
-                the origin run command is:
-                    {}
-                each element is:
-                    {}
-                ''',
-                lstrip=False,
-            ).format(
-                retcode,
-                ' '.join(args),
-                join(
-                    (
-                        '{:<2}  {}'.format(i, x)
-                        for i, x in enumerate(args, 1)
-                    ),
-                    8,
+            # print(':dv8', 'subprocess error')
+        return reindent(
+            '''
+            error happened with exit code {}.
+            the origin run command is:
+                {}
+            each element is:
+                {}
+            ''',
+            lstrip=False,
+        ).format(
+            retcode,
+            ' '.join(args),
+            join(
+                (
+                    '{:<2}  {}'.format(i, x)
+                    for i, x in enumerate(args, 1)
                 ),
+                8,
             ),
-            ':v4'
         )
     
     '''
@@ -294,8 +290,9 @@ def run_command_args(
             if ignore_error:
                 return stdout
             else:
-                show_error(stdout)
-                sys.exit(retcode)
+                # show_error(stdout)
+                # sys.exit(retcode)
+                raise Exception(format_error(stdout))
         else:
             return stdout
     else:

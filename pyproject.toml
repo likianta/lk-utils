@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "3.0.1a1"
+version = "3.0.1"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -9,12 +9,20 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = "^0.5.8"
-# lk-logger = "^6.0.0"
-lk-logger = { version = "^6.0.1a1", source = "likianta-host" }
+lk-logger = "^6.0.1"
+# lk-logger = { version = "^6.0.1a1", source = "likianta-host" }
 psutil = "^6.0.0"
 pyyaml = "^6.0.0"
 rich = "^13.8.0"
 typing-extensions = "^4.0.0"
+
+# # extra
+# openpyxl = { version = "3.0.10", optional = true }  # <- pyexcel-xlsx (https://github.com/pyexcel/pyexcel-xlsx/issues/52)
+# pyexcel = { version = "^0.7.0", optional = true }
+# pyexcel-xlsx = { version = "^0.6.0", optional = true }
+#
+# [tool.poetry.extras]
+# ext = ["openpyxl", "pyexcel", "pyexcel-xlsx"]
 
 [[tool.poetry.source]]
 name = "tsinghua"
