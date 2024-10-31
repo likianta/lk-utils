@@ -1,5 +1,6 @@
 import typing as t
 from contextlib import contextmanager
+from os.path import exists
 
 
 class E:
@@ -20,10 +21,13 @@ class T:
 def load(
     file: str,
     type: T.FileType = 'auto',
+    *,
+    default: t.Any = None,
     **kwargs
-):  # -> t.Union[str, bytes, dict, list, t.Any]
-    #   we don't annotate the return type because some IDE's type checking -
-    #   doesn't work correctly. (last found at pycharm v2024.01)
+) -> t.Union[str, dict, list, t.Any]:
+    if default is not None and not exists(file):
+        dump(default, file)
+        return default
     if type == 'auto':
         type = _detect_file_type(file)
     with open(
@@ -137,7 +141,7 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'plain'
 
 
-# alias
+# DELETE: alias
 rd = read = loads = load
 wr = write = dumps = dump
 
