@@ -14,7 +14,15 @@ class T:
     DataHolder = t.TypeVar('DataHolder', bound=t.Any)
     FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
     FileType = t.Literal[
-        'auto', 'binary', 'json', 'pickle', 'plain', 'table', 'toml', 'yaml'
+        'auto',
+        'binary',
+        'excel',
+        'json',
+        'pickle',
+        'plain',
+        'table',
+        'toml',
+        'yaml',
     ]
 
 
@@ -24,12 +32,35 @@ def load(
     *,
     default: t.Any = None,
     **kwargs
-) -> t.Union[str, dict, list, t.Any]:
+) -> t.Union[str, dict, list, t.List[list], t.Any]:
     if default is not None and not exists(file):
         dump(default, file)
         return default
     if type == 'auto':
         type = _detect_file_type(file)
+    
+    if type == 'excel':
+        import pyexcel  # pip install lk-utils[exl]
+        book_data = pyexcel.get_book_dict(file_name=file)
+        if (x := kwargs.get('sheet')) is not None:
+            if isinstance(x, str):  # by sheet name
+                try:
+                    return book_data[x]
+                except KeyError:
+                    raise KeyError(tuple(book_data.keys()), x)
+            elif isinstance(x, int):  # by sheet number
+                for i, v in enumerate(book_data.values()):
+                    if i == x:
+                        return v
+                else:
+                    raise IndexError(tuple(book_data.keys()), x)
+            else:
+                raise TypeError(x)
+        else:
+            # return OrderedDict ({sheet_name: [row, ...], ...})
+            return book_data
+    assert type != 'excel'
+    
     with open(
         file,
         mode='rb' if type in ('binary', 'pickle') else 'r',
@@ -44,24 +75,25 @@ def load(
             # if out.startswith(u'\ufeff'):
             #     out = out.encode('utf-8')[3:].decode('utf-8')
             return f.read()
-        if type == 'json':
+        elif type == 'json':
             from json import load as jload
             return jload(f, **kwargs)
-        if type == 'yaml':  # pip install pyyaml
+        elif type == 'yaml':  # pip install pyyaml
             from yaml import safe_load as yload
             return yload(f)
-        if type == 'table':
+        elif type == 'table':
             import csv
             return list(csv.reader(f))
-        if type == 'pickle':
+        elif type == 'pickle':
             from pickle import load as pload
             return pload(f, **kwargs)  # noqa
-        if type == 'binary':
+        elif type == 'binary':
             return f.read()
-        if type == 'toml':  # pip install toml
+        elif type == 'toml':  # pip install toml
             from toml import load as tload  # noqa
             return tload(f, **kwargs)
-    raise E.Unreachable
+        else:
+            raise E.Unreachable
 
 
 def dump(
@@ -75,9 +107,10 @@ def dump(
         type = _detect_file_type(file)
     with open(
         file,
-        mode='wb' if type in ('binary', 'pickle') else 'w',
+        mode='wb' if type in ('binary', 'excel', 'pickle') else 'w',
         encoding=kwargs.pop(
-            'encoding', None if type in ('binary', 'pickle') else 'utf-8'
+            'encoding',
+            None if type in ('binary', 'excel', 'pickle') else 'utf-8'
         ),
         newline='' if type == 'table' else None,
     ) as f:
@@ -115,6 +148,8 @@ def dump(
         elif type == 'pickle':
             from pickle import dump as pdump
             pdump(data, f, **kwargs)  # noqa
+        elif type == 'excel':
+            pass  # TODO
         elif type == 'binary':
             f.write(data)
         elif type == 'toml':
@@ -137,13 +172,10 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'toml'
     elif filename.endswith(('.pkl',)):
         return 'pickle'
+    elif filename.endswith(('.xlsx', '.xls')):
+        return 'excel'
     else:  # fallback to 'plain'
         return 'plain'
-
-
-# DELETE: alias
-rd = read = loads = load
-wr = write = dumps = dump
 
 
 @contextmanager
