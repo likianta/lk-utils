@@ -1,6 +1,9 @@
 import typing as t
 from contextlib import contextmanager
+from os.path import basename
 from os.path import exists
+
+import lk_logger
 
 
 class E:
@@ -32,7 +35,19 @@ def load(
     *,
     default: t.Any = None,
     **kwargs
-) -> t.Union[str, dict, list, t.List[list], t.Any]:
+) -> t.Any:  # t.Union[str, dict, list, t.List[list], t.Any]:
+    """
+    kwargs:
+        for excels:
+            sheet: int | str
+                int: get sheet by index. 0 based.
+                str: get sheet by name. case sensitive.
+            progress: bool (=False)
+                since pyexcel opening excel file is slow, this option shows a -
+                progress bar in the console.
+                TODO: this is a workaround option. we consider using `xlrd` to -
+                    replace `pyexcel` to fix this issue.
+    """
     if default is not None and not exists(file):
         dump(default, file)
         return default
@@ -41,7 +56,13 @@ def load(
     
     if type == 'excel':
         import pyexcel  # pip install lk-utils[exl]
-        book_data = pyexcel.get_book_dict(file_name=file)
+        if kwargs.get('progress'):
+            with lk_logger.spinner(
+                'opening excel "{}"...'.format(basename(file))
+            ):
+                book_data = pyexcel.get_book_dict(file_name=file)
+        else:
+            book_data = pyexcel.get_book_dict(file_name=file)
         if (x := kwargs.get('sheet')) is not None:
             if isinstance(x, str):  # by sheet name
                 try:
@@ -178,11 +199,10 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'plain'
 
 
+# DELETE?
 @contextmanager
 def writing_to(
-    file: str,
-    data_holder: T.DataHolder = None,
-    **kwargs
+    file: str, data_holder: T.DataHolder = None, **kwargs
 ) -> T.ContextHolder[T.DataHolder]:
     if data_holder is None:
         data_holder = []
