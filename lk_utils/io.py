@@ -1,15 +1,5 @@
+import os
 import typing as t
-from contextlib import contextmanager
-from os.path import basename
-from os.path import exists
-
-import lk_logger
-
-
-class E:
-    class Unreachable(Exception):
-        # the code should not reach here.
-        pass
 
 
 class T:
@@ -42,44 +32,37 @@ def load(
             sheet: int | str
                 int: get sheet by index. 0 based.
                 str: get sheet by name. case sensitive.
-            progress: bool (=False)
-                since pyexcel opening excel file is slow, this option shows a -
-                progress bar in the console.
-                TODO: this is a workaround option. we consider using `xlrd` to -
-                    replace `pyexcel` to fix this issue.
     """
-    if default is not None and not exists(file):
+    if default is not None and not os.path.exists(file):
         dump(default, file)
         return default
     if type == 'auto':
         type = _detect_file_type(file)
     
     if type == 'excel':
-        import pyexcel  # pip install lk-utils[exl]
-        if kwargs.get('progress'):
-            with lk_logger.spinner(
-                'opening excel "{}"...'.format(basename(file))
-            ):
-                book_data = pyexcel.get_book_dict(file_name=file)
-        else:
-            book_data = pyexcel.get_book_dict(file_name=file)
+        def read_sheet() -> t.List[list]:
+            return [
+                [_prefer_int(value) for value in sheet.row_values(rowx)]
+                for rowx in range(sheet.nrows)
+            ]
+        
+        def _prefer_int(value: t.Any) -> t.Union[int, t.Any]:
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            return value
+        
+        import xlrd  # pip install "lk-utils[exl]"
+        book = xlrd.open_workbook(file)
         if (x := kwargs.get('sheet')) is not None:
             if isinstance(x, str):  # by sheet name
-                try:
-                    return book_data[x]
-                except KeyError:
-                    raise KeyError(tuple(book_data.keys()), x)
+                sheet = book.sheet_by_name(x)
             elif isinstance(x, int):  # by sheet number
-                for i, v in enumerate(book_data.values()):
-                    if i == x:
-                        return v
-                else:
-                    raise IndexError(tuple(book_data.keys()), x)
+                sheet = book.sheet_by_index(x)
             else:
                 raise TypeError(x)
+            return read_sheet()
         else:
-            # return OrderedDict ({sheet_name: [row, ...], ...})
-            return book_data
+            return {sheet.name: read_sheet() for sheet in book.sheets()}
     assert type != 'excel'
     
     with open(
@@ -114,7 +97,7 @@ def load(
             from toml import load as tload  # noqa
             return tload(f, **kwargs)
         else:
-            raise E.Unreachable
+            raise Exception('unreachable case')
 
 
 def dump(
@@ -124,14 +107,88 @@ def dump(
     ensure_line_feed: bool = True,
     **kwargs
 ) -> None:
+    """
+    file types:
+        excel:
+            data type:
+                rows | {sheet_name: rows, ...}
+                    rows: (row, ...)
+                        row: (any value, ...)
+            available kwargs:
+                align: 'left' | 'center' | 'right'
+                bold: bool
+                border: int
+                font_name: str
+                font_size: int
+                prompt: bool, default False.
+                    if saving file crashed by other program occupying, will -
+                    prompt user to close that program and try saving again.
+                    we use `input` to wait user to do it.
+                    be noticed this option is only available for '.xlsx' files -
+                    and on windows.
+                strings_to_numbers: bool
+                strings_to_urls: bool
+                text_wrap: bool
+                valign: 'top' | 'vcenter' | 'bottom'
+    """
     if type == 'auto':
         type = _detect_file_type(file)
+    
+    if type == 'excel':
+        import xlsxwriter  # pip install "lk-utils[exl]"
+        from xlsxwriter.exceptions import FileCreateError
+        
+        options = {'default_format_properties': {}}
+        for k, v in {
+            'strings_to_numbers': True,
+            'strings_to_urls'   : False,
+        }.items():
+            options[k] = kwargs.get(k, v)
+        for k, v in {
+            'align': None,
+            'bold': None,
+            'border': None,
+            'font_name': 'Calibri',
+            'font_size': None,
+            'text_wrap': None,
+            'valign': None,
+        }.items():
+            if k in kwargs:
+                options['default_format_properties'][k] = kwargs[k]
+            elif v is not None:
+                options['default_format_properties'][k] = v
+        
+        book = xlsxwriter.Workbook(filename=file, options=options)
+        
+        if not isinstance(data, dict):
+            data = {'sheet 1': data}
+        for sheet_name, rows in data.items():
+            sheet = book.add_worksheet(sheet_name)
+            for rowx, row in enumerate(rows):
+                for colx, value in enumerate(row):
+                    sheet.write(rowx, colx, value)
+        
+        try:
+            book.close()
+        except FileCreateError as e:
+            if kwargs.get('prompt'):
+                x = input(
+                    'permission denied when saving excel: "{}"!\n'
+                    'please close the opened file manually and press "Y" to '
+                    'retry to save: '
+                )
+                if x.lower() == 'y':
+                    book.close()
+                    return
+            raise e
+        return
+    assert type != 'excel'
+    
     with open(
         file,
-        mode='wb' if type in ('binary', 'excel', 'pickle') else 'w',
+        mode='wb' if type in ('binary', 'pickle') else 'w',
         encoding=kwargs.pop(
-            'encoding',
-            None if type in ('binary', 'excel', 'pickle') else 'utf-8'
+            'encoding', None if type in ('binary', 'pickle') else 'utf-8'
         ),
         newline='' if type == 'table' else None,
     ) as f:
@@ -177,7 +234,7 @@ def dump(
             from toml import dump as tdump  # noqa
             tdump(data, f, **kwargs)
         else:
-            raise E.Unreachable
+            raise Exception('unreachable case')
 
 
 def _detect_file_type(filename: str) -> T.FileType:
@@ -197,14 +254,3 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'excel'
     else:  # fallback to 'plain'
         return 'plain'
-
-
-# DELETE?
-@contextmanager
-def writing_to(
-    file: str, data_holder: T.DataHolder = None, **kwargs
-) -> T.ContextHolder[T.DataHolder]:
-    if data_holder is None:
-        data_holder = []
-    yield data_holder
-    dump(data_holder, file, **kwargs)
