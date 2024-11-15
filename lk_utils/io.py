@@ -40,7 +40,7 @@ def load(
         type = _detect_file_type(file)
     
     if type == 'excel':
-        def read_sheet() -> t.List[list]:
+        def read_sheet(sheet) -> t.List[list]:
             return [
                 [_prefer_int(value) for value in sheet.row_values(rowx)]
                 for rowx in range(sheet.nrows)
@@ -60,9 +60,9 @@ def load(
                 sheet = book.sheet_by_index(x)
             else:
                 raise TypeError(x)
-            return read_sheet()
+            return read_sheet(sheet)
         else:
-            return {sheet.name: read_sheet() for sheet in book.sheets()}
+            return {sheet.name: read_sheet(sheet) for sheet in book.sheets()}
     assert type != 'excel'
     
     with open(
@@ -116,6 +116,7 @@ def dump(
                         row: (any value, ...)
             available kwargs:
                 align: 'left' | 'center' | 'right'
+                autofit: bool, default False.
                 bold: bool
                 border: int
                 font_name: str
@@ -145,13 +146,13 @@ def dump(
         }.items():
             options[k] = kwargs.get(k, v)
         for k, v in {
-            'align': None,
-            'bold': None,
-            'border': None,
-            'font_name': 'Calibri',
+            'align'    : None,  # cell text horizontal alignment.
+            'bold'     : None,  # font bold
+            'border'   : None,  # cell border
+            'font_name': 'Microsoft YaHei UI',
             'font_size': None,
             'text_wrap': None,
-            'valign': None,
+            'valign'   : None,  # cell text vertical alignment.
         }.items():
             if k in kwargs:
                 options['default_format_properties'][k] = kwargs[k]
@@ -159,6 +160,7 @@ def dump(
                 options['default_format_properties'][k] = v
         
         book = xlsxwriter.Workbook(filename=file, options=options)
+        autofit = kwargs.get('autofit', False)
         
         if not isinstance(data, dict):
             data = {'sheet 1': data}
@@ -167,6 +169,8 @@ def dump(
             for rowx, row in enumerate(rows):
                 for colx, value in enumerate(row):
                     sheet.write(rowx, colx, value)
+            if autofit:
+                sheet.autofit()
         
         try:
             book.close()
