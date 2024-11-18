@@ -22,6 +22,7 @@ from .binding import Reactive
 from .binding import Signal
 from .binding import bind_with
 from .binding import call_once
+from .chunk import chunkwise
 from .filesniff import cd_current_dir
 from .filesniff import find_dirs
 from .filesniff import find_files
