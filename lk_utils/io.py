@@ -32,6 +32,7 @@ def load(
             sheet: int | str
                 int: get sheet by index. 0 based.
                 str: get sheet by name. case sensitive.
+            prefer_int_not_float: bool, default True.
     """
     if default is not None and not os.path.exists(file):
         dump(default, file)
@@ -40,11 +41,20 @@ def load(
         type = _detect_file_type(file)
     
     if type == 'excel':
+        sheetx = kwargs.get('sheet')
+        _prefer_int_not_float = kwargs.get('prefer_int_not_float', True)
+        
         def read_sheet(sheet) -> t.List[list]:
-            return [
-                [_prefer_int(value) for value in sheet.row_values(rowx)]
-                for rowx in range(sheet.nrows)
-            ]
+            if _prefer_int_not_float:
+                return [
+                    [_prefer_int(value) for value in sheet.row_values(rowx)]
+                    for rowx in range(sheet.nrows)
+                ]
+            else:
+                return [
+                    sheet.row_values(rowx)
+                    for rowx in range(sheet.nrows)
+                ]
         
         def _prefer_int(value: t.Any) -> t.Union[int, t.Any]:
             if isinstance(value, float) and value.is_integer():
@@ -53,13 +63,13 @@ def load(
         
         import xlrd  # pip install "lk-utils[exl]"
         book = xlrd.open_workbook(file)
-        if (x := kwargs.get('sheet')) is not None:
-            if isinstance(x, str):  # by sheet name
-                sheet = book.sheet_by_name(x)
-            elif isinstance(x, int):  # by sheet number
-                sheet = book.sheet_by_index(x)
+        if sheetx is not None:
+            if isinstance(sheetx, str):  # by sheet name
+                sheet = book.sheet_by_name(sheetx)
+            elif isinstance(sheetx, int):  # by sheet number
+                sheet = book.sheet_by_index(sheetx)
             else:
-                raise TypeError(x)
+                raise TypeError(sheetx)
             return read_sheet(sheet)
         else:
             return {sheet.name: read_sheet(sheet) for sheet in book.sheets()}
