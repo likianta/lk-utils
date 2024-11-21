@@ -78,11 +78,7 @@ class Popen(sp.Popen):
                 return
 
 
-# class SubprocessError(Exception):
-#     pass
-
-
-def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
+def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
     """
     examples:
         ('pip', 'install', '', 'lk-utils') -> ['pip', 'install', 'lk-utils']
@@ -114,7 +110,7 @@ def compose_command(*args: t.Any, filter: bool = True) -> t.List[str]:
     return out
 
 
-def run_command_args(
+def run_cmd_args(
     *args: t.Any,
     verbose: bool = False,
     shell: bool = False,
@@ -162,7 +158,7 @@ def run_command_args(
         `sp.run` is blocking, `sp.Popen` is non-blocking.
     """
     if _refmt_args:
-        args = compose_command(*args, filter=filter)
+        args = compose_cmd(*args, filter=filter)
     # else:
     #     assert all(isinstance(x, str) for x in args)
     if verbose:
@@ -303,13 +299,7 @@ def run_command_args(
         return process
 
 
-def run_command_line(cmd: str, **kwargs) -> t.Union[str, Popen, None]:
-    return run_command_args(
+def run_cmd_line(cmd: str, **kwargs) -> t.Union[str, Popen, None]:
+    return run_cmd_args(
         *shlex.split(cmd), **kwargs, filter=False, _refmt_args=False
     )
-
-
-# alias
-compose = compose_cmd = compose_command
-run = run_cmd_args = run_command_args
-run_cmd_line = run_command_line
