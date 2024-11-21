@@ -205,7 +205,7 @@ def run_command_args(
         
         for line in readlines(process.stdout):
             if verbose:
-                bprint(line, end='')
+                bprint(line, end='', flush=True)
             if remove_ansi_code:
                 yield _ANSI_ESCAPE.sub('', line)
             else:
