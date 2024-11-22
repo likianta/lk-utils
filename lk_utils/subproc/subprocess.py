@@ -118,7 +118,7 @@ def run_cmd_args(
     env: t.Dict[str, str] = None,
     blocking: bool = True,
     ignore_error: bool = False,
-    # ignore_return: bool = False,
+    ignore_return: bool = False,
     force_term_color: bool = False,
     filter: bool = True,
     # subprocess_scheme: str = 'default',
@@ -279,9 +279,13 @@ def run_cmd_args(
     )
     
     if blocking:
-        stdout = '\n'.join(
-            communicate(remove_ansi_code=force_term_color)
-        )
+        comm = communicate(remove_ansi_code=force_term_color)
+        if ignore_return:
+            for _ in comm:
+                pass
+            stdout = None
+        else:
+            stdout = '\n'.join(comm)
         if retcode := process.wait():
             if ignore_error:
                 return stdout
