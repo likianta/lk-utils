@@ -252,7 +252,7 @@ def dump(
 
 
 def _detect_file_type(filename: str) -> T.FileType:
-    if filename.endswith(('.txt', '.htm', '.html', '.md', '.rst')):
+    if filename.endswith(('.txt', '.htm', '.html', '.md', '.rst', '.svg')):
         return 'plain'
     elif filename.endswith(('.json', '.json5')):
         return 'json'
@@ -266,5 +266,10 @@ def _detect_file_type(filename: str) -> T.FileType:
         return 'pickle'
     elif filename.endswith(('.xlsx', '.xls')):
         return 'excel'
+    elif filename.endswith((
+        '.bin', '.exe', '.jpeg', '.jpg', '.mp3', '.mp4', '.png', '.raw', '.wav',
+        '.webp'
+    )):
+        return 'binary'
     else:  # fallback to 'plain'
         return 'plain'
