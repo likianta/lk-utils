@@ -1,10 +1,10 @@
+import atexit
 import os
 import re
 import shlex
 import subprocess as sp
 import typing as t
 
-import atexit
 import psutil
 from rich.text import Text
 from time import sleep

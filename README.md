@@ -1,5 +1,7 @@
 # LK Utils
 
+[中文版](./README.zh.md)
+
 lk-utils is a set of utilities to make data processing more simple and fluent.
 
 # Install
