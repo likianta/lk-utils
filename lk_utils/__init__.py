@@ -46,4 +46,4 @@ from .time_utils import timer
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '3.1.1'
+__version__ = '3.1.2'
