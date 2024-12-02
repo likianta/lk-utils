@@ -1,9 +1,9 @@
 """
 opinion based time utilities.
 """
-
 import time
 import typing as t
+from collections import namedtuple
 from os import stat
 
 
@@ -78,11 +78,13 @@ def timestamp(style: str = 'y-m-d h:n:s', time_sec: float = None) -> str:
 
 def wait(
     timeout: float, interval: float = 1, timeout_error: bool = True
-) -> t.Iterator[float]:
+) -> t.Iterator['_ProgressInfo']:
     count = int(timeout / interval)
     for i in range(count):
-        # yield i
-        yield (i + 1) / count
+        yield _ProgressInfo(count, i + 1, (i + 1) / count)
         time.sleep(interval)
     if timeout_error:
         raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
+
+
+_ProgressInfo = namedtuple('_ProgressInfo', 'total index percent')
