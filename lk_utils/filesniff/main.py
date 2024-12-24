@@ -12,6 +12,7 @@ __all__ = [
     'cd_current_dir',
     'dirname',
     'dirpath',
+    'exist',
     'exists',
     'filename',
     'filepath',
@@ -31,7 +32,7 @@ __all__ = [
 ]
 
 IS_WINDOWS = os.name == 'nt'
-exists = ospath.exists
+exist = exists = ospath.exists  # TODO: remove `exists` in future?
 
 
 class T:
@@ -73,9 +74,9 @@ def dirpath(path: T.Path) -> T.DirPath:
 
 
 def dirname(path: T.Path) -> str:
-    """ Return the directory name of path.
-
-    Examples:
+    """
+    return the directory name of path.
+    examples:
         path = 'a/b/c/d.txt' -> 'c'
         path = 'a/b/c' -> 'c'
     """
