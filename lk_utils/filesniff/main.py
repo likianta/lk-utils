@@ -17,6 +17,7 @@ __all__ = [
     'filename',
     'filepath',
     'filesize',
+    'filetime',
     'get_current_dir',
     'isdir',
     'isfile',
@@ -126,6 +127,22 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
             return f'{size:.2f}TB'
     else:
         raise Exception(fmt, path)
+
+
+def filetime(
+    path: T.Path,
+    by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
+    fmt: t.Type = str,
+) -> t.Union[str, float]:
+    time_float = (
+        os.stat(path).st_ctime if by in ('c', 'created') else
+        os.stat(path).st_mtime
+    )
+    if fmt is str:
+        from ..time_utils import timestamp
+        return timestamp('y-m-d h:n:s', time_sec=time_float)
+    else:  # fmt is float
+        return time_float
 
 
 basename = filename

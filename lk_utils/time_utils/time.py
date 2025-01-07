@@ -4,29 +4,6 @@ opinion based time utilities.
 import time
 import typing as t
 from collections import namedtuple
-from os import stat
-
-
-def get_ctime(filepath: str, style: str = '') -> t.Union[str, float]:
-    """
-    REF: demos/os_demo#get_file_created_time
-    """
-    time_float = stat(filepath).st_ctime
-    if style:
-        return timestamp(style, time_float)
-    else:
-        return time_float
-
-
-def get_mtime(filepath: str, style: str = '') -> t.Union[str, float]:
-    """
-    REF: demos/os_demo#get_file_created_time
-    """
-    time_float = stat(filepath).st_mtime
-    if style:
-        return timestamp(style, time_float)
-    else:
-        return time_float
 
 
 def pretty_time(time_sec: float) -> str:
