@@ -131,18 +131,18 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 
 def filetime(
     path: T.Path,
+    fmt: str = 'y-m-d h:n:s',
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-    fmt: t.Type = str,
 ) -> t.Union[str, float]:
     time_float = (
         os.stat(path).st_ctime if by in ('c', 'created') else
         os.stat(path).st_mtime
     )
-    if fmt is str:
-        from ..time_utils import timestamp
-        return timestamp('y-m-d h:n:s', time_sec=time_float)
-    else:  # fmt is float
+    if fmt == 'float':
         return time_float
+    else:
+        from ..time_utils import timestamp
+        return timestamp(fmt, time_sec=time_float)
 
 
 basename = filename

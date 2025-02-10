@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "3.1.3a2"
+version = "3.1.3a3"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -8,7 +8,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-argsense = ">=0.5.8,<1.0.0"
+argsense = ">=0.5.8,<2.0.0"
 lk-logger = "^6.0.3"
 # lk-logger = { version = "^6.0.3b0", source = "likianta-host" }
 psutil = "^6.0.0"
