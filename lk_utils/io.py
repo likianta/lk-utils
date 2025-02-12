@@ -126,7 +126,8 @@ def dump(
                         row: (any value, ...)
             available kwargs:
                 align: 'left' | 'center' | 'right'
-                autofit: bool, default False.
+                autofit: bool, default True.
+                    autofit column width.
                 bold: bool
                 border: int
                 font_name: str
@@ -170,7 +171,7 @@ def dump(
                 options['default_format_properties'][k] = v
         
         book = xlsxwriter.Workbook(filename=file, options=options)
-        autofit = kwargs.get('autofit', False)
+        autofit = kwargs.get('autofit', True)
         
         if not isinstance(data, dict):
             data = {'sheet 1': data}
