@@ -37,7 +37,7 @@ exist = exists = ospath.exists  # TODO: remove `exists` in future?
 
 
 class T:
-    Path = DirPath = FilePath = str
+    AbsPath = DirPath = FilePath = Path = str
 
 
 def normpath(path: T.Path, force_abspath: bool = False) -> T.Path:
@@ -196,16 +196,16 @@ def not_empty(file: T.FilePath) -> bool:
 # -----------------------------------------------------------------------------
 
 
-def cd_current_dir() -> T.Path:
+def cd_current_dir() -> T.AbsPath:
     caller_frame = currentframe().f_back
-    dir = _get_dir_of_frame(caller_frame)
+    dir = _get_frame_dir(caller_frame)
     os.chdir(dir)
     return dir
 
 
-def get_current_dir() -> T.Path:
+def get_current_dir() -> T.AbsPath:
     caller_frame = currentframe().f_back
-    return _get_dir_of_frame(caller_frame)
+    return _get_frame_dir(caller_frame)
 
 
 def replace_ext(path: T.Path, ext: str) -> T.Path:
@@ -232,34 +232,31 @@ def split(path: T.Path, parts: int = 2) -> t.Tuple[str, ...]:
         raise ValueError('Unsupported parts number!')
 
 
-def xpath(path: T.Path, force_abspath: bool = True) -> T.Path:
-    """ Consider relative path always based on caller's.
-
-    References: https://blog.csdn.net/Likianta/article/details/89299937
+def xpath(relpath: T.Path) -> T.AbsPath:
+    """
+    given a relative path, return a resolved path of -
+    `<dir_of_caller_frame>/<relpath>`.
+    ref: https://blog.csdn.net/Likianta/article/details/89299937
     """
     caller_frame = currentframe().f_back
-    caller_dir = _get_dir_of_frame(caller_frame)
-    
-    if path in ('', '.', './'):
-        out = caller_dir
+    caller_dir = _get_frame_dir(caller_frame)
+    if relpath in ('', '.', './'):
+        return caller_dir
     else:
-        out = ospath.abspath(ospath.join(caller_dir, path))
-    
-    if force_abspath:
-        return normpath(out)
-    else:
-        return normpath(ospath.relpath(out, os.getcwd()))
+        return normpath('{}/{}'.format(caller_dir, relpath))
 
 
-def _get_dir_of_frame(frame: FrameType, ignore_error: bool = False) -> T.Path:
-    file = frame.f_globals.get('__file__') \
-           or frame.f_code.co_filename
+def _get_frame_dir(frame: FrameType, ignore_error: bool = False) -> T.AbsPath:
+    file = frame.f_globals.get('__file__') or frame.f_code.co_filename
     if file.startswith('<') and file.endswith('>'):
         if ignore_error:
-            print(':v4p2', 'Unable to locate directory from caller frame! '
-                           'Fallback using current working directory instead.')
-            return normpath(os.getcwd())
+            print(
+                ':v8p2',
+                'unable to locate directory from caller frame! '
+                'fallback using current working directory instead.'
+            )
+            return normpath(os.getcwd(), True)
         else:
-            raise OSError('Unable to locate directory from caller frame!')
+            raise OSError('unable to locate directory from caller frame!')
     else:
-        return normpath(ospath.dirname(file))
+        return normpath(ospath.dirname(file), True)
