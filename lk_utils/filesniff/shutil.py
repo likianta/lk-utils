@@ -71,7 +71,7 @@ def copy_tree(
     if exists(dst):
         if _overwrite(dst, overwrite) is False:
             return
-    shutil.copytree(src, dst, symlinks=symlinks)
+    shutil.copytree(_safe_long_path(src), dst, symlinks=symlinks)
 
 
 def make_dir(dst: str) -> None:
@@ -80,7 +80,10 @@ def make_dir(dst: str) -> None:
 
 
 def make_dirs(dst: str) -> None:
-    os.makedirs(dst, exist_ok=True)
+    # FIXME: we don't use `os.makedirs(dst, exist_ok=True)` because there may be -
+    #   an issue in resolving symlinked dst.
+    if not exists(dst):
+        os.makedirs(dst)
 
 
 def make_file(dst: str) -> None:
@@ -269,12 +272,7 @@ def unzip_file(
     with ZipFile(
         src, 'r', compression=ZIP_DEFLATED, compresslevel=compress_level
     ) as z:
-        if IS_WINDOWS:
-            # avoid path limit error in windows.
-            # ref: docs/devnote/issues-summary-202401.zh.md
-            z.extractall('\\\\?\\' + dst.replace('/', '\\'))
-        else:
-            z.extractall(dst)
+        z.extractall(_safe_long_path(dst))
     
     dlist = tuple(
         x for x in os.listdir(dst)
@@ -328,3 +326,13 @@ def _overwrite(path: str, scheme: T.OverwriteScheme) -> bool:
         return True
     else:  # raise error
         raise FileExistsError(path)
+
+
+def _safe_long_path(path: str) -> str:
+    """
+    avoid path limit error in windows.
+    ref: docs/devnote/issues-summary-202401.zh.md
+    """
+    if IS_WINDOWS:
+        return '\\\\?\\' + path.replace('/', '\\')
+    return path

@@ -19,11 +19,12 @@ __all__ = [
     'filesize',
     'filetime',
     'get_current_dir',
+    'is_empty_dir',
+    'is_empty_file',
     'isdir',
     'isfile',
     'islink',
     'normpath',
-    'not_empty',
     'parent',
     'parent_path',
     'relpath',
@@ -154,20 +155,6 @@ def barename(path: T.Path, strict: bool = False) -> str:
 
 # ------------------------------------------------------------------------------
 
-def isfile(path: T.Path) -> bool:
-    if path.strip('./') == '':
-        return False
-    if ospath.isfile(path):
-        return True
-    if ospath.isdir(path):
-        return False
-    if ospath.islink(path):
-        path = ospath.realpath(path)
-        return isfile(path)
-    # raise Exception('unknown path type', path)
-    return False
-
-
 def isdir(path: T.Path) -> bool:
     if path.strip('./') == '':
         return True
@@ -182,15 +169,38 @@ def isdir(path: T.Path) -> bool:
     return False
 
 
+def isfile(path: T.Path) -> bool:
+    if path.strip('./') == '':
+        return False
+    if ospath.isfile(path):
+        return True
+    if ospath.isdir(path):
+        return False
+    if ospath.islink(path):
+        path = ospath.realpath(path)
+        return isfile(path)
+    # raise Exception('unknown path type', path)
+    return False
+
+
 islink = ospath.islink
 
 
-def not_empty(file: T.FilePath) -> bool:
+def is_empty_dir(path: T.DirPath) -> bool:
+    for _ in os.listdir(path):
+        return False
+    return True
+
+
+def is_empty_file(path: T.FilePath) -> bool:
     """
-    References:
-        https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
+    https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
     """
-    return bool(ospath.exists(file) and ospath.getsize(file))
+    if ospath.exists(path):
+        if ospath.getsize(path):
+            return False
+        return True
+    return True
 
 
 # -----------------------------------------------------------------------------

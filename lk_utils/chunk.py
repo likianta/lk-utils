@@ -2,11 +2,11 @@ import typing as t
 
 
 def chunkwise(
-    seq: t.Union[list, tuple],
+    seq: t.Union[list, tuple, t.Sequence],
     n: int,
     prepad: int = 0,
     continous: bool = True,
-) -> t.Iterator[tuple]:
+) -> t.Iterator[t.Iterator[t.Any]]:
     """
     split a sequence into chunks.
     example:
