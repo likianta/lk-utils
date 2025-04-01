@@ -132,18 +132,50 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 
 def filetime(
     path: T.Path,
-    fmt: str = 'y-m-d h:n:s',
+    fmt: t.Union[str, t.Type] = 'y-m-d h:n:s',
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-) -> t.Union[str, float]:
+) -> t.Union[str, int, float, t.Tuple[int, int, int, int, int, int]]:
+    """
+    fmt:
+        examples:
+            fmt value       returns
+            -------------   ------------------------
+            'y-m-d'         '2025-03-20'
+            'y-m-d h:n:s'   '2025-03-20 15:31:03'
+            'ymd hns'       '20250320 153103'
+            float           1742455863.6410432
+            int             1742455863
+            round           1742455864
+            str             '2025-03-20 15:31:03'
+            tuple           (2025, 3, 20, 15, 31, 3)
+    """
+    from ..time_utils import timestamp
     time_float = (
         os.stat(path).st_ctime if by in ('c', 'created') else
         os.stat(path).st_mtime
     )
-    if fmt == 'float':
-        return time_float
-    else:
-        from ..time_utils import timestamp
+    if isinstance(fmt, str):
         return timestamp(fmt, time_sec=time_float)
+    elif fmt is int:
+        return int(time_float)
+    elif fmt is tuple:
+        time_str = timestamp('ymdhns', time_sec=time_float)
+        return (
+            int(time_str[0:4]),
+            int(time_str[4:6]),
+            int(time_str[6:8]),
+            int(time_str[8:10]),
+            int(time_str[10:12]),
+            int(time_str[12:14]),
+        )
+    elif fmt is float:
+        return time_float
+    elif fmt is str:
+        return timestamp('y-m-d h:n:s', time_sec=time_float)
+    elif fmt is round:
+        return round(time_float)
+    else:
+        raise ValueError(fmt)
 
 
 basename = filename
