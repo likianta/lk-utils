@@ -5,6 +5,7 @@ import typing as t
 def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
     if getattr(builtins, '__IPYTHON__', False):
         # we are already in ipython environment.
+        print(':pv5', 'you are already in ipython environment')
         return
     
     try:
@@ -16,6 +17,8 @@ def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
         import sys
         from IPython.core.getipython import get_ipython  # noqa
         from IPython.terminal.ipapp import TerminalIPythonApp  # noqa
+        from lk_logger import bprint
+        from lk_logger import deflector
         from lk_logger.console import console
         from rich.traceback import install
     
@@ -24,6 +27,7 @@ def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
     
     sys_argv_backup = sys.argv.copy()
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
+    deflector.add(IPython, bprint, scope=True)
     
     app = TerminalIPythonApp.instance(
         user_ns={

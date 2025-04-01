@@ -14,7 +14,7 @@ from . import filesniff as fs
 from . import importer
 from . import io
 from . import io as rw  # alias
-from . import pycompatible
+from . import pycompatible  # DELETE
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
