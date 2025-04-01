@@ -1,0 +1,43 @@
+import builtins
+import typing as t
+
+
+def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
+    if getattr(builtins, '__IPYTHON__', False):
+        # we are already in ipython environment.
+        return
+    
+    try:
+        import IPython  # noqa
+    except (ImportError, ModuleNotFoundError) as e:
+        print('ipython is not installed!', ':pv8')
+        raise e
+    else:
+        import sys
+        from IPython.core.getipython import get_ipython  # noqa
+        from IPython.terminal.ipapp import TerminalIPythonApp  # noqa
+        from lk_logger.console import console
+        from rich.traceback import install
+    
+    if user_ns:
+        print(':lv2p', 'register global variables', user_ns)
+    
+    sys_argv_backup = sys.argv.copy()
+    sys.argv = ['']  # avoid ipython to parse `sys.argv`.
+    
+    app = TerminalIPythonApp.instance(
+        user_ns={
+            '__USERNS__': user_ns,
+            **(user_ns or {})
+        }
+    )
+    app.initialize()
+    
+    # setup except hook for ipython
+    setattr(builtins, 'get_ipython', get_ipython)
+    install(console=console)
+    
+    app.start()
+    
+    # afterwards
+    sys.argv = sys_argv_backup

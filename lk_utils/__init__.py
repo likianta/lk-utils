@@ -37,6 +37,7 @@ from .filesniff import xpath as p
 from .filesniff import xpath as relpath  # backward compatible
 from .io import dump
 from .io import load
+from .ipython import start_ipython
 from .subproc import coro_mgr as coro
 from .subproc import new_thread
 from .subproc import run_cmd_args
@@ -47,4 +48,4 @@ from .time_utils import timer
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '3.1.3'
+__version__ = '3.2.0'
