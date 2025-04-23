@@ -8,10 +8,12 @@ from zipfile import ZipFile
 from .finder import findall_dirs
 from .finder import findall_files
 from .main import IS_WINDOWS  # noqa
+from .main import abspath
 from .main import basename
 from .main import dirname
 from .main import exist
 from .main import isdir
+from .main import real_exist
 from .main import relpath
 from .main import xpath
 from ..subproc import run_cmd_args
@@ -92,22 +94,20 @@ def make_file(dst: str) -> None:
 
 def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     """
-    args:
-        overwrite:
-            True: if exist, overwrite
-            False: if exist, raise an error
-            None: if exist, skip it
-    
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
     """
-    from .main import normpath
+    src, dst = abspath(src), abspath(dst)
     
-    src = normpath(src, force_abspath=True)
-    dst = normpath(dst, force_abspath=True)
-    
-    assert exist(src), src
+    assert real_exist(src), src
     if exist(dst):
-        if _overwrite(dst, overwrite) is False:
+        if overwrite is True:
+            if real_exist(dst) and os.path.samefile(src, dst):
+                return dst
+            else:
+                remove(dst)
+        elif overwrite is False:
+            raise FileExistsError(dst)
+        elif overwrite is None:
             return dst
     
     if IS_WINDOWS:

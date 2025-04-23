@@ -25,6 +25,7 @@ __all__ = [
     'isdir',
     'isfile',
     'islink',
+    'issame',
     'normpath',
     'parent',
     'parent_path',
@@ -236,6 +237,14 @@ def isfile(path: T.Path) -> bool:
 
 
 islink = ospath.islink
+# issame = ospath.samefile
+
+
+def issame(a: T.Path, b: T.Path) -> bool:
+    if real_exist(a) and real_exist(b):
+        return ospath.samefile(a, b)
+    print(':pv6', 'the comparison may not be valid!', a, b)
+    return ospath.realpath(a) == ospath.realpath(b)
 
 
 def is_empty_dir(path: T.DirPath) -> bool:
