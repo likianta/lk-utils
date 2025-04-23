@@ -3,6 +3,7 @@ import os.path as ospath
 import typing as t
 from functools import partial
 from inspect import currentframe
+from os.path import exists as _exists
 from types import FrameType
 
 __all__ = [
@@ -27,6 +28,8 @@ __all__ = [
     'normpath',
     'parent',
     'parent_path',
+    'real_exist',
+    'real_exists',
     'relpath',
     'replace_ext',
     'split',
@@ -34,7 +37,6 @@ __all__ = [
 ]
 
 IS_WINDOWS = os.name == 'nt'
-exist = exists = ospath.exists  # TODO: remove `exists` in future?
 
 
 class T:
@@ -187,6 +189,24 @@ def barename(path: T.Path, strict: bool = False) -> str:
 
 # ------------------------------------------------------------------------------
 
+def exist(path: T.Path) -> bool:
+    if _exists(path):
+        return True
+    elif os.path.islink(path):
+        # for broken symlink, we returns True
+        # https://stackoverflow.com/questions/75444181
+        return True
+    return False
+
+
+def real_exist(path: T.Path) -> bool:
+    return _exists(path)
+
+
+exists = exist
+real_exists = real_exist
+
+
 def isdir(path: T.Path) -> bool:
     if path.strip('./') == '':
         return True
@@ -228,7 +248,7 @@ def is_empty_file(path: T.FilePath) -> bool:
     """
     https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
     """
-    if ospath.exists(path):
+    if _exists(path):
         if ospath.getsize(path):
             return False
         return True

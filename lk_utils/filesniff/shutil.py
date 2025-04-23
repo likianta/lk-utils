@@ -1,7 +1,6 @@
 import os
 import shutil
 import typing as t
-from os.path import exists
 from textwrap import dedent
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
@@ -11,6 +10,7 @@ from .finder import findall_files
 from .main import IS_WINDOWS  # noqa
 from .main import basename
 from .main import dirname
+from .main import exist
 from .main import isdir
 from .main import relpath
 from .main import xpath
@@ -44,19 +44,19 @@ class T:
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
-    if not exists(dst):
+    if not exist(dst):
         os.mkdir(dst)
     for d in findall_dirs(src):
         dp_o = f'{dst}/{d.relpath}'
-        if not exists(dp_o):
+        if not exist(dp_o):
             os.mkdir(dp_o)
 
 
 def copy_file(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
     shutil.copyfile(src, dst)
@@ -68,21 +68,21 @@ def copy_tree(
     overwrite: T.OverwriteScheme = None,
     symlinks: bool = False
 ) -> None:
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
     shutil.copytree(_safe_long_path(src), dst, symlinks=symlinks)
 
 
 def make_dir(dst: str) -> None:
-    if not exists(dst):
+    if not exist(dst):
         os.mkdir(dst)
 
 
 def make_dirs(dst: str) -> None:
     # FIXME: we don't use `os.makedirs(dst, exist_ok=True)` because there may be -
     #   an issue in resolving symlinked dst.
-    if not exists(dst):
+    if not exist(dst):
         os.makedirs(dst)
 
 
@@ -94,9 +94,9 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     """
     args:
         overwrite:
-            True: if exists, overwrite
-            False: if exists, raise an error
-            None: if exists, skip it
+            True: if exist, overwrite
+            False: if exist, raise an error
+            None: if exist, skip it
     
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
     """
@@ -105,8 +105,8 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     src = normpath(src, force_abspath=True)
     dst = normpath(dst, force_abspath=True)
     
-    assert exists(src), src
-    if exists(dst):
+    assert exist(src), src
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return dst
     
@@ -150,13 +150,13 @@ def make_shortcut(
         https://www.blog.pythonlibrary.org/2010/01/23/using-python-to-create
         -shortcuts/
     """
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
     if not IS_WINDOWS:
         raise NotImplementedError
     
-    assert exists(src) and not src.endswith('.lnk')
+    assert exist(src) and not src.endswith('.lnk')
     if not dst:
         dst = os.path.splitext(os.path.basename(src))[0] + '.lnk'
     else:
@@ -191,7 +191,7 @@ def make_shortcut(
 
 
 def move(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
     shutil.move(src, dst)
@@ -202,7 +202,7 @@ move_tree = move
 
 
 def remove(dst: str) -> None:
-    if exists(dst):
+    if exist(dst):
         if os.path.isfile(dst):
             os.remove(dst)
         elif os.path.islink(dst):
@@ -212,12 +212,12 @@ def remove(dst: str) -> None:
 
 
 def remove_file(dst: str) -> None:
-    if exists(dst):
+    if exist(dst):
         os.remove(dst)
 
 
 def remove_tree(dst: str) -> None:
-    if exists(dst):
+    if exist(dst):
         if os.path.isdir(dst):
             shutil.rmtree(dst)
         elif os.path.islink(dst):
@@ -239,7 +239,7 @@ def zip_dir(
         dst = src + '.zip'
     else:
         assert dst.endswith('.zip')
-    if exists(dst):
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return dst
     top_name = basename(dst[:-4])
@@ -263,8 +263,8 @@ def unzip_file(
     assert src.endswith('.zip')
     if dst is None:
         dst = src[:-4]
-    # print(src, dst, overwrite, exists(path_o), ':lvp')
-    if exists(dst):
+    # print(src, dst, overwrite, exist(path_o), ':lvp')
+    if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return dst
     
@@ -286,7 +286,7 @@ def unzip_file(
                     f'move up sub folder [cyan]({x})[/] to be parent', ':vspr'
                 )
                 dir_m = f'{dst}_tmp'
-                assert not exists(dir_m)
+                assert not exist(dir_m)
                 os.rename(dst, dir_m)
                 shutil.move(f'{dir_m}/{x}', dst)
                 shutil.rmtree(dir_m)
@@ -310,7 +310,7 @@ def _overwrite(path: str, scheme: T.OverwriteScheme) -> bool:
     args:
         scheme:
             True: overwrite
-            False: no overwrite, and raise an FileExistsError
+            False: no overwrite, and raise an FileexistError
             None: no overwrite, no error (skip)
     returns: bool
         the return value reflects what "overwrite" results in, literally.
