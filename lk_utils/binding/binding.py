@@ -1,4 +1,5 @@
 import typing as t
+from functools import partial
 
 from .signal import get_func_id
 
@@ -17,9 +18,21 @@ _bound_funcs = set()
 
 
 def call_once(*_args, **_kwargs) -> T.FuncWrapper:
+    """
+    usage:
+        @call_once(name='Alice')
+        def foo(name):
+            ...
+    """
     def wrapper(func: T.Func) -> T.Func:
         func(*_args, **_kwargs)
-        return func
+        return partial(_used_up, func.__name__)
+    
+    def _used_up(func_name: str) -> None:
+        raise Exception(
+            '{} has been used up, you cannot call it twice!'.format(func_name)
+        )
+    
     return wrapper
 
 

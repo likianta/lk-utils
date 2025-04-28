@@ -155,6 +155,7 @@ def dump(
             'strings_to_numbers': True,
             'strings_to_urls'   : False,
         }.items():
+            # noinspection PyTypeChecker
             options[k] = kwargs.get(k, v)
         for k, v in {
             'align'    : None,  # cell text horizontal alignment.

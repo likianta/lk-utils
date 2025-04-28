@@ -193,7 +193,7 @@ class Thread:
 class ThreadManager:
     thread_pool: T.ThreadPool
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.thread_pool = defaultdict(dict)
     
     def new_thread(

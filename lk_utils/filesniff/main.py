@@ -194,7 +194,7 @@ def exist(path: T.Path) -> bool:
     if _exists(path):
         return True
     elif os.path.islink(path):
-        # for broken symlink, we returns True
+        # for broken symlink, we still return True
         # https://stackoverflow.com/questions/75444181
         return True
     return False
