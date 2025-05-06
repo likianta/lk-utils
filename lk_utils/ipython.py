@@ -2,7 +2,10 @@ import builtins
 import typing as t
 
 
-def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
+def start_ipython(
+    user_ns: t.Dict[str, t.Any] = None,
+    verbosity: t.Union[bool, int] = 1
+) -> None:
     if getattr(builtins, '__IPYTHON__', False):
         # we are already in ipython environment.
         print(':pv5', 'you are already in ipython environment')
@@ -22,8 +25,12 @@ def start_ipython(user_ns: t.Dict[str, t.Any] = None) -> None:
         from lk_logger.console import console
         from rich.traceback import install
     
-    if user_ns:
-        print(':lv2p', 'register global variables', user_ns)
+    if user_ns and verbosity:
+        print(
+            ':lv2ps',
+            'registered global variables:',
+            tuple(user_ns.keys()) if verbosity == 1 else user_ns
+        )
     
     sys_argv_backup = sys.argv.copy()
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
