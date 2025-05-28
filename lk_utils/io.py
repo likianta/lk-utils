@@ -1,4 +1,5 @@
 import os
+import sys
 import typing as t
 
 
@@ -25,14 +26,16 @@ def load(
     *,
     default: t.Any = None,
     **kwargs
-) -> t.Any:  # t.Union[str, dict, list, t.List[list], t.Any]:
+) -> t.Any:  # t.Union[dict, list, str, t.Iterator[str], t.List[list], ...]:
     """
     kwargs:
+        for plain:
+            iter: bool[False]
         for excels:
             sheet: int | str
                 int: get sheet by index. 0 based.
                 str: get sheet by name. case sensitive.
-            prefer_int_not_float: bool, default True.
+            prefer_int_not_float: bool[True]
     """
     if default is not None and not os.path.exists(file):
         dump(default, file)
@@ -75,12 +78,15 @@ def load(
             return {sheet.name: read_sheet(sheet) for sheet in book.sheets()}
     assert type != 'excel'
     
+    # -------------------------------------------------------------------------
+    
     with open(
         file,
-        mode='rb' if type in ('binary', 'pickle') else 'r',
-        encoding=kwargs.pop(
-            'encoding', None if type in ('binary', 'pickle') else 'utf-8'
-        ),
+        mode=(x := 'rb' if (
+            type in ('binary', 'pickle') or
+            (type == 'toml' and sys.version_info >= (3, 11, 0))
+        ) else 'r'),
+        encoding=kwargs.pop('encoding', None if x == 'rb' else 'utf-8'),
     ) as f:
         if type == 'plain':
             # out = f.read()
@@ -88,7 +94,10 @@ def load(
             # # https://blog.csdn.net/liu_xzhen/article/details/79563782
             # if out.startswith(u'\ufeff'):
             #     out = out.encode('utf-8')[3:].decode('utf-8')
-            return f.read()
+            if kwargs.get('iter'):
+                return (x.rstrip('\n') for x in f.readlines())
+            else:
+                return f.read()
         elif type == 'json':
             from json import load as jload
             return jload(f, **kwargs)
@@ -103,8 +112,11 @@ def load(
             return pload(f, **kwargs)  # noqa
         elif type == 'binary':
             return f.read()
-        elif type == 'toml':  # pip install toml
-            from toml import load as tload  # noqa
+        elif type == 'toml':
+            if sys.version_info >= (3, 11, 0):
+                from tomllib import load as tload
+            else:
+                from toml import load as tload  # pip install toml  # noqa
             return tload(f, **kwargs)
         else:
             raise Exception('unreachable case')
