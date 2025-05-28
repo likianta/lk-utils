@@ -73,7 +73,11 @@ def copy_tree(
     if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
-    shutil.copytree(_safe_long_path(src), dst, symlinks=symlinks)
+    shutil.copytree(
+        _safe_long_path(src),
+        _safe_long_path(dst),
+        symlinks=symlinks
+    )
 
 
 def make_dir(dst: str) -> None:
@@ -202,28 +206,32 @@ move_tree = move
 
 
 def remove(dst: str) -> None:
-    if exist(dst):
-        if os.path.isfile(dst):
-            os.remove(dst)
-        elif os.path.islink(dst):
-            os.unlink(dst)
-        else:
-            shutil.rmtree(dst)
+    if os.path.isfile(dst):
+        os.remove(dst)
+    elif os.path.islink(dst):
+        os.unlink(dst)
+    elif os.path.isdir(dst):
+        shutil.rmtree(dst)
+    else:
+        raise Exception('inexistent or invalid path type', dst)
 
 
 def remove_file(dst: str) -> None:
-    if exist(dst):
+    if os.path.isfile(dst):
         os.remove(dst)
+    elif os.path.islink(dst):
+        os.unlink(dst)
+    else:
+        raise Exception('inexistent or invalid path type', dst)
 
 
 def remove_tree(dst: str) -> None:
-    if exist(dst):
-        if os.path.isdir(dst):
-            shutil.rmtree(dst)
-        elif os.path.islink(dst):
-            os.unlink(dst)
-        else:
-            raise Exception('Unknown file type', dst)
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    elif os.path.islink(dst):
+        os.unlink(dst)
+    else:
+        raise Exception('inexistent or invalid path type', dst)
 
 
 def zip_dir(
@@ -334,5 +342,5 @@ def _safe_long_path(path: str) -> str:
     ref: docs/devnote/issues-summary-202401.zh.md
     """
     if IS_WINDOWS:
-        return '\\\\?\\' + path.replace('/', '\\')
+        return '\\\\?\\' + os.path.abspath(path)
     return path

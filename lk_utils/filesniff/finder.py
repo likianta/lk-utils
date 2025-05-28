@@ -40,7 +40,11 @@ class Path:
         return self.path
     
     @property
-    def stem(self) -> str:
+    def barename(self) -> str:
+        return os.path.splitext(self.name)[0]
+    
+    @property
+    def stem(self) -> str:  # alias to `barename`
         return os.path.splitext(self.name)[0]
     
     @property
