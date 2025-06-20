@@ -15,7 +15,6 @@ __all__ = [
     'dirpath',
     'empty',
     'exist',
-    'exists',  # DELETE?
     'filename',
     'filepath',
     'filesize',
@@ -31,7 +30,6 @@ __all__ = [
     'parent',
     'parent_path',
     'real_exist',
-    'real_exists',
     'relpath',
     'replace_ext',
     'split',
@@ -223,10 +221,6 @@ def exist(path: T.Path) -> bool:
 
 def real_exist(path: T.Path) -> bool:
     return _exists(path)
-
-
-exists = exist
-real_exists = real_exist
 
 
 def isdir(path: T.Path) -> bool:
