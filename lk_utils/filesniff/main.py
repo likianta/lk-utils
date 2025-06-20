@@ -13,8 +13,9 @@ __all__ = [
     'cd_current_dir',
     'dirname',
     'dirpath',
+    'empty',
     'exist',
-    'exists',
+    'exists',  # DELETE?
     'filename',
     'filepath',
     'filesize',
@@ -46,7 +47,10 @@ class T:
 
 def normpath(path: T.Path, force_abspath: bool = False) -> T.Path:
     if force_abspath:
-        out = ospath.abspath(path)
+        if path.startswith('/'):
+            out = path
+        else:
+            out = ospath.abspath(path)
     else:
         out = ospath.normpath(path)
     if IS_WINDOWS:
@@ -135,9 +139,10 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 
 def filetime(
     path: T.Path,
-    fmt: t.Union[str, t.Type] = 'y-m-d h:n:s',
+    # fmt: t.Union[str, t.Type] = 'y-m-d h:n:s',
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-) -> t.Union[str, int, float, t.Tuple[int, int, int, int, int, int]]:
+    pretty_fmt: bool = False
+) -> t.Union[int, str]:
     """
     fmt:
         examples:
@@ -157,28 +162,32 @@ def filetime(
         os.stat(path).st_ctime if by in ('c', 'created') else
         os.stat(path).st_mtime
     )
-    if isinstance(fmt, str):
-        return timestamp(fmt, time_sec=time_float)
-    elif fmt is int:
-        return int(time_float)
-    elif fmt is tuple:
-        time_str = timestamp('ymdhns', time_sec=time_float)
-        return (
-            int(time_str[0:4]),
-            int(time_str[4:6]),
-            int(time_str[6:8]),
-            int(time_str[8:10]),
-            int(time_str[10:12]),
-            int(time_str[12:14]),
-        )
-    elif fmt is float:
-        return time_float
-    elif fmt is str:
+    if pretty_fmt:
         return timestamp('y-m-d h:n:s', time_sec=time_float)
-    elif fmt is round:
-        return round(time_float)
     else:
-        raise ValueError(fmt)
+        return int(time_float)
+    # if isinstance(fmt, str):
+    #     return timestamp(fmt, time_sec=time_float)
+    # elif fmt is int:
+    #     return int(time_float)
+    # elif fmt is tuple:
+    #     time_str = timestamp('ymdhns', time_sec=time_float)
+    #     return (
+    #         int(time_str[0:4]),
+    #         int(time_str[4:6]),
+    #         int(time_str[6:8]),
+    #         int(time_str[8:10]),
+    #         int(time_str[10:12]),
+    #         int(time_str[12:14]),
+    #     )
+    # elif fmt is float:
+    #     return time_float
+    # elif fmt is str:
+    #     return timestamp('y-m-d h:n:s', time_sec=time_float)
+    # elif fmt is round:
+    #     return round(time_float)
+    # else:
+    #     raise ValueError(fmt)
 
 
 basename = filename
@@ -189,6 +198,17 @@ def barename(path: T.Path, strict: bool = False) -> str:
 
 
 # ------------------------------------------------------------------------------
+
+def empty(path: T.Path) -> bool:
+    if os.path.isdir(path):
+        return is_empty_dir(path)
+    elif os.path.isfile(path):
+        return is_empty_file(path)
+    elif os.path.islink(path):
+        return empty(os.path.realpath(path))
+    else:
+        raise Exception(path)
+
 
 def exist(path: T.Path) -> bool:
     if _exists(path):

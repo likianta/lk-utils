@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lk-utils"
-version = "3.3.0a12"
+version = "3.2.1b0"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = ["Likianta <likianta@foxmail.com>"]
@@ -9,7 +9,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = ">=0.7.2"
-lk-logger = "^6.0.5"
+lk-logger = "^6.0.6"
 psutil = ">=6.0.0"
 pyyaml = "^6.0.0"
 rich = "^13.9.0"
