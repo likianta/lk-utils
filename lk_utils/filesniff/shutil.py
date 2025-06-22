@@ -57,18 +57,27 @@ def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
             os.mkdir(dp_o)
 
 
-def copy_file(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
+def copy_file(
+    src: str,
+    dst: str,
+    overwrite: T.OverwriteScheme = None,
+    reserve_metadata: bool = False,
+) -> None:
     if exist(dst):
         if _overwrite(dst, overwrite) is False:
             return
-    shutil.copyfile(src, dst)
+    if reserve_metadata:
+        shutil.copy2(src, dst)
+    else:
+        shutil.copyfile(src, dst)
 
 
 def copy_tree(
     src: str,
     dst: str,
     overwrite: T.OverwriteScheme = None,
-    symlinks: bool = False
+    symlinks: bool = False,
+    reserve_metadata: bool = True,
 ) -> None:
     if exist(dst):
         if _overwrite(dst, overwrite) is False:
@@ -76,6 +85,7 @@ def copy_tree(
     shutil.copytree(
         _safe_long_path(src),
         _safe_long_path(dst),
+        copy_function=shutil.copy2 if reserve_metadata else shutil.copy,
         symlinks=symlinks
     )
 
