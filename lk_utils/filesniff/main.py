@@ -304,18 +304,22 @@ def replace_ext(path: T.Path, ext: str) -> T.Path:
     return ospath.splitext(path)[0] + '.' + ext.lstrip('.')
 
 
-def split(path: T.Path, parts: int = 2) -> t.Tuple[str, ...]:
-    path = abspath(path)
+def split(path: T.Path, parts: int = 2) -> t.Union[
+    t.Tuple[str, str], t.Tuple[str, str, str]
+]:
+    path = normpath(path)
+    if '/' not in path:
+        path = abspath(path)
     if parts == 2:
         a, b = path.rsplit('/', 1)
         return a, b
     elif parts == 3:
-        assert isfile(path)
         a, b = path.rsplit('/', 1)
         b, c = b.rsplit('.', 1)
+        #   special case: '.abc' -> ('', 'abc')
         return a, b, c
     else:
-        raise ValueError('Unsupported parts number!')
+        raise ValueError(path, parts)
 
 
 def xpath(relpath: T.Path) -> T.AbsPath:
