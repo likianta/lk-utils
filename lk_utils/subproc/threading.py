@@ -17,6 +17,7 @@ class T:
     Target = t.TypeVar('Target', bound=t.Callable)
     Thread = t.ForwardRef('Thread')
     
+    # noinspection PyTypeHints
     Task = t.Tuple[Target, Args, KwArgs, _Inherit]
     ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
 
@@ -28,6 +29,7 @@ class Thread:
     _is_executed: bool
     _is_running: bool
     _result: T.Result
+    # noinspection PyTypeHints
     _target: T.Target
     _tasks: t.Deque[T.Task]
     _thread: _Thread
@@ -112,18 +114,12 @@ class Thread:
                         for _ in self._result:
                             if not self._is_running:
                                 # a safe "break signal" emitted from the outside.
-                                print(
-                                    '[red dim]thread is safely killed[/]',
-                                    func,
-                                    ':r',
-                                )
+                                print('thread is safely killed', func, ':v7')
                                 return
                     else:
                         print(
-                            '[yellow dim]thread is marked interruptible but '
-                            'there is no break point in function[/]',
-                            func,
-                            ':r',
+                            'thread is marked interruptible but there is no '
+                            'break point in function', func, ':v5',
                         )
             self._is_running = False
         
