@@ -46,9 +46,8 @@ class T:
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return
     if not exist(dst):
         os.mkdir(dst)
     for d in findall_dirs(src):
@@ -63,9 +62,8 @@ def copy_file(
     overwrite: T.OverwriteScheme = None,
     reserve_metadata: bool = False,
 ) -> None:
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return
     if reserve_metadata:
         shutil.copy2(src, dst)
     else:
@@ -79,9 +77,8 @@ def copy_tree(
     symlinks: bool = False,
     reserve_metadata: bool = True,
 ) -> None:
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return
     shutil.copytree(
         _safe_long_path(src),
         _safe_long_path(dst),
@@ -91,15 +88,13 @@ def copy_tree(
 
 
 def make_dir(dst: str) -> None:
-    if not exist(dst):
-        os.mkdir(dst)
+    os.mkdir(dst)
 
 
 def make_dirs(dst: str) -> None:
     # FIXME: we don't use `os.makedirs(dst, exist_ok=True)` because there may be -
     #   an issue in resolving symlinked dst.
-    if not exist(dst):
-        os.makedirs(dst)
+    os.makedirs(dst)
 
 
 def make_file(dst: str) -> None:
@@ -114,7 +109,7 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     
     assert real_exist(src), src
     if exist(dst):
-        if overwrite is True:
+        if overwrite is True:  # noqa
             if real_exist(dst) and os.path.samefile(src, dst):
                 return dst
             else:
@@ -164,9 +159,8 @@ def make_shortcut(
         https://www.blog.pythonlibrary.org/2010/01/23/using-python-to-create
         -shortcuts/
     """
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return
     if not IS_WINDOWS:
         raise NotImplementedError
     
@@ -205,9 +199,8 @@ def make_shortcut(
 
 
 def move(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return
     shutil.move(src, dst)
 
 
@@ -257,9 +250,8 @@ def zip_dir(
         dst = src + '.zip'
     else:
         assert dst.endswith('.zip')
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return dst
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return dst
     top_name = basename(dst[:-4])
     with ZipFile(
         dst, 'w', compression=ZIP_DEFLATED, compresslevel=compress_level
@@ -282,9 +274,8 @@ def unzip_file(
     if dst is None:
         dst = src[:-4]
     # print(src, dst, overwrite, exist(path_o), ':lvp')
-    if exist(dst):
-        if _overwrite(dst, overwrite) is False:
-            return dst
+    if exist(dst) and not _overwrite(dst, overwrite):
+        return dst
     
     dirname_o = dirname(dst)
     with ZipFile(
@@ -325,21 +316,17 @@ unzip = unzip_file
 
 def _overwrite(path: str, scheme: T.OverwriteScheme) -> bool:
     """
-    args:
+    params:
         scheme:
             True: overwrite
             False: no overwrite, and raise an FileexistError
             None: no overwrite, no error (skip)
     returns: bool
-        the return value reflects what "overwrite" results in, literally.
-        i.e. True means "we DID overwrite", False means "we DID NOT overwrite".
-        the caller should take care of the return value and do the leftovers. \
-        usually, if caller receives True, it can continue its work; if False, \
-        should return at once.
+        True menas "can do overwrite".
     """
     if scheme is None:
         return False
-    elif scheme is True:
+    elif scheme is True:  # noqa
         remove(path)
         return True
     else:  # raise error
