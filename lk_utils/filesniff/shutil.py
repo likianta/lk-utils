@@ -12,7 +12,7 @@ from .main import abspath
 from .main import basename
 from .main import dirname
 from .main import exist
-from .main import isdir
+from .main import parent
 from .main import real_exist
 from .main import relpath
 from .main import xpath
@@ -277,36 +277,23 @@ def unzip_file(
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
     
-    dirname_o = dirname(dst)
+    def is_duplicate_subfolder(zfile: ZipFile, target_name: str) -> bool:
+        top_names = set()
+        for name in zfile.namelist():
+            if name.endswith('/') and '/' not in name[:-1]:
+                top_names.add(name[:-1])
+        if len(top_names) == 1:
+            if top_names.pop() == target_name:
+                return True
+        return False
+    
     with ZipFile(
         src, 'r', compression=ZIP_DEFLATED, compresslevel=compress_level
     ) as z:
-        z.extractall(_safe_long_path(dst))
-    
-    dlist = tuple(
-        x for x in os.listdir(dst)
-        if x not in ('.DS_Store', '__MACOSX')
-    )
-    if len(dlist) == 1:
-        x = dlist[0]
-        if isdir(f'{dst}/{x}'):
-            if x == dirname_o:
-                print(
-                    f'move up sub folder [cyan]({x})[/] to be parent', ':vspr'
-                )
-                dir_m = f'{dst}_tmp'
-                assert not exist(dir_m)
-                os.rename(dst, dir_m)
-                shutil.move(f'{dir_m}/{x}', dst)
-                shutil.rmtree(dir_m)
-            else:
-                print(
-                    f'notice there is only one folder [magenta]({x})[/] in '
-                    f'this folder: [yellow]{dst}[/]. '
-                    '[dim](we don\'t move up it because its name is not same '
-                    'with its parent.)[/]',
-                    ':pr',
-                )
+        if is_duplicate_subfolder(z, dirname(dst)):
+            z.extractall(_safe_long_path(parent(dst)))
+        else:
+            z.extractall(_safe_long_path(dst))
     return dst
 
 
