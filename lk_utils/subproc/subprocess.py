@@ -13,9 +13,7 @@ from lk_logger import bprint
 from .threading import Thread
 from .threading import new_thread
 from .threading import run_new_thread
-from ..textwrap import indent
-from ..textwrap import join
-from ..textwrap import reindent
+from .. import textwrap
 
 _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
@@ -213,9 +211,11 @@ def run_cmd_args(
         else:  # better to dump the stdout message to console.
             if stdout:
                 print(':s1r', '[red dim]original output from subprocess:[/]')
-                print(':s1r1', Text.from_ansi(indent(stdout), style='red dim'))
+                print(':s1r1', Text.from_ansi(
+                    textwrap.wrap(stdout, 4), style='red dim'
+                ))
             # print(':dv8', 'subprocess error')
-        return reindent(
+        return textwrap.wrap(
             '''
             error happened with exit code {}.
             the origin run command is:
@@ -227,7 +227,7 @@ def run_cmd_args(
         ).format(
             retcode,
             ' '.join(args),
-            join(
+            textwrap.join(
                 (
                     '{:<2}  {}'.format(i, x)
                     for i, x in enumerate(args, 1)

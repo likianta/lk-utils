@@ -43,9 +43,10 @@ from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
-from .textwrap import dedent
+# from .textwrap import wrap
+from .textwrap import wrap as dedent
 from .time_utils import timer
 from .time_utils import timestamp
 from .time_utils import wait
 
-__version__ = '3.2.1'
+__version__ = '3.3.0'
