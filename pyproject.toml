@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.3.0a22"
+version = "3.3.0"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -19,7 +19,7 @@ homepage = "https://github.com/likianta/lk-utils"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-argsense = "^1.0.0"
+argsense = "^1.1.0"
 lk-logger = "^6.0.6"
 psutil = ">=6.0.0"
 pyyaml = "^6.0.0"
@@ -30,18 +30,14 @@ typing-extensions = "^4.0.0"
 # --- extras
 ipython = [
     { version = "<9.0.0", python = ">=3.8,<3.11", optional = true },
-    { version = "^9.0.0", python = "^3.11", optional = true },
+    { version = "^9.4.0", python = "^3.11", optional = true },
 ]
-# ipython = { version = "^9.0.0", optional = true }
-# openpyxl = { version = "3.0.10", optional = true }  # <- pyexcel-xlsx (https://github.com/pyexcel/pyexcel-xlsx/issues/52)
-# pyexcel = { version = "^0.7.0", optional = true }
-# pyexcel-xlsx = { version = "^0.6.0", optional = true }
 toml = { version = "^0.10.0", python = "<3.11", optional = true }
 xlrd = { version = "1.2.0", optional = true }
 xlsxwriter = { version = "^3.2.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
-ipython = { version = "^9.0.0", python = "^3.12" }
+ipython = { version = "^9.4.0", python = "^3.12" }
 # openpyxl = "3.0.10"  # <- pyexcel-xlsx
 # pyexcel = "^0.7.0"
 # pyexcel-xlsx = "^0.6.0"

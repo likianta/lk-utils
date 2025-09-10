@@ -31,6 +31,9 @@ def wrap(
     return text
 
 
+dedent = wrap  # DELETE?
+
+
 def join(
     parts: t.Iterable[str],
     indent: int = 0,

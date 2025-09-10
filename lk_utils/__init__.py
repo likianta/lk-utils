@@ -14,10 +14,11 @@ from . import filesniff as fs
 from . import importer
 from . import io
 from . import io as rw  # alias
-from . import pycompatible  # DELETE
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
+from .background_activities import Activity
+from .background_activities import bg
 from .binding import Reactive
 from .binding import Signal
 from .binding import bind_with

@@ -92,9 +92,7 @@ def make_dir(dst: str) -> None:
 
 
 def make_dirs(dst: str) -> None:
-    # FIXME: we don't use `os.makedirs(dst, exist_ok=True)` because there may be -
-    #   an issue in resolving symlinked dst.
-    os.makedirs(dst)
+    os.makedirs(dst, exist_ok=True)
 
 
 def make_file(dst: str) -> None:
