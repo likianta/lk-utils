@@ -17,6 +17,8 @@ def pretty_time(time_sec: float) -> str:
         return '{:.1f}min'.format(time_sec / 60)
     elif time_sec >= 1:
         return '{:.1f}s'.format(time_sec)
+    elif time_sec == 0:
+        return '0s'
     else:
         for unit in ('ms', 'us', 'ns'):
             time_sec *= 1000
