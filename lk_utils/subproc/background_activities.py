@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from time import sleep
 from time import time
 from types import GeneratorType
-from .subproc import new_thread
+from .threading import new_thread
 
 
 class Activity:

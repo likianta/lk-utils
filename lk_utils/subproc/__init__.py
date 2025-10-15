@@ -1,4 +1,6 @@
 from . import subprocess
+from .background_activities import Activity
+from .background_activities import bg
 from .coroutine import coro_mgr
 # from .multi_process import new_process
 from .promise import Promise

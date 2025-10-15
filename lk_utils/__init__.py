@@ -17,8 +17,6 @@ from . import io as rw  # alias
 from . import subproc
 from . import textwrap
 from . import time_utils  # TODO: rename to "time"?
-from .background_activities import Activity
-from .background_activities import bg
 from .binding import Reactive
 from .binding import Signal
 from .binding import bind_with
@@ -39,6 +37,8 @@ from .filesniff import xpath as relpath  # backward compatible
 from .io import dump
 from .io import load
 from .ipython import start_ipython
+from .subproc import Activity
+from .subproc import bg
 from .subproc import coro_mgr as coro
 from .subproc import new_thread
 from .subproc import run_cmd_args
