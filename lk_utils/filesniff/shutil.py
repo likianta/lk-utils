@@ -1,7 +1,6 @@
 import os
 import shutil
 import typing as t
-from textwrap import dedent
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
@@ -17,6 +16,7 @@ from .main import real_exist
 from .main import relpath
 from .main import xpath
 from ..subproc import run_cmd_args
+from ..textwrap import dedent
 
 __all__ = [
     'clone_tree',
@@ -172,13 +172,15 @@ def make_shortcut(
     
     vbs = xpath('./_temp_shortcut_generator.vbs')
     with open(vbs, 'w') as f:
-        f.write(dedent('''
+        f.write(dedent(
+            '''
             Set objWS = WScript.CreateObject("WScript.Shell")
             lnkFile = "{file_o}"
             Set objLink = objWS.CreateShortcut(lnkFile)
             objLink.TargetPath = "{file_i}"
             objLink.Save
-        ''').format(
+            '''
+        ).format(
             file_i=src.replace('/', '\\'),
             file_o=dst.replace('/', '\\'),
         ))
@@ -227,10 +229,10 @@ def remove_file(dst: str) -> None:
 
 
 def remove_tree(dst: str) -> None:
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
-    elif os.path.islink(dst):
+    if os.path.islink(dst):
         os.unlink(dst)
+    elif os.path.isdir(dst):
+        shutil.rmtree(dst)
     else:
         raise Exception('inexistent or invalid path type', dst)
 
