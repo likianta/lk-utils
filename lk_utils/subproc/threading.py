@@ -1,37 +1,31 @@
 import typing as t
 from collections import defaultdict
-from collections import deque
 from functools import wraps
 from threading import Thread as _Thread
 from types import GeneratorType
+from ..binding import Signal
 
 
 class T:
-    _Inherit = bool
-    
-    Args = t.Optional[tuple]
+    Args = tuple
     Group = str  # the default group is 'default'
     Id = t.Union[str, int]
-    KwArgs = t.Optional[dict]
+    KwArgs = dict
     Result = t.Any
     Target = t.TypeVar('Target', bound=t.Callable)
     Thread = t.ForwardRef('Thread')
-    
-    # noinspection PyTypeHints
-    Task = t.Tuple[Target, Args, KwArgs, _Inherit]
     ThreadPool = t.Dict[Group, t.Dict[Id, Thread]]
 
 
 class Thread:
+    on_complete: Signal[t.Any]
     _daemon: bool
     _illed: t.Optional[Exception]
     _interruptible: bool
     _is_executed: bool
     _is_running: bool
     _result: T.Result
-    # noinspection PyTypeHints
-    _target: T.Target
-    _tasks: t.Deque[T.Task]
+    _target: t.Tuple[T.Target, T.Args, T.KwArgs]
     _thread: _Thread
     
     class Undefined:
@@ -50,17 +44,19 @@ class Thread:
         interruptible: bool = False,
         start_now: bool = True,
     ) -> None:
-        self._tasks = deque()
-        self._tasks.append((target, args, kwargs, False))
+        self.on_complete = Signal()
         self._daemon = daemon
         self._illed = None
         self._interruptible = interruptible
         self._is_executed = False
         self._is_running = False
         self._result = Thread.Undefined
-        self._target = target
+        self._target = (target, args, kwargs)
         if start_now:
             self.mainloop()
+    
+    def __bool__(self) -> bool:
+        return not self._is_executed or self._is_running
     
     # -------------------------------------------------------------------------
     
@@ -83,81 +79,70 @@ class Thread:
     @property
     def result(self) -> T.Result:
         if self._result is Thread.Undefined:
-            raise RuntimeError('The result is not ready yet.')
+            raise RuntimeError('result is not evaluated out')
         return self._result
     
     # -------------------------------------------------------------------------
     
     def start(self) -> None:
+        if not self._is_running:
+            self.mainloop()
+    
+    def stop(self) -> None:
         if self._is_running:
-            print('thread is already running', ':pv3')
-            return
-        self.mainloop()
+            if self._interruptible:
+                self._is_running = False
+            else:
+                raise Exception(
+                    'thread cannot be stopped because it has no break point'
+                )
+    
+    kill = stop
     
     def mainloop(self) -> None:
         self._is_running = True
         
-        def loop() -> None:
-            while self._tasks:
-                func, args, kwargs, inherit = self._tasks.popleft()
-                if inherit:
-                    args = (self._result, *(args or ()))
-                try:
-                    self._result = func(*(args or ()), **(kwargs or {}))
-                except Exception as e:
-                    self._illed = e
-                    self._is_running = False
-                    self._result = Thread.BrokenResult(e)
-                    raise e
-                if self._interruptible:
-                    if isinstance(self._result, GeneratorType):
-                        for _ in self._result:
-                            if not self._is_running:
-                                # a safe "break signal" emitted from the outside.
-                                print('thread is safely killed', func, ':v7')
-                                return
-                    else:
-                        print(
-                            'thread is marked interruptible but there is no '
-                            'break point in function', func, ':v5',
-                        )
+        def _handle() -> None:
+            func, args, kwargs = self._target
+            try:
+                self._result = func(*args, **kwargs)
+            except Exception as e:
+                self._illed = e
+                self._is_running = False
+                self._result = Thread.BrokenResult(e)
+                raise e
+            if self._interruptible:
+                # https://stackoverflow.com/questions/6416538
+                if isinstance(self._result, GeneratorType):
+                    for _ in self._result:
+                        if not self._is_running:
+                            # a safe "break signal" emitted from the outside.
+                            print('thread is safely killed', func, ':v7')
+                            break
+                else:
+                    raise Exception(
+                        'thread is marked interruptible but there is no break '
+                        'point in the function', func,
+                    )
+            self.on_complete.emit(self._result)
             self._is_running = False
         
-        self._thread = _Thread(target=loop)
+        self._thread = _Thread(target=_handle)
         self._thread.daemon = self._daemon
         self._thread.start()
         self._is_executed = True
-    
-    def add_task(self, args: tuple = None, kwargs: dict = None) -> int:
-        self._tasks.append((self._target, args, kwargs, False))
-        number = len(self._tasks)
-        if not self._is_running:
-            self.mainloop()
-        return number
-    
-    def then(
-        self,
-        func: T.Target,
-        args: tuple = None,
-        kwargs: dict = None,
-        inherit: bool = True,
-    ) -> t.Self:
-        self._tasks.append((func, args, kwargs, inherit))
-        if not self._is_running:
-            self.mainloop()
-        return self
     
     def join(self, timeout: t.Optional[float] = 10e-3) -> T.Result:
         """
         params:
             timeout: None | float
-                None: blocks until the thread is finished.
+                None: blocking until thread finished.
                     warning: the thread won't listen to KeyboardInterrupt
-                    signal, it means you may never stop it if the thread is
-                    run into a dead loop.
-                float: blocks until the thread is finished or user presses
-                    `ctrl + c`.
-                ref: https://stackoverflow.com/a/3788243/9695911
+                    signal, it means you may never stop it if the thread is run
+                    into a dead loop.
+                float:
+                    blocking until thread finished or user presses `ctrl + c`.
+                    ref: https://stackoverflow.com/a/3788243/9695911
         """
         if not self._is_executed:
             raise Exception('thread is never started!')
@@ -171,19 +156,6 @@ class Thread:
                         break
             assert self._is_running is False
         return self.result
-    
-    def kill(self) -> bool:
-        """
-        https://stackoverflow.com/questions/6416538/how-to-check-if-an-object-is
-        -a-generator-object-in-python
-        """
-        if self._interruptible:
-            self._is_running = False
-            return True
-        else:
-            # raise RuntimeError('the thread is not interuptable!')
-            print('the thread is not interruptible!', self._thread, ':v4p')
-            return False
 
 
 class ThreadManager:
@@ -209,7 +181,7 @@ class ThreadManager:
             
             @wraps(func)
             def wrapper(*args, **kwargs) -> Thread:
-                return self._create_thread_broker(
+                return self._create_thread(
                     group,
                     ident,
                     func,
@@ -227,14 +199,14 @@ class ThreadManager:
     def run_new_thread(
         self,
         target: T.Target,
-        args: T.Args = None,
-        kwargs: T.KwArgs = None,
+        *args,
         daemon: bool = True,
-        interruptible: bool = False,
+        interruptible: bool = None,
+        **kwargs
     ) -> Thread:
         """run function in a new thread at once."""
         # # assert id(target) not in __thread_pool  # should i check it?
-        return self._create_thread_broker(
+        return self._create_thread(
             'default',
             id(target),
             target,
@@ -242,16 +214,16 @@ class ThreadManager:
             kwargs,
             daemon,
             False,
-            interruptible,
+            interruptible
         )
     
-    def _create_thread_broker(
+    def _create_thread(
         self,
         group: T.Group,
         ident: T.Id,
         target: T.Target,
-        args: T.Args = None,
-        kwargs: T.KwArgs = None,
+        args: tuple = None,
+        kwargs: dict = None,
         daemon: bool = True,
         singleton: bool = False,
         interruptible: bool = False,
@@ -260,14 +232,14 @@ class ThreadManager:
             if t := self.thread_pool[group].get(ident):
                 t.add_task(args, kwargs)
                 return t
-        broker = self.thread_pool[group][ident] = Thread(
+        out = self.thread_pool[group][ident] = Thread(
             target=target,
             args=args,
             kwargs=kwargs,
             daemon=daemon,
             interruptible=interruptible,
         )
-        return broker
+        return out
     
     # -------------------------------------------------------------------------
     
