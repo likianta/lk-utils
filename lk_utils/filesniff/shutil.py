@@ -1,6 +1,7 @@
 import os
 import shutil
 import typing as t
+import urllib.request
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
@@ -22,6 +23,7 @@ __all__ = [
     'clone_tree',
     'copy_file',
     'copy_tree',
+    'download',
     'make_dir',
     'make_dirs',
     'make_file',
@@ -85,6 +87,31 @@ def copy_tree(
         copy_function=shutil.copy2 if reserve_metadata else shutil.copy,
         symlinks=symlinks
     )
+
+
+def download(
+    url: str,
+    path: str, 
+    extract: bool = False,
+    overwrite: T.OverwriteScheme = True,
+) -> None:
+    if exist(path) and not _overwrite(path, overwrite):
+        return
+    if extract:
+        ext = (
+            url.rsplit('.', 1)[-1] if url.endswith(
+                ('.zip', '.gz', '.7z', '.zst')
+            ) else 'zip'
+        )
+        assert ext == 'zip', (  # TODO
+            'currently only support ".zip" extension.', url, path
+        )
+        temp_file = '{}.tmp.{}'.format(path, ext)
+        urllib.request.urlretrieve(url, temp_file)
+        unzip_file(temp_file, path)
+        remove_file(temp_file)
+    else:
+        urllib.request.urlretrieve(url, path)
 
 
 def make_dir(dst: str) -> None:
@@ -241,7 +268,7 @@ def zip_dir(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
-    compress_level: int = 7,
+    compression_level: int = 7,
 ) -> str:
     """
     ref: https://likianta.blog.csdn.net/article/details/126710855
@@ -254,7 +281,7 @@ def zip_dir(
         return dst
     top_name = basename(dst[:-4])
     with ZipFile(
-        dst, 'w', compression=ZIP_DEFLATED, compresslevel=compress_level
+        dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
     ) as z:
         z.write(src, arcname=top_name)
         for f in tuple(findall_files(src)):
@@ -268,7 +295,7 @@ def unzip_file(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
-    compress_level: int = 7,
+    compression_level: int = 7,
 ) -> str:
     assert src.endswith('.zip')
     if dst is None:
@@ -288,7 +315,7 @@ def unzip_file(
         return False
     
     with ZipFile(
-        src, 'r', compression=ZIP_DEFLATED, compresslevel=compress_level
+        src, 'r', compression=ZIP_DEFLATED, compresslevel=compression_level
     ) as z:
         if is_duplicate_subfolder(z, dirname(dst)):
             z.extractall(_safe_long_path(parent(dst)))

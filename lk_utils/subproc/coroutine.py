@@ -183,8 +183,7 @@ class Task:
             else:
                 assert isinstance(pending_result, GeneratorType)
                 self._rolls.append(pending_result)
-            finally:
-                return
+            return
         
         # self.reset_status()
         self.start()
