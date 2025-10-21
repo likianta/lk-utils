@@ -93,7 +93,7 @@ def download(
     url: str,
     path: str, 
     extract: bool = False,
-    overwrite: T.OverwriteScheme = True,
+    overwrite: T.OverwriteScheme = None,
 ) -> None:
     if exist(path) and not _overwrite(path, overwrite):
         return

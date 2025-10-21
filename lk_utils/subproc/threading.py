@@ -1,7 +1,9 @@
+import inspect
 import typing as t
 from collections import defaultdict
 from functools import wraps
 from threading import Thread as _Thread
+from types import FrameType
 from types import GeneratorType
 from ..binding import Signal
 
@@ -18,16 +20,6 @@ class T:
 
 
 class Thread:
-    on_complete: Signal[t.Any]
-    _daemon: bool
-    _illed: t.Optional[Exception]
-    _interruptible: bool
-    _is_executed: bool
-    _is_running: bool
-    _result: T.Result
-    _target: t.Tuple[T.Target, T.Args, T.KwArgs]
-    _thread: _Thread
-    
     class Undefined:
         pass
     
@@ -45,13 +37,15 @@ class Thread:
         start_now: bool = True,
     ) -> None:
         self.on_complete = Signal()
+        self._crashed = Signal()
         self._daemon = daemon
-        self._illed = None
+        self._illed = None  # DELETE?
         self._interruptible = interruptible
         self._is_executed = False
         self._is_running = False
         self._result = Thread.Undefined
         self._target = (target, args, kwargs)
+        self._thread = None
         if start_now:
             self.mainloop()
     
@@ -102,7 +96,7 @@ class Thread:
     def mainloop(self) -> None:
         self._is_running = True
         
-        def _handle() -> None:
+        def _handle(main_caller_frame: FrameType) -> None:
             func, args, kwargs = self._target
             try:
                 self._result = func(*args, **kwargs)
@@ -110,6 +104,24 @@ class Thread:
                 self._illed = e
                 self._is_running = False
                 self._result = Thread.BrokenResult(e)
+                
+                # https://gemini.google.com/share/7cff088615cb
+                stack = []
+                frame = main_caller_frame
+                while frame:
+                    info = inspect.getframeinfo(frame)
+                    stack.append('file "{}:{}" at "{}"'.format(
+                        info.filename, info.lineno, info.function
+                    ))
+                    frame = frame.f_back
+                print(':dv8')
+                print(
+                    'an exception occured in a thread processing, here is its '
+                    'caller stack trace:', ':v8'
+                )
+                for i, line in enumerate(reversed(stack)):
+                    print('    {}. {}'.format(i, line), ':v8s1')
+                    
                 raise e
             if self._interruptible:
                 # https://stackoverflow.com/questions/6416538
@@ -127,7 +139,8 @@ class Thread:
             self.on_complete.emit(self._result)
             self._is_running = False
         
-        self._thread = _Thread(target=_handle)
+        _frame = inspect.currentframe()
+        self._thread = _Thread(target=_handle, args=(_frame,))
         self._thread.daemon = self._daemon
         self._thread.start()
         self._is_executed = True
@@ -201,6 +214,7 @@ class ThreadManager:
         target: T.Target,
         *args,
         daemon: bool = True,
+        singleton: bool = False,
         interruptible: bool = None,
         **kwargs
     ) -> Thread:
@@ -213,7 +227,7 @@ class ThreadManager:
             args,
             kwargs,
             daemon,
-            False,
+            singleton,
             interruptible
         )
     

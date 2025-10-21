@@ -298,7 +298,7 @@ def run_cmd_args(
     else:
         if verbose:
             process.communication_thread = run_new_thread(
-                communicate, args=(False,), interruptible=True
+                communicate, False, interruptible=True
             )
         return process
 
