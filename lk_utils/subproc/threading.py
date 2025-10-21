@@ -37,7 +37,6 @@ class Thread:
         start_now: bool = True,
     ) -> None:
         self.on_complete = Signal()
-        self._crashed = Signal()
         self._daemon = daemon
         self._illed = None  # DELETE?
         self._interruptible = interruptible
@@ -220,6 +219,13 @@ class ThreadManager:
     ) -> Thread:
         """run function in a new thread at once."""
         # # assert id(target) not in __thread_pool  # should i check it?
+        if 'args' in kwargs or 'kwargs' in kwargs:
+            print(
+                ':v6',
+                'deprecation warning: `run_new_thread` has changed its '
+                'signature to `(func, *args, **kwargs)`, if you are passing '
+                '`(func, args=..., kwargs=...)`, it may crash the process.'
+            )
         return self._create_thread(
             'default',
             id(target),
