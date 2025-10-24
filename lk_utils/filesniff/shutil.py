@@ -279,7 +279,7 @@ def zip_dir(
         assert dst.endswith('.zip')
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
-    top_name = basename(dst[:-4])
+    top_name = basename(src)
     with ZipFile(
         dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
     ) as z:
@@ -296,6 +296,7 @@ def unzip_file(
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
     compression_level: int = 7,
+    overwrite_top_name: bool = True,
 ) -> str:
     assert src.endswith('.zip')
     if dst is None:
@@ -304,21 +305,32 @@ def unzip_file(
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
     
-    def is_duplicate_subfolder(zfile: ZipFile, target_name: str) -> bool:
+    def is_single_top(zfile: ZipFile) -> str:
         top_names = set()
         for name in zfile.namelist():
-            if name.endswith('/') and '/' not in name[:-1]:
-                top_names.add(name[:-1])
+            if name.endswith('/'):
+                if '/' not in name[:-1]:
+                    top_names.add(name[:-1])
+            else:
+                if '/' not in name:
+                    return ''
         if len(top_names) == 1:
-            if top_names.pop() == target_name:
-                return True
-        return False
+            return top_names.pop()
+        else:
+            return ''
     
     with ZipFile(
         src, 'r', compression=ZIP_DEFLATED, compresslevel=compression_level
     ) as z:
-        if is_duplicate_subfolder(z, dirname(dst)):
-            z.extractall(_safe_long_path(parent(dst)))
+        if top_name := is_single_top(z):
+            if top_name == dirname(dst):
+                z.extractall(_safe_long_path(parent(dst)))
+            elif overwrite_top_name:
+                for name in z.namelist():
+                    z.extract(name, name.replace(top_name, dst, 1))
+            else:
+                make_dir(dst)
+                z.extractall(_safe_long_path(dst))
         else:
             z.extractall(_safe_long_path(dst))
     return dst
