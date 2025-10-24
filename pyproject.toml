@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.4.1b0"
+version = "3.4.1"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -13,6 +13,8 @@ all = ["ipython", "toml", "xlrd", "xlsxwriter"]
 dbg = ["ipython"]
 # exl = ["openpyxl", "pyexcel", "pyexcel-xlsx"]
 exl = ["xlrd", "xlsxwriter"]
+io = ["toml", "xlrd", "xlsxwriter"]
+tml = ["toml"]
 
 [project.urls]
 homepage = "https://github.com/likianta/lk-utils"

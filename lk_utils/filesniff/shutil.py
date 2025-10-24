@@ -14,7 +14,6 @@ from .main import dirname
 from .main import exist
 from .main import parent
 from .main import real_exist
-from .main import relpath
 from .main import xpath
 from ..subproc import run_cmd_args
 from ..textwrap import dedent
@@ -126,6 +125,9 @@ def make_file(dst: str) -> None:
     open(dst, 'w').close()
 
 
+_symlink_granted = True
+
+
 def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     """
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
@@ -145,11 +147,44 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
             return dst
     
     if IS_WINDOWS:
-        os.symlink(src, dst, target_is_directory=os.path.isdir(src))
+        global _symlink_granted
+        if _symlink_granted:
+            try:
+                os.symlink(src, dst, target_is_directory=os.path.isdir(src))
+            except OSError as e:
+                # print(':v8p', e)
+                if 'WinError 1314' in str(e):
+                    # https://docs.python.org/3/library/os.html#os.symlink
+                    # if os.getenv('FALLBACK_SYMLINK_IF_NO_PRIVILEGE') == '1':
+                    print(':pv6', 'fallback symlink with no privileges')
+                    _symlink_granted = False
+                    _make_link_fallback(src, dst)
+                    return dst
+                raise e
+        else:
+            _make_link_fallback(src, dst)
+            return dst
     else:
         os.symlink(src, dst)
     
     return dst
+
+
+def _make_link_fallback(src: str, dst: str) -> None:
+    """
+    this function doesn't require administrative privileges.
+    note: `src` and `dst` must be absolute paths.
+    related:
+        https://docs.python.org/3/library/os.html#os.symlink
+        https://discuss.python.org/t/add-os-junction-pathlib-path-junction-to
+        /50394
+    """
+    src = src.replace('/', '\\')
+    dst = dst.replace('/', '\\')
+    if os.path.isdir(src):  # directory junction for dirs
+        run_cmd_args(('mklink', '/J', dst, src), shell=True)
+    else:  # hard link for files
+        run_cmd_args(('mklink', '/H', dst, src), shell=True)
 
 
 def make_links(
@@ -285,9 +320,7 @@ def zip_dir(
     ) as z:
         z.write(src, arcname=top_name)
         for f in tuple(findall_files(src)):
-            z.write(f.path, arcname='{}/{}'.format(
-                top_name, relpath(f.path, src)
-            ))
+            z.write(f.path, arcname='{}/{}'.format(top_name, f.relpath))
     return dst
 
 
