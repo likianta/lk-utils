@@ -44,7 +44,7 @@ class Thread:
         self._is_running = False
         self._result = Thread.Undefined
         self._target = (target, args, kwargs)
-        self._thread = None
+        self._thread: t.Optional[_Thread] = None
         if start_now:
             self.mainloop()
     

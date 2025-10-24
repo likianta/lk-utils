@@ -31,7 +31,7 @@ class Popen(sp.Popen):
             self._watch_self_status()
     
     @property
-    def is_running(self) -> bool:
+    def is_alive(self) -> bool:
         # return self.poll() is None
         return psutil.pid_exists(self.pid) and self.poll() is None
     
@@ -39,7 +39,7 @@ class Popen(sp.Popen):
         """
         kill self and child processes.
         """
-        if not self.is_running: return
+        if not self.is_alive: return
         pid = self.pid
         parent = psutil.Process(pid)
         print(':r', '[red dim]kill process: {} ({})[/]'.format(
@@ -68,7 +68,7 @@ class Popen(sp.Popen):
     def _watch_self_status(self) -> None:
         self._introspection = True
         while self._introspection:
-            if self.is_running:
+            if self.is_alive:
                 sleep(1)
             else:
                 print(':v8', 'process has exited unexpectly.')
