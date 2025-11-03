@@ -44,12 +44,20 @@ class Path:
         return os.path.splitext(self.name)[0]
     
     @property
-    def stem(self) -> str:  # alias to `barename`
-        return os.path.splitext(self.name)[0]
+    def ctime(self) -> int:
+        return int(os.path.getctime(self.abspath))
     
     @property
     def ext(self) -> str:
         return os.path.splitext(self.name)[1][1:].lower()
+    
+    @property
+    def mtime(self) -> int:
+        return int(os.path.getmtime(self.abspath))
+    
+    @property
+    def stem(self) -> str:  # alias to `barename`
+        return os.path.splitext(self.name)[0]
     
     # make it sortable.
     def __lt__(self, other: 'Path') -> bool:
