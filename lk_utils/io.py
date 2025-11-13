@@ -281,8 +281,8 @@ def _detect_file_type(filename: str) -> T.FileType:
     elif filename.endswith(('.xlsx', '.xls')):
         return 'excel'
     elif filename.endswith((
-        '.bin', '.exe', '.jpeg', '.jpg', '.mp3', '.mp4', '.png', '.raw', '.wav',
-        '.webp'
+        '.7z', '.bin', '.exe', '.jpeg', '.jpg', '.mp3', '.mp4', '.png', '.raw',
+        '.wav', '.webp', '.zip', '.zst'
     )):
         return 'binary'
     else:  # fallback to 'plain'

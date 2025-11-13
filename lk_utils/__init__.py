@@ -10,7 +10,7 @@ if 2:
         sys.modules['typing'] = common_typing
 
 from . import binding
-from . import filesniff as fs
+from . import filesys as fs
 from . import importer
 from . import io
 from . import io as rw  # alias
@@ -22,18 +22,18 @@ from .binding import Signal
 from .binding import bind_with
 from .binding import call_once
 from .chunk import chunkwise
-from .filesniff import cd_current_dir
-from .filesniff import find_dirs
-from .filesniff import find_files
-from .filesniff import findall_dirs
-from .filesniff import findall_files
-# from .filesniff import get_current_dir
-from .filesniff import make_link as mklink
-from .filesniff import make_links as mklinks
-from .filesniff import normpath
-from .filesniff import xpath
-from .filesniff import xpath as p
-from .filesniff import xpath as relpath  # backward compatible
+from .filesys import cd_current_dir
+from .filesys import find_dirs
+from .filesys import find_files
+from .filesys import findall_dirs
+from .filesys import findall_files
+# from .filesys import get_current_dir
+from .filesys import make_link as mklink
+from .filesys import make_links as mklinks
+from .filesys import normpath
+from .filesys import xpath
+from .filesys import xpath as p
+from .filesys import xpath as relpath  # backward compatible
 from .io import dump
 from .io import load
 from .ipython import start_ipython

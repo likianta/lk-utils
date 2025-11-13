@@ -99,7 +99,7 @@ mklinks('/from_dir', '/to_dir_2')
 
 ```python
 import os
-from lk_utils import filesniff as fs
+from lk_utils import filesys as fs
 print(fs.currdir() == os.path.dirname(__file__).replace('\\', '/'))  # -> True
 print(fs.relpath('..') == os.path.dirname(fs.currdir()))  # -> True
 ```
@@ -107,7 +107,7 @@ print(fs.relpath('..') == os.path.dirname(fs.currdir()))  # -> True
 ### list files/dirs
 
 ```python
-from lk_utils import filesniff as fs
+from lk_utils import filesys as fs
 
 for path, name in fs.find_files('.'):  # this is an generator.
     print(path, name)
