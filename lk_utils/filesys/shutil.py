@@ -92,8 +92,13 @@ def download(
     url: str,
     path: str, 
     extract: bool = False,
+    keep_file: bool = False,
     overwrite: T.OverwriteScheme = None,
 ) -> None:
+    """
+    params:
+        keep_file: whether to keep zip file after extracting.
+    """
     if exist(path) and not _overwrite(path, overwrite):
         return
     if extract:
@@ -108,7 +113,8 @@ def download(
         temp_file = '{}.tmp.{}'.format(path, ext)
         urllib.request.urlretrieve(url, temp_file)
         unzip_file(temp_file, path)
-        remove_file(temp_file)
+        if not keep_file:
+            remove_file(temp_file)
     else:
         urllib.request.urlretrieve(url, path)
 
