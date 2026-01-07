@@ -1,5 +1,10 @@
 # 更新日志
 
+### 3.4.3 (wip)
+
+- 更新 `fs.download`
+- 修复 `fs.zip_dir`
+
 ### 3.4.2 (2025-11-03)
 
 - fs finder 返回的对象增加 ctime, mtime 属性

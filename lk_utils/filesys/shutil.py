@@ -120,7 +120,8 @@ def download(
 
 
 def make_dir(dst: str) -> None:
-    os.mkdir(dst)
+    if not exist(dst):
+        os.mkdir(dst)
 
 
 def make_dirs(dst: str) -> None:
@@ -325,6 +326,8 @@ def zip_dir(
         dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
     ) as z:
         z.write(src, arcname=top_name)
+        for d in tuple(findall_dirs(src)):
+            z.write(d.path, arcname='{}/{}'.format(top_name, d.relpath))
         for f in tuple(findall_files(src)):
             z.write(f.path, arcname='{}/{}'.format(top_name, f.relpath))
     return dst
