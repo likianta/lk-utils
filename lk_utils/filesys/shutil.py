@@ -93,6 +93,7 @@ def download(
     path: str, 
     extract: bool = False,
     keep_file: bool = False,
+    progress: t.Callable[[float], None] = None,
     overwrite: T.OverwriteScheme = None,
 ) -> None:
     """
@@ -101,6 +102,14 @@ def download(
     """
     if exist(path) and not _overwrite(path, overwrite):
         return
+    
+    if progress:
+        def _report(count, block_size, total_size):
+            assert total_size > 0, (url, path)
+            progress(count * block_size / total_size)
+    else:
+        _report = None
+
     if extract:
         ext = (
             url.rsplit('.', 1)[-1] if url.endswith(
@@ -111,12 +120,12 @@ def download(
             'currently only support ".zip" extension.', url, path
         )
         temp_file = '{}.tmp.{}'.format(path, ext)
-        urllib.request.urlretrieve(url, temp_file)
+        urllib.request.urlretrieve(url, temp_file, _report)
         unzip_file(temp_file, path)
         if not keep_file:
             remove_file(temp_file)
     else:
-        urllib.request.urlretrieve(url, path)
+        urllib.request.urlretrieve(url, path, _report)
 
 
 def make_dir(dst: str) -> None:
