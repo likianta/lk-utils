@@ -49,7 +49,7 @@ class Activity:
         # wait for background loop to recycle it.
 
 
-class BackgroundActivities:
+class BackgroundActivityManager:
     busy: bool
     _activities: t.Dict[int, Activity]
     _timer: t.Dict[int, float]
@@ -60,6 +60,9 @@ class BackgroundActivities:
         self._timer = {}
         self._mainloop()
     
+    def __bool__(self) -> bool:
+        return bool(self._activities)
+
     def close(self) -> None:
         self._activities.clear()
         self._timer.clear()
@@ -149,4 +152,4 @@ class _Delay:
     value: float
 
 
-bg = BackgroundActivities()
+bg = BackgroundActivityManager()
