@@ -47,9 +47,13 @@ class T:
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
-    if exist(dst) and not _overwrite(dst, overwrite):
-        return
-    if not exist(dst):
+    if exist(dst):
+        if any(os.listdir(dst)):
+            if _overwrite(dst, overwrite):
+                os.mkdir(dst)
+            else:
+                return
+    else:
         os.mkdir(dst)
     for d in findall_dirs(src):
         dp_o = f'{dst}/{d.relpath}'
