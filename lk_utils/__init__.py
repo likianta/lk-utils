@@ -16,7 +16,7 @@ from . import io
 from . import io as rw  # alias
 from . import subproc
 from . import textwrap
-from . import time_utils  # TODO: rename to "time"?
+from . import time
 from .binding import Reactive
 from .binding import Signal
 from .binding import bind_with
@@ -46,9 +46,7 @@ from .subproc import run_cmd_line
 from .subproc import run_new_thread
 # from .textwrap import wrap
 from .textwrap import wrap as dedent
-from .time_utils import timer
-from .time_utils import timestamp
-from .time_utils import timing
-from .time_utils import wait
+from .time import timestamp
+from .time import wait
 
-__version__ = '3.4.3'
+__version__ = '3.5.0'
