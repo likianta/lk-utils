@@ -14,6 +14,7 @@ def chunkwise(
     examples:
         seq = [1, 2, 3, 4]
         
+        # continous = True
         chunkwise(seq, 2, 0, True)
             -> (1, 2), (2, 3), (3, 4), (4, None)
                 ^       ^       ^       ^
@@ -30,6 +31,7 @@ def chunkwise(
             -> (None, None, 1), (None, 1, 2), (1, 2, 3), (2, 3, 4)
                             ^             ^          ^          ^
         
+        # continous = False
         chunkwise(seq, 2, 0, False)
             -> (1, 2), (3, 4)
         chunkwise(seq, 2, 1, False)
@@ -40,12 +42,19 @@ def chunkwise(
             -> (None, 1, 2), (3, 4, None)
         chunkwise(seq, 3, 2, False)
             -> (None, None, 1), (2, 3, 4)
+        
+        # sequence is shorter than `n`
+        chunkwise((1, 2), 3, 1, True)
+        #   -> (None, 1, 2), (1, 2, None)
+                      ^          ^
     """
-    assert 0 <= prepad < n <= len(seq), (len(seq), n, prepad)
+    # assert 0 <= prepad < n <= len(seq), (len(seq), n, prepad)
+    assert 0 <= prepad < n, (len(seq), n, prepad)
     seq_filled = (
         *((_placeholder,) * prepad),
         *seq,
-        *((_placeholder,) * n)
+        *((_placeholder,) * (n - len(seq)) if n > len(seq) else ()),
+        *((_placeholder,) * n),
     )
     main_idx = prepad
     for i in range(0, len(seq_filled), 1 if continous else n):
