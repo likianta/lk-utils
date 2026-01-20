@@ -155,21 +155,21 @@ def filetime(
             str             '2025-03-20 15:31:03'
             tuple           (2025, 3, 20, 15, 31, 3)
     """
-    from ..time_utils import timestamp
+    from ..time import timestamp
     time_float = (
         os.stat(path).st_ctime if by in ('c', 'created') else
         os.stat(path).st_mtime
     )
     if pretty_fmt:
-        return timestamp('y-m-d h:n:s', time_sec=time_float)
+        return timestamp('y-m-d h:n:s', t=time_float)
     else:
         return int(time_float)
     # if isinstance(fmt, str):
-    #     return timestamp(fmt, time_sec=time_float)
+    #     return timestamp(fmt, t=time_float)
     # elif fmt is int:
     #     return int(time_float)
     # elif fmt is tuple:
-    #     time_str = timestamp('ymdhns', time_sec=time_float)
+    #     time_str = timestamp('ymdhns', t=time_float)
     #     return (
     #         int(time_str[0:4]),
     #         int(time_str[4:6]),
@@ -181,7 +181,7 @@ def filetime(
     # elif fmt is float:
     #     return time_float
     # elif fmt is str:
-    #     return timestamp('y-m-d h:n:s', time_sec=time_float)
+    #     return timestamp('y-m-d h:n:s', t=time_float)
     # elif fmt is round:
     #     return round(time_float)
     # else:

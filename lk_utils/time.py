@@ -10,6 +10,10 @@ class T:
     Time = Union[int, float]
 
 
+def now(fmt: str = 'y-m-d h:n:s'):
+    return timestamp(fmt)
+
+
 def pretty_duration(t: T.Time) -> str:
     if t >= 3600:
         return '{}h{}m{}s'.format(
@@ -33,12 +37,7 @@ def pretty_duration(t: T.Time) -> str:
 
 
 def pretty_time(t: T.Time, fmt: str = 'y-m-d h:n:s') -> str:
-    return time.strftime(
-        fmt
-        .replace('y', '%Y').replace('m', '%m').replace('d', '%d')
-        .replace('h', '%H').replace('n', '%M').replace('s', '%S'),
-        time.localtime(t)
-    )
+    return timestamp(fmt, t)
 
 
 @contextmanager
@@ -107,7 +106,15 @@ def timestamp(fmt: str = 'y-m-d h:n:s', t: T.Time = None) -> str:
     generate a timestamp string.
     e.g. 'y-m-d h:n:s' -> '2018-12-27 15:13:45'
     """
-    return pretty_time(... if t is None else t, fmt)
+    fmt = (
+        fmt
+        .replace('y', '%Y').replace('m', '%m').replace('d', '%d')
+        .replace('h', '%H').replace('n', '%M').replace('s', '%S')
+    )
+    if t is None:
+        return time.strftime(fmt)
+    else:
+        return time.strftime(fmt, time.localtime(t))
 
 
 _ProgressDatum = namedtuple('_ProgressDatum', 'total index percent')

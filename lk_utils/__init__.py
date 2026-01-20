@@ -46,6 +46,8 @@ from .subproc import run_cmd_line
 from .subproc import run_new_thread
 # from .textwrap import wrap
 from .textwrap import wrap as dedent
+from .time import now
+from .time import pretty_time
 from .time import timestamp
 from .time import wait
 

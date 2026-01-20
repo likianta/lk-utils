@@ -7,7 +7,7 @@ from threading import Thread
 from types import FunctionType
 from types import GeneratorType
 
-from ..time_utils import wait as sync_wait
+from ..time import wait as sync_wait
 
 
 class _Pause:

@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.4.3"
+version = "3.5.0a4"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -22,7 +22,7 @@ homepage = "https://github.com/likianta/lk-utils"
 [tool.poetry.dependencies]
 python = "^3.8"
 argsense = "^1.1.0"
-lk-logger = "^6.0.6"
+lk-logger = "^6.0.7"
 psutil = ">=6.0.0"
 pyyaml = "^6.0.0"
 rich = ">=13.9.0"
