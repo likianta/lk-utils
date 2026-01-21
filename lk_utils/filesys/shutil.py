@@ -44,6 +44,7 @@ __all__ = [
 
 class T:
     OverwriteScheme = t.Optional[bool]
+    Progress = t.Union[t.Callable[[float], None], bool]
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
@@ -97,7 +98,7 @@ def download(
     path: str, 
     extract: bool = False,
     keep_file: bool = False,
-    progress: t.Union[t.Callable[[float], None], bool] = None,
+    progress: T.Progress = None,
     overwrite: T.OverwriteScheme = None,
 ) -> None:
     """
@@ -327,6 +328,7 @@ def zip_dir(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
+    progress: T.Progress = None,
     compression_level: int = 7,
 ) -> str:
     """
@@ -339,6 +341,13 @@ def zip_dir(
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
     
+    if progress is True:
+        report = _terminal_progress
+    elif progress:
+        raise NotImplementedError
+    else:
+        report = None
+    
     is_7z = dst.endswith('.7z')
     if is_7z:
         import py7zr  # `pip install lk-utils[zip]` or `pip install py7zr`
@@ -349,15 +358,26 @@ def zip_dir(
         )
     
     top_name = basename(src)
+    todo_dirs = tuple(findall_dirs(src))
+    todo_files = tuple(findall_files(src))
+    total = len(todo_dirs) + len(todo_files)
+    
     handle.write(src, arcname=top_name)
-    for d in tuple(findall_dirs(src)):
+    i = -1
+    for d in todo_dirs:
+        i += 1
+        if report: report(total, i, d.name)
         handle.write(d.path, arcname='{}/{}'.format(top_name, d.relpath))
-    for f in tuple(findall_files(src)):
+    for f in todo_files:
+        i += 1
+        if report: report(total, i, f.name)
         handle.write(
             os.path.realpath(f.path) if is_7z else f.path,
             arcname='{}/{}'.format(top_name, f.relpath)
         )
     handle.close()
+    if report: print('', ':s2')
+    
     return dst
 
 
@@ -365,6 +385,7 @@ def unzip_file(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
+    # progress: T.Progress = None,  # TODO
     compression_level: int = 7,
     overwrite_top_name: bool = True,
 ) -> str:
@@ -449,7 +470,7 @@ def _terminal_progress(
     total: t.Union[float, int],
     current: t.Union[float, int],
     desc: str = ''
-):
+) -> None:
     prog = current / total
     print(':s1r', '\\[{}/{}] [red]{}[/][bright_black]{}[/] {}'.format(
         current,
