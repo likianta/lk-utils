@@ -97,7 +97,7 @@ def download(
     path: str, 
     extract: bool = False,
     keep_file: bool = False,
-    progress: t.Callable[[float], None] = None,
+    progress: t.Union[t.Callable[[float], None], bool] = None,
     overwrite: T.OverwriteScheme = None,
 ) -> None:
     """
@@ -107,7 +107,11 @@ def download(
     if exist(path) and not _overwrite(path, overwrite):
         return
     
-    if progress:
+    if progress is True:
+        def _report(count, block_size, total_size):
+            assert total_size > 0, (url, path)
+            _terminal_progress(count * block_size, total_size)
+    elif progress:
         def _report(count, block_size, total_size):
             assert total_size > 0, (url, path)
             progress(count * block_size / total_size)
@@ -331,18 +335,29 @@ def zip_dir(
     if dst is None:
         dst = src + '.zip'
     else:
-        assert dst.endswith('.zip')
+        assert dst.endswith(('.zip', '.7z'))
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
+    
+    is_7z = dst.endswith('.7z')
+    if is_7z:
+        import py7zr  # `pip install lk-utils[zip]` or `pip install py7zr`
+        handle = py7zr.SevenZipFile(dst, 'w')
+    else:
+        handle = ZipFile(
+            dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
+        )
+    
     top_name = basename(src)
-    with ZipFile(
-        dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
-    ) as z:
-        z.write(src, arcname=top_name)
-        for d in tuple(findall_dirs(src)):
-            z.write(d.path, arcname='{}/{}'.format(top_name, d.relpath))
-        for f in tuple(findall_files(src)):
-            z.write(f.path, arcname='{}/{}'.format(top_name, f.relpath))
+    handle.write(src, arcname=top_name)
+    for d in tuple(findall_dirs(src)):
+        handle.write(d.path, arcname='{}/{}'.format(top_name, d.relpath))
+    for f in tuple(findall_files(src)):
+        handle.write(
+            os.path.realpath(f.path) if is_7z else f.path,
+            arcname='{}/{}'.format(top_name, f.relpath)
+        )
+    handle.close()
     return dst
 
 
@@ -353,12 +368,20 @@ def unzip_file(
     compression_level: int = 7,
     overwrite_top_name: bool = True,
 ) -> str:
-    assert src.endswith('.zip')
+    assert src.endswith(('.zip', '.7z'))
     if dst is None:
-        dst = src[:-4]
+        dst = src.rsplit('.', 1)[0]
     # print(src, dst, overwrite, exist(path_o), ':lvp')
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
+    
+    if dst.endswith('.7z'):
+        import py7zr
+        handle = py7zr.SevenZipFile(dst, 'r')
+    else:
+        handle = ZipFile(
+            src, 'r', compression=ZIP_DEFLATED, compresslevel=compression_level
+        )
     
     def is_single_top(zfile: ZipFile) -> str:
         top_names = set()
@@ -374,20 +397,18 @@ def unzip_file(
         else:
             return ''
     
-    with ZipFile(
-        src, 'r', compression=ZIP_DEFLATED, compresslevel=compression_level
-    ) as z:
-        if top_name := is_single_top(z):
-            if top_name == dirname(dst):
-                z.extractall(_safe_long_path(parent(dst)))
-            elif overwrite_top_name:
-                for name in z.namelist():
-                    z.extract(name, name.replace(top_name, dst, 1))
-            else:
-                make_dir(dst)
-                z.extractall(_safe_long_path(dst))
+    if top_name := is_single_top(handle):
+        if top_name == dirname(dst):
+            handle.extractall(_safe_long_path(parent(dst)))
+        elif overwrite_top_name:
+            for name in handle.namelist():
+                handle.extract(name, name.replace(top_name, dst, 1))
         else:
-            z.extractall(_safe_long_path(dst))
+            make_dir(dst)
+            handle.extractall(_safe_long_path(dst))
+    else:
+        handle.extractall(_safe_long_path(dst))
+    handle.close()
     return dst
 
 
@@ -422,3 +443,18 @@ def _safe_long_path(path: str) -> str:
     if IS_WINDOWS:
         return '\\\\?\\' + os.path.abspath(path)
     return path
+
+
+def _terminal_progress(
+    total: t.Union[float, int],
+    current: t.Union[float, int],
+    desc: str = ''
+):
+    prog = current / total
+    print(':s1r', '\\[{}/{}] [red]{}[/][bright_black]{}[/] {}'.format(
+        current,
+        total,
+        '-' * round(prog * 60),
+        '-' * (60 - round(prog * 60)),
+        desc or '{:.2%}'.format(prog)
+    ), end='\r')
