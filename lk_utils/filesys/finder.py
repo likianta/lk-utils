@@ -34,6 +34,9 @@ class Path:
     relpath: str
     name: str
     type: t.Literal['dir', 'file']
+    mtime: int
+    ctime: int
+    size: int
     
     @property
     def abspath(self) -> str:  # alias to 'path'
@@ -44,16 +47,8 @@ class Path:
         return os.path.splitext(self.name)[0]
     
     @property
-    def ctime(self) -> int:
-        return int(os.path.getctime(self.abspath))
-    
-    @property
     def ext(self) -> str:
         return os.path.splitext(self.name)[1][1:].lower()
-    
-    @property
-    def mtime(self) -> int:
-        return int(os.path.getmtime(self.abspath))
     
     @property
     def stem(self) -> str:  # alias to `barename`
@@ -126,47 +121,70 @@ def _find_paths(
         filter1 = None
     # del filter
     
-    def main() -> T.FinderResult:
-        for root, dirs, files in os.walk(dirpath, followlinks=True):
-            root = normpath(root)
-            
-            if root != dirpath and (
-                filter0 and filter0.filter_dir(root, root.rsplit('/', 1)[-1])
-            ):
-                continue
-            
-            names = files if path_type == PathType.FILE else dirs
-            for n in names:
-                p = f'{root}/{n}'
-                # noinspection PyArgumentList
-                if filter1 and filter1(p, n):
-                    continue
-                if prefix and not n.startswith(prefix):
-                    continue
-                if suffix and not n.endswith(suffix):
-                    continue
-                
-                yield Path(
-                    dir=root,
-                    path=p,
-                    relpath=p[len(dirpath) + 1:],
-                    name=n,
-                    type='dir' if path_type == PathType.DIR else 'file',  # noqa
-                )
-            
-            if not recursive:
-                break
+    if os.name == 'nt':
+        def _fast_norm_path(path: str) -> str:
+            return path.replace('\\', '/')
+    else:
+        def _fast_norm_path(path: str) -> str:
+            return path
+    
+    def walk(root: T.DirPath) -> T.FinderResult:
+        # https://chatgpt.com/share/69772104-aaa4-800a-a072-88e93ad3c39b
+        for entry in os.scandir(root):
+            if path_type == PathType.FILE:
+                if entry.is_file():
+                    p, n = _fast_norm_path(entry.path), entry.name
+                    if (
+                        (filter1 and filter1(p, n)) or  # noqa
+                        (prefix and not n.startswith(prefix)) or
+                        (suffix and not n.endswith(suffix))
+                    ):
+                        continue
+                    else:
+                        stat = entry.stat()
+                        yield Path(
+                            dir=root,
+                            path=p,
+                            relpath=p[len(root) + 1:],
+                            name=n,
+                            type='file',
+                            mtime=int(stat.st_mtime),
+                            ctime=int(stat.st_ctime),
+                            size=stat.st_size,
+                        )
+            else:
+                if entry.is_dir():
+                    p, n = _fast_norm_path(entry.path), entry.name
+                    if (
+                        (filter0 and filter0.filter_dir(p, n)) or
+                        (filter1 and filter1(p, n)) or  # noqa
+                        (prefix and not n.startswith(prefix)) or
+                        (suffix and not n.endswith(suffix))
+                    ):
+                        continue
+                    else:
+                        stat = entry.stat()
+                        yield Path(
+                            dir=root,
+                            path=p,
+                            relpath=p[len(root) + 1:],
+                            name=n,
+                            type='dir',
+                            mtime=int(stat.st_mtime),
+                            ctime=int(stat.st_ctime),
+                            size=stat.st_size,
+                        )
+                        if recursive:
+                            yield from walk(p)
     
     if sort_by is None:
-        yield from main()
+        yield from walk(dirpath)
     elif sort_by == 'name':
-        yield from sorted(main(), key=lambda x: x.name)
+        yield from sorted(walk(dirpath), key=lambda x: x.name)
     elif sort_by == 'path':
-        yield from sorted(main(), key=lambda x: x.path)
+        yield from sorted(walk(dirpath), key=lambda x: x.path)
     elif sort_by == 'time':
-        yield from sorted(
-            main(), key=lambda x: os.path.getmtime(x.path), reverse=True
-        )
+        yield from sorted(walk(dirpath), key=lambda x: x.mtime, reverse=True)
     else:
         raise ValueError(sort_by)
 

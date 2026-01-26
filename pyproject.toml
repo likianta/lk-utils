@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.5.0a5"
+version = "3.5.0a7"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -32,8 +32,8 @@ argsense = "^1.1.0"
 lk-logger = "^6.0.7"
 psutil = ">=6.0.0"
 pyyaml = "^6.0.0"
-rich = ">=13.9.0"
-# rich = "^14.0.0"
+# rich = ">=13.9.0"
+rich = "^14.0.0"
 typing-extensions = "^4.0.0"
 
 # --- extras

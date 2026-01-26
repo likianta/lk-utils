@@ -7,7 +7,7 @@ description = "Disable App Nap on macOS >= 10.9"
 optional = true
 python-versions = ">=3.6"
 groups = ["main"]
-markers = "python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\") and sys_platform == \"darwin\""
+markers = "(extra == \"all\" or extra == \"dbg\") and sys_platform == \"darwin\" and python_version <= \"3.10\""
 files = [
     {file = "appnope-0.1.4-py2.py3-none-any.whl", hash = "sha256:502575ee11cd7a28c0205f379b525beefebab9d161b7c964670864014ed7213c"},
     {file = "appnope-0.1.4.tar.gz", hash = "sha256:1de3860566df9caf38f01f86f65e0e13e379af54f9e4bee1e66b48f2efffd1ee"},
@@ -52,7 +52,7 @@ files = [
     {file = "asttokens-3.0.0-py3-none-any.whl", hash = "sha256:e3078351a059199dd5138cb1c706e6430c05eff2ff136af5eb4790f9d28932e2"},
     {file = "asttokens-3.0.0.tar.gz", hash = "sha256:0dcd8baa8d62b0c1d118b399b2ddba3c4aff271d0d7a9e0d4c1681c79035bbc7"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.extras]
 astroid = ["astroid (>=2,<4)"]
@@ -70,7 +70,7 @@ description = "Specifications for callback functions passed in to an API"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")"
+markers = "(extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\""
 files = [
     {file = "backcall-0.2.0-py2.py3-none-any.whl", hash = "sha256:fbbce6a29f263178a1f7915c1940bde0ec2b2a967566fe1c65c1dfb7422bd255"},
     {file = "backcall-0.2.0.tar.gz", hash = "sha256:5cbdbf27be5e7cfadb448baf0aa95508f91f2bbc6c6437cd9cd06e2a4c215e1e"},
@@ -492,7 +492,7 @@ files = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
     {file = "decorator-5.1.1.tar.gz", hash = "sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.source]
 type = "legacy"
@@ -510,7 +510,7 @@ files = [
     {file = "executing-2.2.0-py2.py3-none-any.whl", hash = "sha256:11387150cad388d62750327a53d3339fad4888b39a6fe233c3afbb54ecffd3aa"},
     {file = "executing-2.2.0.tar.gz", hash = "sha256:5d108c028108fe2551d1a7b2e8b713341e2cb4fc0aa7dcf966fa4327a5226755"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.extras]
 tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipython", "littleutils", "pytest", "rich ; python_version >= \"3.11\""]
@@ -619,7 +619,7 @@ description = "IPython: Productive Interactive Computing"
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")"
+markers = "(extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\""
 files = [
     {file = "ipython-8.12.3-py3-none-any.whl", hash = "sha256:b0340d46a933d27c657b211a329d0be23793c36595acf9e6ef4164bc01a1804c"},
     {file = "ipython-8.12.3.tar.gz", hash = "sha256:3910c4b54543c2ad73d06579aa771041b7d5707b033bd488669b4cf544e3b363"},
@@ -728,7 +728,7 @@ files = [
     {file = "jedi-0.19.2-py2.py3-none-any.whl", hash = "sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9"},
     {file = "jedi-0.19.2.tar.gz", hash = "sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.dependencies]
 parso = ">=0.8.4,<0.9.0"
@@ -806,7 +806,7 @@ files = [
     {file = "matplotlib_inline-0.1.7-py3-none-any.whl", hash = "sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca"},
     {file = "matplotlib_inline-0.1.7.tar.gz", hash = "sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.dependencies]
 traitlets = "*"
@@ -867,7 +867,7 @@ files = [
     {file = "parso-0.8.4-py2.py3-none-any.whl", hash = "sha256:a418670a20291dacd2dddc80c377c5c3791378ee1e8d12bffc35420643d43f18"},
     {file = "parso-0.8.4.tar.gz", hash = "sha256:eb3a7b58240fb99099a345571deecc0f9540ea5f4dd2fe14c2a99d6b281ab92d"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.extras]
 qa = ["flake8 (==5.0.4)", "mypy (==0.971)", "types-setuptools (==67.2.0.1)"]
@@ -889,7 +889,7 @@ files = [
     {file = "pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523"},
     {file = "pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f"},
 ]
-markers = {main = "python_version >= \"3.12\" and sys_platform != \"win32\" and sys_platform != \"emscripten\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\") and sys_platform != \"win32\"", dev = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\""}
+markers = {main = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\") and sys_platform != \"win32\"", dev = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\""}
 
 [package.dependencies]
 ptyprocess = ">=0.5"
@@ -906,7 +906,7 @@ description = "Tiny 'shelve'-like database with concurrency support"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")"
+markers = "(extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\""
 files = [
     {file = "pickleshare-0.7.5-py2.py3-none-any.whl", hash = "sha256:9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56"},
     {file = "pickleshare-0.7.5.tar.gz", hash = "sha256:87683d47965c1da65cdacaf31c8441d12b8044cdec9aca500cd78fc2c683afca"},
@@ -928,7 +928,7 @@ files = [
     {file = "prompt_toolkit-3.0.50-py3-none-any.whl", hash = "sha256:9b6427eb19e479d98acff65196a307c555eb567989e6d88ebbb1b509d9779198"},
     {file = "prompt_toolkit-3.0.50.tar.gz", hash = "sha256:544748f3860a2623ca5cd6d2795e7a14f3d0e1c3c9728359013f79877fc89bab"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.dependencies]
 wcwidth = "*"
@@ -986,7 +986,7 @@ files = [
     {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"},
     {file = "ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220"},
 ]
-markers = {main = "python_version >= \"3.12\" and sys_platform != \"win32\" and sys_platform != \"emscripten\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\") and sys_platform != \"win32\"", dev = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\""}
+markers = {main = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\") and sys_platform != \"win32\"", dev = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and python_version >= \"3.12\""}
 
 [package.source]
 type = "legacy"
@@ -1004,7 +1004,7 @@ files = [
     {file = "pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0"},
     {file = "pure_eval-0.2.3.tar.gz", hash = "sha256:5f4e983f40564c576c7c8635ae88db5956bb2229d7e9237d03b3c0b0190eaf42"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.extras]
 tests = ["pytest"]
@@ -1132,7 +1132,7 @@ description = "C parser in Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
-markers = "implementation_name != \"PyPy\" and platform_python_implementation == \"PyPy\" and python_version >= \"3.10\""
+markers = "implementation_name != \"PyPy\" and python_version >= \"3.10\" and platform_python_implementation == \"PyPy\""
 files = [
     {file = "pycparser-2.23-py3-none-any.whl", hash = "sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"},
     {file = "pycparser-2.23.tar.gz", hash = "sha256:78816d4f24add8f10a06d6f05b4d424ad9e96cfebf68a4ddc99c65c0720d00c2"},
@@ -1374,20 +1374,19 @@ reference = "tsinghua"
 
 [[package]]
 name = "rich"
-version = "13.9.4"
+version = "14.2.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 optional = false
 python-versions = ">=3.8.0"
 groups = ["main"]
 files = [
-    {file = "rich-13.9.4-py3-none-any.whl", hash = "sha256:6049d5e6ec054bf2779ab3358186963bac2ea89175919d699e378b99738c2a90"},
-    {file = "rich-13.9.4.tar.gz", hash = "sha256:439594978a49a09530cff7ebc4b5c7103ef57baf48d5ea3184f21d9a2befa098"},
+    {file = "rich-14.2.0-py3-none-any.whl", hash = "sha256:76bc51fe2e57d2b1be1f96c524b890b816e334ab4c1e45888799bfaab0021edd"},
+    {file = "rich-14.2.0.tar.gz", hash = "sha256:73ff50c7c0c1c77c8243079283f4edb376f0f6442433aecb8ce7e6d0b92d1fe4"},
 ]
 
 [package.dependencies]
 markdown-it-py = ">=2.2.0"
 pygments = ">=2.13.0,<3.0.0"
-typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
@@ -1408,7 +1407,7 @@ files = [
     {file = "stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695"},
     {file = "stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.dependencies]
 asttokens = ">=2.1.0"
@@ -1448,7 +1447,7 @@ description = "Python Library for Tom's Obvious, Minimal Language"
 optional = true
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 groups = ["main"]
-markers = "(extra == \"all\" or extra == \"io\" or extra == \"tml\") and python_version <= \"3.10\""
+markers = "python_version <= \"3.10\" and (extra == \"all\" or extra == \"io\" or extra == \"tml\")"
 files = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
@@ -1470,7 +1469,7 @@ files = [
     {file = "traitlets-5.14.3-py3-none-any.whl", hash = "sha256:b74e89e397b1ed28cc831db7aea759ba6640cb3de13090ca145426688ff1ac4f"},
     {file = "traitlets-5.14.3.tar.gz", hash = "sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
@@ -1509,7 +1508,7 @@ files = [
     {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
     {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
 ]
-markers = {main = "python_version >= \"3.12\" or python_version <= \"3.10\" and (extra == \"all\" or extra == \"dbg\")", dev = "python_version >= \"3.12\""}
+markers = {main = "python_version >= \"3.12\" or (extra == \"all\" or extra == \"dbg\") and python_version <= \"3.10\"", dev = "python_version >= \"3.12\""}
 
 [package.source]
 type = "legacy"
@@ -1551,7 +1550,7 @@ url = "https://mirrors.aliyun.com/pypi/simple"
 reference = "tsinghua"
 
 [extras]
-all = ["ipython", "toml", "xlrd", "xlsxwriter"]
+all = ["ipython", "py7zr", "toml", "xlrd", "xlsxwriter"]
 dbg = ["ipython"]
 exl = ["xlrd", "xlsxwriter"]
 io = ["toml", "xlrd", "xlsxwriter"]
@@ -1561,4 +1560,4 @@ zip = ["py7zr"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.8"
-content-hash = "f3f09fc35f75a6095c7ff25a32491906d57ed4db58f407ce5c10dad74fd9b9c7"
+content-hash = "0ea22b2bbd0a59bd470b69128f50d6360f2478d270a3eba35ecf4bade109f23c"
