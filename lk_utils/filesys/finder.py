@@ -128,12 +128,15 @@ def _find_paths(
         def _fast_norm_path(path: str) -> str:
             return path
     
+    _initial_root = dirpath
+    
     def walk(root: T.DirPath) -> T.FinderResult:
         # https://chatgpt.com/share/69772104-aaa4-800a-a072-88e93ad3c39b
         for entry in os.scandir(root):
-            if path_type == PathType.FILE:
-                if entry.is_file():
-                    p, n = _fast_norm_path(entry.path), entry.name
+            p, n = _fast_norm_path(entry.path), entry.name
+            
+            if entry.is_file():
+                if path_type == PathType.FILE:
                     if (
                         (filter1 and filter1(p, n)) or  # noqa
                         (prefix and not n.startswith(prefix)) or
@@ -145,7 +148,7 @@ def _find_paths(
                         yield Path(
                             dir=root,
                             path=p,
-                            relpath=p[len(root) + 1:],
+                            relpath=p[len(_initial_root) + 1:],
                             name=n,
                             type='file',
                             mtime=int(stat.st_mtime),
@@ -153,10 +156,10 @@ def _find_paths(
                             size=stat.st_size,
                         )
             else:
-                if entry.is_dir():
-                    p, n = _fast_norm_path(entry.path), entry.name
+                if filter0 and filter0.filter_dir(p, n):
+                    continue
+                if path_type == PathType.DIR:
                     if (
-                        (filter0 and filter0.filter_dir(p, n)) or
                         (filter1 and filter1(p, n)) or  # noqa
                         (prefix and not n.startswith(prefix)) or
                         (suffix and not n.endswith(suffix))
@@ -167,15 +170,15 @@ def _find_paths(
                         yield Path(
                             dir=root,
                             path=p,
-                            relpath=p[len(root) + 1:],
+                            relpath=p[len(_initial_root) + 1:],
                             name=n,
-                            type='dir',
+                            type='file',
                             mtime=int(stat.st_mtime),
                             ctime=int(stat.st_ctime),
                             size=stat.st_size,
                         )
-                        if recursive:
-                            yield from walk(p)
+                if recursive:
+                    yield from walk(p)
     
     if sort_by is None:
         yield from walk(dirpath)
