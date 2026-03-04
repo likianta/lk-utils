@@ -2,6 +2,7 @@ import os
 import shutil
 import typing as t
 import urllib.request
+from datetime import datetime
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
@@ -125,9 +126,9 @@ def download(
                 ('.zip', '.gz', '.7z', '.zst')
             ) else 'zip'
         )
-        assert ext == 'zip', (  # TODO
-            'currently only support ".zip" extension.', url, path
-        )
+        if ext not in ('zip', '7z'):
+            raise NotImplementedError(url, path)
+        
         temp_file = '{}.tmp.{}'.format(path, ext)
         urllib.request.urlretrieve(url, temp_file, _report)
         unzip_file(temp_file, path)
@@ -386,8 +387,9 @@ def unzip_file(
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
     # progress: T.Progress = None,  # TODO
-    compression_level: int = 7,
+    # compression_level: int = 7,
     overwrite_top_name: bool = True,
+    reserve_file_mtime: bool = True,
 ) -> str:
     assert src.endswith(('.zip', '.7z'))
     if dst is None:
@@ -400,13 +402,12 @@ def unzip_file(
         import py7zr
         handle = py7zr.SevenZipFile(dst, 'r')
     else:
-        handle = ZipFile(
-            src, 'r', compression=ZIP_DEFLATED, compresslevel=compression_level
-        )
+        handle = ZipFile(src, 'r', compression=ZIP_DEFLATED)
     
     def is_single_top(zfile: ZipFile) -> str:
         top_names = set()
         for name in zfile.namelist():
+            # print(name, ':vi')
             if name.endswith('/'):
                 if '/' not in name[:-1]:
                     top_names.add(name[:-1])
@@ -418,17 +419,41 @@ def unzip_file(
         else:
             return ''
     
-    if top_name := is_single_top(handle):
-        if top_name == dirname(dst):
-            handle.extractall(_safe_long_path(parent(dst)))
-        elif overwrite_top_name:
-            for name in handle.namelist():
-                handle.extract(name, name.replace(top_name, dst, 1))
+    top_name_i = is_single_top(handle)
+    top_name_o = dirname(dst)
+    # print(top_name_i, top_name_o, overwrite_top_name, ':v')
+    if reserve_file_mtime:
+        trim_src_prefix = False
+        if top_name_i:
+            if top_name_i == top_name_o:
+                dst_prefix = parent(dst)
+            elif overwrite_top_name:
+                trim_src_prefix = True
+                dst_prefix = dst
+            else:
+                dst_prefix = dst
         else:
-            make_dir(dst)
-            handle.extractall(_safe_long_path(dst))
-    else:
-        handle.extractall(_safe_long_path(dst))
+            dst_prefix = dst
+        
+        if dst_prefix == dst:
+            os.mkdir(dst)
+        for name in sorted(handle.namelist()):
+            info = handle.NameToInfo[name]
+            time = int(datetime(*info.date_time).timestamp())
+            relpath_o = name[len(top_name_i) + 1:] if trim_src_prefix else name
+            if relpath_o:
+                if relpath_o.endswith('/'):
+                    os.mkdir(dst_prefix + '/' + relpath_o)
+                    # TODO: edit folder's mtime
+                else:
+                    with (
+                        handle.open(info) as i,
+                        open(dst_prefix + '/' + relpath_o, 'wb') as o
+                    ):
+                        shutil.copyfileobj(i, o)  # noqa
+                    if reserve_file_mtime:
+                        os.utime(dst_prefix + '/' + relpath_o, (time, time))
+    
     handle.close()
     return dst
 
