@@ -34,9 +34,9 @@ class Path:
     relpath: str
     name: str
     type: t.Literal['dir', 'file']
-    mtime: int
-    ctime: int
-    size: int
+    mtime: t.Optional[int]
+    ctime: t.Optional[int]
+    size: t.Optional[int]
     
     @property
     def abspath(self) -> str:  # alias to 'path'
@@ -144,17 +144,30 @@ def _find_paths(
                     ):
                         continue
                     else:
-                        stat = entry.stat()
-                        yield Path(
-                            dir=root,
-                            path=p,
-                            relpath=p[len(_initial_root) + 1:],
-                            name=n,
-                            type='file',
-                            mtime=int(stat.st_mtime),
-                            ctime=int(stat.st_ctime),
-                            size=stat.st_size,
-                        )
+                        try:
+                            stat = entry.stat()
+                        except FileNotFoundError:
+                            yield Path(
+                                dir=root,
+                                path=p,
+                                relpath=p[len(_initial_root) + 1:],
+                                name=n,
+                                type='file',
+                                mtime=None,
+                                ctime=None,
+                                size=None,
+                            )
+                        else:
+                            yield Path(
+                                dir=root,
+                                path=p,
+                                relpath=p[len(_initial_root) + 1:],
+                                name=n,
+                                type='file',
+                                mtime=int(stat.st_mtime),
+                                ctime=int(stat.st_ctime),
+                                size=stat.st_size,
+                            )
             else:
                 if filter0 and filter0.filter_dir(p, n):
                     continue
@@ -166,17 +179,30 @@ def _find_paths(
                     ):
                         continue
                     else:
-                        stat = entry.stat()
-                        yield Path(
-                            dir=root,
-                            path=p,
-                            relpath=p[len(_initial_root) + 1:],
-                            name=n,
-                            type='file',
-                            mtime=int(stat.st_mtime),
-                            ctime=int(stat.st_ctime),
-                            size=stat.st_size,
-                        )
+                        try:
+                            stat = entry.stat()
+                        except FileNotFoundError:
+                            yield Path(
+                                dir=root,
+                                path=p,
+                                relpath=p[len(_initial_root) + 1:],
+                                name=n,
+                                type='dir',
+                                mtime=None,
+                                ctime=None,
+                                size=None,
+                            )
+                        else:
+                            yield Path(
+                                dir=root,
+                                path=p,
+                                relpath=p[len(_initial_root) + 1:],
+                                name=n,
+                                type='dir',
+                                mtime=int(stat.st_mtime),
+                                ctime=int(stat.st_ctime),
+                                size=stat.st_size,
+                            )
                 if recursive:
                     yield from walk(p)
     
