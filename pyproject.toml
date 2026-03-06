@@ -1,27 +1,12 @@
 [project]
 name = "lk-utils"
-version = "3.5.0"
+version = "3.5.1"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 requires-python = ">=3.8"
 dynamic = ["dependencies"]
 license = "MIT"
-
-[project.optional-dependencies]
-all = [
-    "ipython",
-    "py7zr; python_version >= '3.10'",
-    "toml; python_version < '3.11'",
-    "xlrd==1.2.0",
-    "xlsxwriter"
-]
-dbg = ["ipython"]
-# exl = ["openpyxl", "pyexcel", "pyexcel-xlsx"]
-exl = ["xlrd==1.2.0", "xlsxwriter"]
-io = ["toml; python_version < '3.11'", "xlrd==1.2.0", "xlsxwriter"]
-tml = ["toml"]
-zip = ["py7zr; python_version >= '3.10'"]
 
 [project.urls]
 homepage = "https://github.com/likianta/lk-utils"
@@ -45,6 +30,21 @@ py7zr = { version = "^1.1.0", python = "^3.10", optional = true }
 toml = { version = "^0.10.0", python = "<3.11", optional = true }
 xlrd = { version = "1.2.0", optional = true }
 xlsxwriter = { version = "^3.2.0", optional = true }
+
+[project.optional-dependencies]
+all = [
+    "ipython",
+    "py7zr; python_version >= '3.10'",
+    "toml; python_version < '3.11'",
+    "xlrd==1.2.0",
+    "xlsxwriter"
+]
+dbg = ["ipython"]
+# exl = ["openpyxl", "pyexcel", "pyexcel-xlsx"]
+exl = ["xlrd==1.2.0", "xlsxwriter"]
+io = ["toml; python_version < '3.11'", "xlrd==1.2.0", "xlsxwriter"]
+tml = ["toml"]
+zip = ["py7zr; python_version >= '3.10'"]
 
 [tool.poetry.group.dev.dependencies]
 ipython = { version = "^9.10.0", python = "^3.12" }

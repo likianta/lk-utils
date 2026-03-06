@@ -51,4 +51,4 @@ from .time import pretty_time
 from .time import timestamp
 from .time import wait
 
-__version__ = '3.5.0'
+__version__ = '3.5.1'
