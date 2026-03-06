@@ -1,9 +1,8 @@
 import os
-import os.path as ospath
+import os.path as osp
 import typing as t
 from functools import partial
 from inspect import currentframe
-from os.path import exists as _exists
 from types import FrameType
 
 __all__ = [
@@ -48,9 +47,9 @@ def normpath(path: T.Path, force_abspath: bool = False) -> T.Path:
         if path.startswith('/'):
             out = path
         else:
-            out = ospath.abspath(path)
+            out = osp.abspath(path)
     else:
-        out = ospath.normpath(path)
+        out = osp.normpath(path)
     if IS_WINDOWS:
         out = out.replace('\\', '/')
     return out
@@ -62,7 +61,7 @@ abspath = partial(normpath, force_abspath=True)
 # ------------------------------------------------------------------------------
 
 def parent_path(path: T.Path) -> T.DirPath:
-    return normpath(ospath.dirname(path.rstrip('/\\')))
+    return normpath(osp.dirname(path.rstrip('/\\')))
 
 
 parent = parent_path  # alias
@@ -70,14 +69,14 @@ parent = parent_path  # alias
 
 def relpath(path: T.Path, start: T.Path = None) -> T.Path:
     if not path: return ''
-    return normpath(ospath.relpath(path, start))
+    return normpath(osp.relpath(path, start))
 
 
 def dirpath(path: T.Path) -> T.DirPath:
-    if ospath.isdir(path):
+    if osp.isdir(path):
         return normpath(path)
     else:
-        return normpath(ospath.dirname(path))
+        return normpath(osp.dirname(path))
 
 
 def dirname(path: T.Path) -> str:
@@ -88,10 +87,10 @@ def dirname(path: T.Path) -> str:
         path = 'a/b/c' -> 'c'
     """
     path = normpath(path, True)
-    if ospath.isfile(path):
-        return ospath.basename(ospath.dirname(path))
+    if osp.isfile(path):
+        return osp.basename(osp.dirname(path))
     else:
-        return ospath.basename(path)
+        return osp.basename(path)
 
 
 def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
@@ -100,7 +99,7 @@ def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
     if suffix:
         return normpath(path)
     else:
-        return normpath(ospath.splitext(path)[0])
+        return normpath(osp.splitext(path)[0])
 
 
 def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
@@ -115,13 +114,13 @@ def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
     if strict and isdir(path):
         raise Exception('Cannot get filename from a directory!')
     if suffix:
-        return ospath.basename(path)
+        return osp.basename(path)
     else:
-        return ospath.splitext(ospath.basename(path))[0]
+        return osp.splitext(osp.basename(path))[0]
 
 
 def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
-    size = os.path.getsize(path)
+    size = osp.getsize(path)
     if fmt is int:
         return size
     elif fmt is str:
@@ -198,12 +197,12 @@ def barename(path: T.Path, strict: bool = False) -> str:
 # ------------------------------------------------------------------------------
 
 def empty(path: T.Path) -> bool:
-    if os.path.isdir(path):
+    if osp.isdir(path):
         return is_empty_dir(path)
-    elif os.path.isfile(path):
+    elif osp.isfile(path):
         return is_empty_file(path)
-    elif os.path.islink(path):
-        return empty(os.path.realpath(path))
+    elif osp.islink(path):
+        return empty(osp.realpath(path))
     else:
         raise Exception(path)
 
@@ -212,32 +211,32 @@ system_privileged = None  # None: unknown; True: yes; False: no.
 
 
 def exist(path: T.Path) -> bool:
-    if _exists(path):
+    if osp.exists(path):
         return True
-    elif os.path.islink(path):
-        # for broken symlink, although `os.path.exists` gives False, we still -
+    elif osp.islink(path):
+        # for broken symlink, although `osp.exists` gives False, we still -
         # return True.
         # https://stackoverflow.com/questions/75444181
         return True
     elif system_privileged is not True:
-        if os.path.isjunction(path):  # a broken junction link
+        if osp.isjunction(path):  # a broken junction link
             return True
     return False
 
 
 def real_exist(path: T.Path) -> bool:
-    return _exists(path)
+    return osp.exists(path)
 
 
 def isdir(path: T.Path) -> bool:
     if path.strip('./') == '':
         return True
-    if ospath.isdir(path):
+    if osp.isdir(path):
         return True
-    if ospath.isfile(path):
+    if osp.isfile(path):
         return False
-    if ospath.islink(path):
-        path = ospath.realpath(path)
+    if osp.islink(path):
+        path = osp.realpath(path)
         return isdir(path)
     # raise Exception('unknown path type', path)
     return False
@@ -246,34 +245,34 @@ def isdir(path: T.Path) -> bool:
 def isfile(path: T.Path) -> bool:
     if path.strip('./') == '':
         return False
-    if ospath.isfile(path):
+    if osp.isfile(path):
         return True
-    if ospath.isdir(path):
+    if osp.isdir(path):
         return False
-    if ospath.islink(path):
-        path = ospath.realpath(path)
+    if osp.islink(path):
+        path = osp.realpath(path)
         return isfile(path)
     # raise Exception('unknown path type', path)
     return False
 
 
 def islink(path: T.Path) -> bool:
-    if ospath.islink(path):
+    if osp.islink(path):
         return True
     if system_privileged is not True:
-        if ospath.isjunction(path):
+        if osp.isjunction(path):
             return True
     return False
 
 
-# issame = ospath.samefile
+# issame = osp.samefile
 
 
 def issame(a: T.Path, b: T.Path) -> bool:
     if real_exist(a) and real_exist(b):
-        return ospath.samefile(a, b)
+        return osp.samefile(a, b)
     print(':pv6', 'the comparison may not be valid!', a, b)
-    return ospath.realpath(a) == ospath.realpath(b)
+    return osp.realpath(a) == osp.realpath(b)
 
 
 def is_empty_dir(path: T.DirPath) -> bool:
@@ -286,8 +285,8 @@ def is_empty_file(path: T.FilePath) -> bool:
     """
     https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
     """
-    if _exists(path):
-        if ospath.getsize(path):
+    if osp.exists(path):
+        if osp.getsize(path):
             return False
         return True
     return True
@@ -315,7 +314,7 @@ def replace_ext(path: T.Path, ext: str) -> T.Path:
             recommend no dot prefiexed, like 'png'.
             but for compatibility, '.png' is also acceptable.
     """
-    return ospath.splitext(path)[0] + '.' + ext.lstrip('.')
+    return osp.splitext(path)[0] + '.' + ext.lstrip('.')
 
 
 def split(path: T.Path, parts: int = 2) -> t.Union[
@@ -363,4 +362,4 @@ def _get_frame_dir(frame: FrameType, ignore_error: bool = False) -> T.AbsPath:
         else:
             raise OSError('unable to locate directory from caller frame!')
     else:
-        return normpath(ospath.dirname(file), True)
+        return normpath(osp.dirname(file), True)
