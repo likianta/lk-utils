@@ -6,6 +6,7 @@ from datetime import datetime
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
+from . import main
 from .finder import findall_dirs
 from .finder import findall_files
 from .main import IS_WINDOWS  # noqa
@@ -151,9 +152,6 @@ def make_file(dst: str) -> None:
     open(dst, 'w').close()
 
 
-_symlink_granted = True
-
-
 def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
     """
     ref: https://blog.walterlv.com/post/ntfs-link-comparisons.html
@@ -173,25 +171,24 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
             return dst
     
     if IS_WINDOWS:
-        global _symlink_granted
-        if _symlink_granted:
+        if main.system_privileged is True:
+            os.symlink(src, dst, target_is_directory=os.path.isdir(src))
+        elif main.system_privileged is False:
+            _make_link_fallback(src, dst)
+        else:  # None type. only first-time calling reaches this case.
             try:
                 os.symlink(src, dst, target_is_directory=os.path.isdir(src))
             except OSError as e:
                 # print(':v8p', e)
                 if 'WinError 1314' in str(e):
                     # https://docs.python.org/3/library/os.html#os.symlink
-                    # if os.getenv('FALLBACK_SYMLINK_IF_NO_PRIVILEGE') == '1':
                     print(':pv6', 'fallback symlink with no privileges')
-                    _symlink_granted = False
+                    main.system_privileged = False
                     _make_link_fallback(src, dst)
                     return dst
                 raise e
-        else:
-            _make_link_fallback(src, dst)
-            return dst
-    else:
-        os.symlink(src, dst)
+            else:
+                main.system_privileged = True
     
     return dst
 
@@ -299,7 +296,7 @@ move_tree = move
 def remove(dst: str) -> None:
     if os.path.isfile(dst):
         os.remove(dst)
-    elif os.path.islink(dst):
+    elif main.islink(dst):
         os.unlink(dst)
     elif os.path.isdir(dst):
         shutil.rmtree(dst)
@@ -310,19 +307,22 @@ def remove(dst: str) -> None:
 def remove_file(dst: str) -> None:
     if os.path.isfile(dst):
         os.remove(dst)
-    elif os.path.islink(dst):
+    elif main.islink(dst):
         os.unlink(dst)
     else:
         raise Exception('inexistent or invalid path type', dst)
 
 
 def remove_tree(dst: str) -> None:
-    if os.path.islink(dst):
+    if main.islink(dst):
         os.unlink(dst)
     elif os.path.isdir(dst):
         shutil.rmtree(dst)
     else:
         raise Exception('inexistent or invalid path type', dst)
+
+
+rename = move
 
 
 def zip_dir(

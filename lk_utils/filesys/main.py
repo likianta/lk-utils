@@ -208,6 +208,9 @@ def empty(path: T.Path) -> bool:
         raise Exception(path)
 
 
+system_privileged = None  # None: unknown; True: yes; False: no.
+
+
 def exist(path: T.Path) -> bool:
     if _exists(path):
         return True
@@ -216,6 +219,9 @@ def exist(path: T.Path) -> bool:
         # return True.
         # https://stackoverflow.com/questions/75444181
         return True
+    elif system_privileged is not True:
+        if os.path.isjunction(path):  # a broken junction link
+            return True
     return False
 
 
@@ -251,7 +257,15 @@ def isfile(path: T.Path) -> bool:
     return False
 
 
-islink = ospath.islink
+def islink(path: T.Path) -> bool:
+    if ospath.islink(path):
+        return True
+    if system_privileged is not True:
+        if ospath.isjunction(path):
+            return True
+    return False
+
+
 # issame = ospath.samefile
 
 
