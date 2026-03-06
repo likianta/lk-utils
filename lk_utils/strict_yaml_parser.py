@@ -10,11 +10,11 @@ _PRINTABLE2 = _PRINTABLE1 + ' '
 
 def load_file(file):
     with open(file, 'r', encoding='utf-8') as f:
-        return load(f.read())
+        return load_data(f.read())
 
 
 # noinspection PyUnresolvedReferences
-def load(data: str):
+def load_data(data: str):
     lines = []
     for ln in data.splitlines():
         if ln.rstrip():

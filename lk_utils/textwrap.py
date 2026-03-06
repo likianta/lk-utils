@@ -38,9 +38,12 @@ def join(
     parts: t.Iterable[str],
     indent: int = 0,
     sep: str = '\n',
+    lstrip: bool = True,
     **kwargs
 ) -> str:
     text = sep.join(parts)
     if indent:
-        text = wrap(text, indent, **kwargs).lstrip()
+        text = wrap(text, indent, **kwargs)
+        if lstrip:
+            text = text.lstrip()
     return text

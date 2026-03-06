@@ -1,12 +1,11 @@
 # 更新日志
 
-### 3.5.0 (wip)
+### 3.5.0 (2026-03-06)
 
 - 重构 time 模块
-- 为长耗时任务 (download, zip_dir, unzip_file) 添加进度提示
-- 重新定义 chunkwise 逻辑
-- YAML 严格子集解析器 (实验性支持)
-- 对 ".7z" 文件的可选支持
+- 为长耗时任务 (download, zip, unzip) 添加进度提示
+- 更改 chunkwise 行为
+- 对 `filesys` 模块一系列更新和优化
 
 ### 3.4.3 (2026-01-07)
 
