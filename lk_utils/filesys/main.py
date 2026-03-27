@@ -61,6 +61,11 @@ abspath = partial(normpath, force_abspath=True)
 # ------------------------------------------------------------------------------
 
 def parent_path(path: T.Path) -> T.DirPath:
+    if IS_WINDOWS:
+        if path.endswith((':', ':/', ':\\')):
+            raise Exception('cannot get parent path of drive letter', path)
+    elif path.startswith('/') and '/' not in path[1:]:
+        raise Exception('cannot get parent path of root directory', path)
     return normpath(osp.dirname(path.rstrip('/\\')))
 
 

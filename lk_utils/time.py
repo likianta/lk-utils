@@ -14,15 +14,19 @@ def now(fmt: str = 'y-m-d h:n:s'):
     return timestamp(fmt)
 
 
-def pretty_duration(t: T.Time) -> str:
+def pretty_duration(t: T.Time, sep: str = '') -> str:
     if t >= 3600:
-        return '{}h{}m{}s'.format(
-            int(t // 3600),
-            int(t % 3600 // 60),
-            int(t % 60)
-        )
+        return sep.join((
+            '{}h'.format(t // 3600),
+            '{}m'.format(t % 3600 // 60),
+            '{}s'.format(t % 60),
+        ))
     elif t >= 60:
-        return '{:.1f}min'.format(t / 60)
+        # return '{:.1f}min'.format(t / 60)
+        return sep.join((
+            '{}m'.format(t // 60),
+            '{}s'.format(t % 60),
+        ))
     elif t >= 1:
         return '{:.1f}s'.format(t)
     elif t == 0:
