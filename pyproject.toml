@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.5.1"
+version = "3.5.2b0"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -23,7 +23,7 @@ typing-extensions = "^4.0.0"
 
 # --- extras
 ipython = [
-    { version = "^9.10.0", python = "^3.11", optional = true },
+    { version = "^9.11.0", python = "^3.11", optional = true },
     { version = "<9.0.0", python = ">=3.8,<3.11", optional = true },
 ]
 py7zr = { version = "^1.1.0", python = "^3.10", optional = true }
@@ -47,7 +47,7 @@ tml = ["toml"]
 zip = ["py7zr; python_version >= '3.10'"]
 
 [tool.poetry.group.dev.dependencies]
-ipython = { version = "^9.10.0", python = "^3.12" }
+ipython = { version = "^9.11.0", python = "^3.12" }
 # openpyxl = "3.0.10"  # <- pyexcel-xlsx
 py7zr = { version = "^1.1.0", python = "^3.10" }
 # pyexcel = "^0.7.0"

@@ -9,27 +9,39 @@ from .threading import new_thread
 
 class Activity:
     state: t.Literal['idle', 'running', 'paused', 'stopped', 'cancelled']
+    _process: t.Generator
     _remark: str
-    _task: t.Generator
+    _task: t.Optional[t.Callable[[...], t.Generator]]
     
     @property
     def running(self) -> bool:
         return self.state == 'running'
     
-    def __init__(self, task: t.Generator, remark: str = '') -> None:
+    def __init__(
+        self,
+        task: t.Optional[t.Callable[[...], t.Generator]],
+        remark: str = '',
+        _generator: t.Generator = None,
+    ) -> None:
         self.state = 'idle'
         self._remark = remark or str(task)
         self._task = task
+        if task is None:
+            assert isinstance(_generator, GeneratorType)
+            self._process = _generator
     
     def __next__(self) -> t.Generator:
         assert self.state == 'running'
-        return next(self._task)
+        return next(self._process)
     
     def __str__(self) -> str:
         return self._remark
     
-    def start(self) -> t.Self:
+    def start(self, *args, **kwargs) -> t.Self:
         self.state = 'running'
+        if self._task:
+            self._process = self._task(*args, **kwargs)
+            assert isinstance(self._process, GeneratorType)
         return self
     
     def pause(self) -> None:
@@ -43,6 +55,11 @@ class Activity:
     def stop(self) -> None:
         # currently this state is equal to "paused"
         self.state = 'stopped'
+    
+    def restart(self, *args, **kwargs) -> None:
+        assert self._task, 'Cannot restart a generator object'
+        # self.stop()
+        self.start(*args, **kwargs)
     
     def cancel(self) -> None:
         self.state = 'cancelled'
@@ -84,10 +101,21 @@ class BackgroundActivityManager:
         return _Delay(sec)
     
     def register_activity(
-        self, task: t.Generator, remark: str = ''
+        self,
+        task: t.Union[t.Callable[[...], t.Generator], t.Generator],
+        remark: str = ''
     ) -> Activity:
-        assert isinstance(task, GeneratorType)
-        act = self._activities[id(task)] = Activity(task, remark)
+        if isinstance(task, GeneratorType):
+            print(
+                'directly registering a generator as activity is deprecated. '
+                'use callable instead.', ':v6p'
+            )
+            act = self._activities[id(task)] = Activity(
+                None, remark, _generator=task
+            )
+        else:
+            assert callable(task)
+            act = self._activities[id(task)] = Activity(task, remark)
         return act
     
     @contextmanager
