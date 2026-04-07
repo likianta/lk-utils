@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.5.2b0"
+version = "3.5.2"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]

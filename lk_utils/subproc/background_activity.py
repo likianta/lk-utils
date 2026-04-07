@@ -108,7 +108,7 @@ class BackgroundActivityManager:
         if isinstance(task, GeneratorType):
             print(
                 'directly registering a generator as activity is deprecated. '
-                'use callable instead.', ':v6p'
+                'use callable instead.', ':v5p'
             )
             act = self._activities[id(task)] = Activity(
                 None, remark, _generator=task

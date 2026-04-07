@@ -422,38 +422,37 @@ def unzip_file(
     top_name_i = is_single_top(handle)
     top_name_o = dirname(dst)
     # print(top_name_i, top_name_o, overwrite_top_name, ':v')
-    if reserve_file_mtime:
-        trim_src_prefix = False
-        if top_name_i:
-            if top_name_i == top_name_o or overwrite_top_name:
-                trim_src_prefix = True
-        
-        # -- make dirs
-        dirs = set()
-        for name in handle.namelist():
-            relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
-            if relpath:
-                if relpath.endswith('/'):
-                    dirs.add(relpath[:-1])
-                elif '/' in relpath:
-                    dirs.add(relpath.rsplit('/', 1)[0])
-        os.mkdir(dst)
-        for relpath in sorted(dirs):
-            os.makedirs(dst + '/' + relpath, exist_ok=True)
+    trim_src_prefix = False
+    if top_name_i:
+        if top_name_i == top_name_o or overwrite_top_name:
+            trim_src_prefix = True
+    
+    # -- make dirs
+    dirs = set()
+    for name in handle.namelist():
+        relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
+        if relpath:
+            if relpath.endswith('/'):
+                dirs.add(relpath[:-1])
+            elif '/' in relpath:
+                dirs.add(relpath.rsplit('/', 1)[0])
+    os.mkdir(dst)
+    for relpath in sorted(dirs):
+        os.makedirs(dst + '/' + relpath, exist_ok=True)
 
-        # -- dump files
-        for name in sorted(handle.namelist()):
-            relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
-            if relpath and not relpath.endswith('/'):
-                info = handle.NameToInfo[name]
-                time = int(datetime(*info.date_time).timestamp())
-                with (
-                    handle.open(info) as i,
-                    open(dst + '/' + relpath, 'wb') as o
-                ):
-                    shutil.copyfileobj(i, o)  # noqa
-                if reserve_file_mtime:
-                    os.utime(dst + '/' + relpath, (time, time))
+    # -- dump files
+    for name in sorted(handle.namelist()):
+        relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
+        if relpath and not relpath.endswith('/'):
+            info = handle.NameToInfo[name]
+            time = int(datetime(*info.date_time).timestamp())
+            with (
+                handle.open(info) as i,
+                open(dst + '/' + relpath, 'wb') as o
+            ):
+                shutil.copyfileobj(i, o)  # noqa
+            if reserve_file_mtime:
+                os.utime(dst + '/' + relpath, (time, time))
     
     handle.close()
     return dst
