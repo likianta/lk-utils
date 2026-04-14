@@ -1,6 +1,7 @@
 import os
 import shutil
 import typing as t
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from zipfile import ZIP_DEFLATED
@@ -110,6 +111,8 @@ def download(
     if exist(path) and not _overwrite(path, overwrite):
         return
     
+    url = urllib.parse.quote(url)
+    
     if progress is True:
         def _report(count, block_size, total_size):
             assert total_size > 0, (url, path)
@@ -122,14 +125,10 @@ def download(
         _report = None
 
     if extract:
-        ext = (
-            url.rsplit('.', 1)[-1] if url.endswith(
-                ('.zip', '.gz', '.7z', '.zst')
-            ) else 'zip'
-        )
-        if ext not in ('zip', '7z'):
-            raise NotImplementedError(url, path)
-        
+        assert url.endswith(('.zip', '.7z'))
+        #   if assertion error, a workaround is setting `extract=False` then
+        #   using `unzip_file()` function afterwards.
+        ext = url.rsplit('.', 1)[-1]
         temp_file = '{}.tmp.{}'.format(path, ext)
         urllib.request.urlretrieve(url, temp_file, _report)
         unzip_file(temp_file, path)
