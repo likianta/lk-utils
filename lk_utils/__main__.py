@@ -1,9 +1,7 @@
 from argsense import cli
-
 from . import fs
 
-
-@cli.cmd()
+@cli
 def mklink(src, dst, overwrite: bool = None):
     src = fs.normpath(src)
     dst = fs.normpath(dst)
@@ -12,8 +10,7 @@ def mklink(src, dst, overwrite: bool = None):
     print('[green]soft-link done:[/] '
           '[red]{}[/] -> [cyan]{}[/]'.format(src, dst), ':r')
 
-
-@cli.cmd()
+@cli
 def move(src, dst, overwrite: bool = None):
     src = fs.normpath(src)
     dst = fs.normpath(dst)
@@ -22,13 +19,11 @@ def move(src, dst, overwrite: bool = None):
     print('[green]move done:[/] '
           '[red]{}[/] -> [cyan]{}[/]'.format(src, dst), ':r')
 
-
 def _dst_or_dst_under(src: str, dst: str) -> str:
     from os.path import basename, exists
     if exists(dst) and basename(dst) != (x := basename(src)):
         dst += '/' + x
     return dst
-
 
 if __name__ == '__main__':
     cli.run()
