@@ -41,7 +41,10 @@ class Popen(sp.Popen):
         """
         if not self.is_alive: return
         pid = self.pid
-        parent = psutil.Process(pid)
+        try:
+            parent = psutil.Process(pid)
+        except psutil.NoSuchProcess:
+            return
         print(':r', '[red dim]kill process: {} ({})[/]'.format(
             pid, parent.name()
         ))
