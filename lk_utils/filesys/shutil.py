@@ -1,11 +1,12 @@
 import os
 import shutil
 import typing as t
-import urllib.parse
 import urllib.request
+from collections import namedtuple
 from datetime import datetime
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
+from zipfile import ZipInfo
 
 from . import main
 from .finder import findall_dirs
@@ -15,7 +16,6 @@ from .main import abspath
 from .main import basename
 from .main import dirname
 from .main import exist
-from .main import parent
 from .main import real_exist
 from .main import xpath
 from ..subproc import run_cmd_args
@@ -44,10 +44,11 @@ __all__ = [
     'zip_dir',
 ]
 
+_ProgressItem = namedtuple('ProgressItem', 'total index percent text')
 
 class T:
+    AnyProgress = t.Optional[t.Union[t.Callable[[_ProgressItem], None], bool]]
     OverwriteScheme = t.Optional[bool]
-    Progress = t.Union[t.Callable[[float], None], bool]
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
@@ -101,7 +102,7 @@ def download(
     path: str, 
     extract: bool = False,
     keep_file: bool = False,
-    progress: T.Progress = None,
+    progress: T.AnyProgress = None,
     overwrite: T.OverwriteScheme = None,
 ) -> None:
     """
@@ -111,16 +112,23 @@ def download(
     if exist(path) and not _overwrite(path, overwrite):
         return
     
-    url = urllib.parse.quote(url)
+    url = url.replace(' ', '%20')
     
     if progress is True:
         def _report(count, block_size, total_size):
             assert total_size > 0, (url, path)
-            _terminal_progress(count * block_size, total_size)
+            _show_progress_in_console(total_size, block_size * count)
     elif progress:
         def _report(count, block_size, total_size):
             assert total_size > 0, (url, path)
-            progress(count * block_size / total_size)
+            progress(
+                _ProgressItem(
+                    total_size,
+                    block_size * count,
+                    block_size * count / total_size,
+                    ''
+                )
+            )
     else:
         _report = None
 
@@ -328,8 +336,9 @@ def zip_dir(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
-    progress: T.Progress = None,
+    progress: T.AnyProgress = None,
     compression_level: int = 7,
+    keep_empty_folders: bool = True,
 ) -> str:
     """
     ref: https://likianta.blog.csdn.net/article/details/126710855
@@ -337,45 +346,118 @@ def zip_dir(
     if dst is None:
         dst = src + '.zip'
     else:
-        assert dst.endswith(('.zip', '.7z'))
+        assert dst.endswith(('.zip', '.7z', '.tar.zst'))
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
     
     if progress is True:
-        report = _terminal_progress
+        report = _show_progress_in_console
     elif progress:
         raise NotImplementedError
     else:
         report = None
     
-    is_7z = dst.endswith('.7z')
-    if is_7z:
-        import py7zr  # `pip install lk-utils[zip]` or `pip install py7zr`
-        handle = py7zr.SevenZipFile(dst, 'w')
-    else:
-        handle = ZipFile(
+    if dst.endswith('.zip'):
+        top_name = basename(src)
+        todo_dirs = tuple(findall_dirs(src))
+        todo_files = tuple(findall_files(src))
+        total = len(todo_dirs) + len(todo_files)
+        
+        with ZipFile(
             dst, 'w', compression=ZIP_DEFLATED, compresslevel=compression_level
-        )
+        ) as handle:
+            handle.write(src, arcname=top_name)
+            i = 0
+            for d in todo_dirs:
+                i += 1
+                if report: report(total, i, d.name)
+                handle.write(
+                    d.path, arcname='{}/{}'.format(top_name, d.relpath)
+                )
+            for f in todo_files:
+                i += 1
+                if report: report(total, i, f.name)
+                handle.write(
+                    f.path, arcname='{}/{}'.format(top_name, f.relpath)
+                )
+                
+    elif dst.endswith('.7z'):
+        import py7zr  # `pip install lk-utils[zip]` or `pip install py7zr`
+        
+        top_name = basename(src)
+        todo_dirs = tuple(findall_dirs(src))
+        todo_files = tuple(findall_files(src))
+        total = len(todo_dirs) + len(todo_files)
+        
+        with py7zr.SevenZipFile(dst, 'w') as handle:
+            handle.write(src, arcname=top_name)
+            i = 0
+            for d in todo_dirs:
+                i += 1
+                if report: report(total, i, d.name)
+                handle.write(
+                    d.path, arcname='{}/{}'.format(top_name, d.relpath)
+                )
+            for f in todo_files:
+                i += 1
+                if report: report(total, i, f.name)
+                handle.write(
+                    os.path.realpath(f.path),
+                    arcname='{}/{}'.format(top_name, f.relpath)
+                )
+                
+    elif dst.endswith('.tar.zst'):
+        # https://chatgpt.com/share/69dde78d-8348-8321-b90d-0efc090f6b4f
+        import tarfile
+        # from compression import zstd  # TODO
+        import zstandard as zstd  # pip install zstandard
+        
+        top_name = basename(src)
+        todo_files = tuple(findall_files(src))
+        if keep_empty_folders:
+            all_dirs = frozenset((x.relpath for x in findall_dirs(src)))
+            dirs_not_empty = frozenset((
+                x.relpath.rsplit('/', 1)[0]
+                for x in todo_files if '/' in x.relpath
+            ))
+            todo_dirs = sorted(all_dirs - dirs_not_empty)
+        else:
+            todo_dirs = ()
+        total = len(todo_dirs) + len(todo_files)
+        empty = xpath('.empty')
+        
+        with open(dst, 'wb') as file_out:
+            with zstd.ZstdCompressor().stream_writer(file_out) as compressor:
+                with tarfile.open(fileobj=compressor, mode='w|') as tar:
+                    tar.add(src, arcname=basename(src))
+                    i = 0
+                    for f in todo_files:
+                        i += 1
+                        if report:
+                            report(total, i, f.name)
+                        if os.path.islink(f.path):
+                            full_path = os.path.realpath(f.path)
+                        else:
+                            full_path = f.path
+                        tar.add(
+                            full_path,
+                            arcname='{}/{}'.format(top_name, f.relpath)
+                        )
+                    if keep_empty_folders:
+                        for d in todo_dirs:
+                            i += 1
+                            if report:
+                                report(
+                                    total, i, d.rsplit('/', 1)[-1] + '/.empty'
+                                )
+                            tar.add(
+                                empty,
+                                arcname='{}/{}'.format(top_name, d + '/.empty')
+                            )
+        
+    else:
+        raise Exception('no handler to compress this file type', dst)
     
-    top_name = basename(src)
-    todo_dirs = tuple(findall_dirs(src))
-    todo_files = tuple(findall_files(src))
-    total = len(todo_dirs) + len(todo_files)
-    
-    handle.write(src, arcname=top_name)
-    i = -1
-    for d in todo_dirs:
-        i += 1
-        if report: report(total, i, d.name)
-        handle.write(d.path, arcname='{}/{}'.format(top_name, d.relpath))
-    for f in todo_files:
-        i += 1
-        if report: report(total, i, f.name)
-        handle.write(
-            os.path.realpath(f.path) if is_7z else f.path,
-            arcname='{}/{}'.format(top_name, f.relpath)
-        )
-    handle.close()
     if report: print('', ':s2')
     
     return dst
@@ -385,7 +467,7 @@ def unzip_file(
     src: str,
     dst: str = None,
     overwrite: T.OverwriteScheme = None,
-    # progress: T.Progress = None,  # TODO
+    progress: T.AnyProgress = None,
     # compression_level: int = 7,
     overwrite_top_name: bool = True,
     reserve_file_mtime: bool = True,
@@ -396,6 +478,14 @@ def unzip_file(
     # print(src, dst, overwrite, exist(path_o), ':lvp')
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
+    
+    if progress is True:
+        _report = _show_progress_in_console
+    elif progress:
+        def _report(total, index, name):
+            progress(_ProgressItem(total, index, index / total, name))
+    else:
+        _report = None
     
     if dst.endswith('.7z'):
         import py7zr
@@ -426,32 +516,42 @@ def unzip_file(
         if top_name_i == top_name_o or overwrite_top_name:
             trim_src_prefix = True
     
-    # -- make dirs
-    dirs = set()
+    todo_dirs: t.Set[str] = set()
+    todo_files: t.Set[t.Tuple[str, ZipInfo, int]] = set()
     for name in handle.namelist():
         relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
         if relpath:
             if relpath.endswith('/'):
-                dirs.add(relpath[:-1])
-            elif '/' in relpath:
-                dirs.add(relpath.rsplit('/', 1)[0])
+                todo_dirs.add(relpath[:-1])
+            else:
+                info = handle.NameToInfo[name]  # noqa
+                time = int(datetime(*info.date_time).timestamp())
+                todo_files.add((relpath, info, time))
+                if '/' in relpath:
+                    todo_dirs.add(relpath.rsplit('/', 1)[0])
+    total = len(todo_dirs) + len(todo_files)
+    
+    # -- make dirs
     os.mkdir(dst)
-    for relpath in sorted(dirs):
+    i = 0
+    for relpath in sorted(todo_dirs):
+        if _report:
+            i += 1
+            _report(total, i, relpath)
         os.makedirs(dst + '/' + relpath, exist_ok=True)
 
     # -- dump files
-    for name in sorted(handle.namelist()):
-        relpath = name[len(top_name_i) + 1:] if trim_src_prefix else name
-        if relpath and not relpath.endswith('/'):
-            info = handle.NameToInfo[name]
-            time = int(datetime(*info.date_time).timestamp())
-            with (
-                handle.open(info) as i,
-                open(dst + '/' + relpath, 'wb') as o
-            ):
-                shutil.copyfileobj(i, o)  # noqa
-            if reserve_file_mtime:
-                os.utime(dst + '/' + relpath, (time, time))
+    for relpath, info, time in sorted(todo_files):
+        if _report:
+            i += 1
+            _report(total, i, relpath)  # noqa
+        with (
+            handle.open(info) as i,  # noqa
+            open(dst + '/' + relpath, 'wb') as o
+        ):
+            shutil.copyfileobj(i, o)  # noqa
+        if reserve_file_mtime:
+            os.utime(dst + '/' + relpath, (time, time))
     
     handle.close()
     return dst
@@ -490,7 +590,7 @@ def _safe_long_path(path: str) -> str:
     return path
 
 
-def _terminal_progress(
+def _show_progress_in_console(
     total: t.Union[float, int],
     current: t.Union[float, int],
     desc: str = ''
@@ -501,5 +601,5 @@ def _terminal_progress(
         total,
         '-' * round(prog * 60),
         '-' * (60 - round(prog * 60)),
-        desc or '{:.2%}'.format(prog)
+        desc and '{} ({:.2%})'.format(desc, prog) or '{:.2%}'.format(prog)
     ), end='\r')

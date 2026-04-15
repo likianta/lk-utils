@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.6.0a1"
+version = "3.6.0a7"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -33,21 +33,26 @@ py7zr = { version = "^1.1.0", python = "^3.10", optional = true }
 toml = { version = "^0.10.0", python = "<3.11", optional = true }
 xlrd = { version = "1.2.0", optional = true }
 xlsxwriter = { version = "^3.2.0", optional = true }
+zstandard = { version = "^0.25.0", python = ">=3.9,<3.14", optional = true }
 
 [project.optional-dependencies]
 all = [
     "ipython>=9.12.0; python_version >= '3.12'",
-    "py7zr; python_version >= '3.10'",
+    "py7zr>=1.1.0; python_version >= '3.10'",
     "toml; python_version < '3.11'",
     "xlrd==1.2.0",
-    "xlsxwriter"
+    "xlsxwriter",
+    "zstandard>=0.25.0; python_version < '3.14'",
 ]
 dbg = ["ipython>=9.12.0; python_version >= '3.12'"]
 # exl = ["openpyxl", "pyexcel", "pyexcel-xlsx"]
 exl = ["xlrd==1.2.0", "xlsxwriter"]
 io = ["toml; python_version < '3.11'", "xlrd==1.2.0", "xlsxwriter"]
 tml = ["toml"]
-zip = ["py7zr; python_version >= '3.10'"]
+zip = [
+    "py7zr>=1.1.0; python_version >= '3.10'",
+    "zstandard>=0.25.0; python_version >= '3.9' and python_version < '3.14'"
+]
 
 [tool.poetry.group.dev.dependencies]
 ipython = { version = "^9.12.0", python = "^3.12" }
@@ -57,6 +62,7 @@ py7zr = { version = "^1.1.0", python = "^3.10" }
 # pyexcel-xlsx = "^0.6.0"
 xlrd = "1.2.0"
 xlsxwriter = "^3.2.0"
+zstandard = { version = "^0.25.0", python = "^3.9" }
 
 [[tool.poetry.source]]
 name = "tsinghua"

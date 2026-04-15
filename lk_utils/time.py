@@ -1,7 +1,9 @@
 import time
 from contextlib import contextmanager
+from typing import Any
 from typing import Callable
 from typing import Iterator
+from typing import Literal
 from typing import Union
 from collections import namedtuple
 
@@ -105,6 +107,26 @@ def timing() -> Iterator[Callable[[], None]]:
         print('total_time: {}'.format(pretty_duration(end - start)), ':p')
 
 
+def timeit(
+    target: Union[Iterator, Callable],
+    type: Literal['auto', 'callable', 'iterator'] = 'iterator'
+) -> Any:
+    if type == 'auto':
+        raise NotImplementedError
+    if type == 'callable':
+        start = time.time()
+        result = target()
+        end = time.time()
+        print('total_time: {}'.format(pretty_duration(end - start)), ':p')
+        return result
+    else:
+        with timing() as countup:
+            result = []
+            for datum in target():
+                result.append(datum)
+                countup()
+        return result
+
 def timestamp(fmt: str = 'y-m-d h:n:s', t: T.Time = None) -> str:
     """
     generate a timestamp string.
@@ -121,15 +143,15 @@ def timestamp(fmt: str = 'y-m-d h:n:s', t: T.Time = None) -> str:
         return time.strftime(fmt, time.localtime(t))
 
 
-_ProgressDatum = namedtuple('_ProgressDatum', 'total index percent')
+_ProgressItem = namedtuple('Progress', 'total index percent')
 
 
 def wait(
     timeout: float, interval: float = 1, timeout_error: bool = True
-) -> Iterator[_ProgressDatum]:
+) -> Iterator[_ProgressItem]:
     count = int(timeout / interval)
     for i in range(count):
-        yield _ProgressDatum(count, i + 1, (i + 1) / count)
+        yield _ProgressItem(count, i + 1, (i + 1) / count)
         time.sleep(interval)
     if timeout_error:
         raise TimeoutError(f'timeout in {timeout} seconds (with {count} loops)')
