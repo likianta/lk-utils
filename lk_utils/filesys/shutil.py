@@ -116,16 +116,14 @@ def download(
     
     if progress is True:
         def _report(count, block_size, total_size):
-            assert total_size > 0, (url, path)
             _show_progress_in_console(total_size, block_size * count)
     elif progress:
         def _report(count, block_size, total_size):
-            assert total_size > 0, (url, path)
             progress(
                 _ProgressItem(
                     total_size,
                     block_size * count,
-                    block_size * count / total_size,
+                    min((1.0, block_size * count / total_size)),
                     ''
                 )
             )
@@ -465,7 +463,7 @@ def zip_dir(
 
 def unzip_file(
     src: str,
-    dst: str = None,
+    dst: str = '',
     overwrite: T.OverwriteScheme = None,
     progress: T.AnyProgress = None,
     # compression_level: int = 7,
@@ -473,7 +471,7 @@ def unzip_file(
     reserve_file_mtime: bool = True,
 ) -> str:
     assert src.endswith(('.zip', '.7z'))
-    if dst is None:
+    if not dst:
         dst = src.rsplit('.', 1)[0]
     # print(src, dst, overwrite, exist(path_o), ':lvp')
     if exist(dst) and not _overwrite(dst, overwrite):
@@ -483,7 +481,9 @@ def unzip_file(
         _report = _show_progress_in_console
     elif progress:
         def _report(total, index, name):
-            progress(_ProgressItem(total, index, index / total, name))
+            progress(
+                _ProgressItem(total, index, min((1.0, index / total)), name)
+            )
     else:
         _report = None
     
@@ -546,10 +546,10 @@ def unzip_file(
             i += 1
             _report(total, i, relpath)  # noqa
         with (
-            handle.open(info) as i,  # noqa
-            open(dst + '/' + relpath, 'wb') as o
+            handle.open(info) as obj_s,
+            open(dst + '/' + relpath, 'wb') as obj_t
         ):
-            shutil.copyfileobj(i, o)  # noqa
+            shutil.copyfileobj(obj_s, obj_t)  # noqa
         if reserve_file_mtime:
             os.utime(dst + '/' + relpath, (time, time))
     

@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.6.0a7"
+version = "3.6.0a10"
 description = "LK Utils is a set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
@@ -69,6 +69,9 @@ name = "tsinghua"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 # url = "https://mirrors.aliyun.com/pypi/simple/"
 priority = "primary"
+
+[tool.ty.rules]
+invalid-type-form = "ignore"
 
 [build-system]
 requires = ["poetry"]
