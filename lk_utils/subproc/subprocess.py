@@ -50,15 +50,13 @@ class Popen(sp.Popen):
         ))
         self._introspection = False
         for child in parent.children(recursive=True):
-            print(':r', '[red dim]|- kill child process: {} ({})[/]'.format(
-                child.pid, child.name()
-            ))
-            # noinspection PyUnresolvedReferences
             try:
+                print(':r', '[red dim]|- kill child process: {} ({})[/]'.format(
+                    child.pid, child.name()
+                ))
                 child.kill()
             except psutil.NoSuchProcess:
                 pass
-        # noinspection PyUnresolvedReferences
         try:
             parent.kill()
         except psutil.NoSuchProcess:
@@ -115,8 +113,8 @@ def run_cmd_args(
     *args: t.Any,
     verbose: bool = False,
     shell: bool = False,
-    cwd: str = None,
-    env: t.Dict[str, str] = None,
+    cwd: t.Optional[str] = None,
+    env: t.Optional[t.Dict[str, str]] = None,
     blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
@@ -159,7 +157,7 @@ def run_cmd_args(
         `sp.run` is blocking, `sp.Popen` is non-blocking.
     """
     if _refmt_args:
-        args = compose_cmd(*args, filter=filter)
+        args = compose_cmd(*args, filter=filter)  # type: ignore
     # else:
     #     assert all(isinstance(x, str) for x in args)
     if verbose:

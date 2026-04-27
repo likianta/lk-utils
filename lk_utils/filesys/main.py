@@ -212,7 +212,8 @@ def empty(path: T.Path) -> bool:
         raise Exception(path)
 
 
-system_privileged = None  # None: unknown; True: yes; False: no.
+system_privileged: t.Optional[bool] = None
+#   None: unknown; True: yes; False: no.
 
 
 def exist(path: T.Path) -> bool:

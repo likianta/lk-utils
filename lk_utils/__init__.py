@@ -12,8 +12,6 @@ if 2:
 from . import binding
 from . import filesys as fs
 from . import importer
-from . import io
-from . import io as rw  # alias
 from . import subproc
 from . import textwrap
 from . import time
