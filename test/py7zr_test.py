@@ -10,7 +10,7 @@ def test_zip(
         src,
         dst,
         overwrite=True,
-        progress=True,
+        progress=_plain_print,
         compression_level=compression_level,
     )
     print('done', fs.filesize(out, str), ':t')
@@ -18,8 +18,16 @@ def test_zip(
 
 @cli
 def test_unzip(src: str, dst: str = '') -> None:
-    fs.unzip(src, dst, overwrite=True, progress=True)
+    fs.unzip(src, dst, overwrite=True, progress=_plain_print)
     print(':t', 'done')
+
+
+def _plain_print(prog: fs.ProgressItem) -> None:
+    print(
+        '[{}/{}] {} ({:.2%})'.format(
+            prog.index, prog.total, prog.text, prog.percent
+        )
+    )
 
 
 if __name__ == '__main__':
