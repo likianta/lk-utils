@@ -3,9 +3,17 @@ from lk_utils import fs
 
 
 @cli
-def test_zip(src: str, dst: str = '') -> None:
-    out = fs.zip(src, dst, overwrite=True, progress=True)
-    print(fs.filesize(out, str), ':t')
+def test_zip(
+    src: str, dst: str = '', compression_level: str = 'normal'
+) -> None:
+    out = fs.zip(
+        src,
+        dst,
+        overwrite=True,
+        progress=True,
+        compression_level=compression_level,
+    )
+    print('done', fs.filesize(out, str), ':t')
 
 
 @cli

@@ -1,11 +1,11 @@
 import os
 import shutil
+import sys
 import typing as t
 import urllib.request
+import zipfile
 from collections import namedtuple
 from datetime import datetime
-from functools import partial
-from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 from zipfile import ZipInfo
 
@@ -45,11 +45,13 @@ __all__ = [
     'zip_dir',
 ]
 
+_IS_PYTHON_314_OR_HIGHER = sys.version_info >= (3, 14)
 _ProgressItem = namedtuple('ProgressItem', 'total index percent text')
 
 
 class T:
     AnyProgress = t.Optional[t.Union[t.Callable[[_ProgressItem], None], bool]]
+    CompressionLevel = t.Literal['fast', 'normal', 'maximum']
     OverwriteScheme = t.Optional[bool]
     ReportProgress = t.Optional[t.Callable[[int, int, str], None]]
 
@@ -341,15 +343,24 @@ def zip_dir(
     dst: str = '',
     overwrite: T.OverwriteScheme = None,
     progress: T.AnyProgress = None,
-    compression_level: int = 7,
+    compression_level: T.CompressionLevel = 'normal',
     keep_empty_folders: bool = True,
     **zip_options,
 ) -> str:
     """
     ref: https://likianta.blog.csdn.net/article/details/126710855
+    params:
+        dst:
+            if not given, will use `src + '.zip'`.
+            if ends with `.zip`, `.7z`, `.tar.zst`, will use it as is.
+            additionally, if `dst` is literally one of
+            ('.zip', '.7z', '.tar.zst'), will create `src + dst`.
     """
     if dst:
-        assert dst.endswith(('.zip', '.7z', '.tar.zst'))
+        if dst in ('.zip', '.7z', '.tar.zst'):
+            dst = src + dst
+        else:
+            assert dst.endswith(('.zip', '.7z', '.tar.zst'))
     else:
         dst = src + '.zip'
     if exist(dst) and not _overwrite(dst, overwrite):
@@ -374,13 +385,48 @@ def zip_dir(
         todo_files = tuple(findall_files(src))
         total = len(todo_dirs) + len(todo_files)
 
-        with ZipFile(
-            dst,
-            'w',
-            compression=ZIP_DEFLATED,
-            compresslevel=compression_level,
+        # https://chatgpt.com/share/69f010ae-553c-8320-8e88-00cb37b1b409
+        zip_options = {
+            'compression': (
+                # choice explanation:
+                #   python 3.14+: always ZIP_ZSTANDARD
+                #   else:
+                #       fast: ZIP_STORED
+                #       normal: ZIP_DEFLATED
+                #       maximum: ZIP_DEFLATED
+                _IS_PYTHON_314_OR_HIGHER
+                and zipfile.ZIP_ZSTANDARD
+                or compression_level == 'fast'
+                and zipfile.ZIP_STORED
+                or zipfile.ZIP_DEFLATED
+            ),
+            'compresslevel': (
+                # choice explanation:
+                #   ZIP_ZSTANDARD: -5 for fast, 3 for normal, 19 for maximum.
+                #   ZIP_STORED: value has no effect.
+                #   ZIP_DEFLATED: 1 for fast, 6 for normal, 9 for maximum.
+                _IS_PYTHON_314_OR_HIGHER
+                and (
+                    compression_level == 'fast'
+                    and -5
+                    or compression_level == 'normal'
+                    and 3
+                    or compression_level == 'maximum'
+                    and 19
+                )
+                or (
+                    compression_level == 'fast'
+                    and 1
+                    or compression_level == 'normal'
+                    and 6
+                    or compression_level == 'maximum'
+                    and 9
+                )
+            ),
             **zip_options,
-        ) as handle:
+        }
+
+        with ZipFile(dst, 'w', **zip_options) as handle:  # type: ignore
             handle.write(src, arcname=top_name)
             i = 0
             for d in todo_dirs:
@@ -406,17 +452,29 @@ def zip_dir(
         todo_files = tuple(findall_files(src))
         total = len(todo_dirs) + len(todo_files)
 
+        # https://chatgpt.com/share/69f01d60-62a4-8320-aee3-b7ef6f390ddf
+        zip_options = {
+            'filters': [
+                {
+                    'id': py7zr.FILTER_LZMA2,
+                    'preset': (
+                        compression_level == 'fast'
+                        and 1
+                        or compression_level == 'normal'
+                        and 6
+                        or compression_level == 'maximum'
+                        and 9
+                    ),
+                    # 'dict_size': 1 << 29,  # 512MB
+                }
+            ],
+            **zip_options,
+        }
+
         with py7zr.SevenZipFile(
             dst,
             'w',
-            # filters=[
-            #     {
-            #         'id': py7zr.FILTER_LZMA2,
-            #         'preset': 9,
-            #         'dict_size': 1 << 30,  # 1GB
-            #     }
-            # ],
-            **zip_options,
+            **zip_options,  # type: ignore
         ) as handle:
             handle.write(src, arcname=top_name)
             i = 0
