@@ -1,7 +1,7 @@
 [project]
 name = "lk-utils"
 version = "3.6.0a14"
-description = "LK Utils is a set of utility wrappers made for data processing."
+description = "A set of utility wrappers made for data processing."
 readme = "README.md"
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 requires-python = ">=3.8"
