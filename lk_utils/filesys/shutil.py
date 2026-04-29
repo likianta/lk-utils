@@ -346,6 +346,7 @@ def zip_dir(
     progress: T.AnyProgress = None,
     compression_level: T.CompressionLevel = 'normal',
     keep_empty_folders: bool = True,
+    # bandizip_command_line_tool: str = '',
     **zip_options,
 ) -> str:
     """
@@ -356,6 +357,7 @@ def zip_dir(
             if ends with `.zip`, `.7z`, `.tar.zst`, will use it as is.
             additionally, if `dst` is literally one of
             ('.zip', '.7z', '.tar.zst'), will create `src + dst`.
+        bandizip_command_line_tool: a path to `<bandizip_software>/bc.exe`.
     """
     if dst:
         if dst in ('.zip', '.7z', '.tar.zst'):
@@ -650,9 +652,9 @@ def unzip_file(
 
     elif src.endswith('.7z'):
         # https://chatgpt.com/share/69f042ab-03c0-8323-8187-70f87711119c
-        # from pathlib import Path
+        from pathlib import Path
         from py7zr import SevenZipFile
-        from py7zr.callbacks import ExtractCallback
+        # from py7zr.callbacks import ExtractCallback
         from py7zr.helpers import filetime_to_dt
 
         def detect_single_top(handle: SevenZipFile) -> str:
@@ -681,142 +683,152 @@ def unzip_file(
             # reimplementation of `py7zr.SevenZipFile.extractall()`,
             # `py7zr.py7zr.Worker.extract_single()`.
 
-            # worker = handle.worker
-            # assert worker.header.main_streams.unpackinfo.numfolders == 1
-            # src_start = worker.src_start
-            # src_end = (
-            #     src_start
-            #     + worker.header.main_streams.packinfo.packpositions[-1]
-            # )
-            # # print(src_start, src_end, ':v')
-            # handle.fp.seek(src_start)
+            worker = handle.worker
+            assert worker.header.main_streams.unpackinfo.numfolders == 1
+            src_start = worker.src_start
+            src_end = (
+                src_start
+                + worker.header.main_streams.packinfo.packpositions[-1]
+            )
+            # print(src_start, src_end, ':v')
+            handle.fp.seek(src_start)
 
-            # out_root = Path(dst)
-            # # out_dirs: t.List[Path] = []
-            # # out_files: t.List[t.Tuple[Path, ArchiveFile]] = []
+            out_root = Path(dst)
+            # out_dirs: t.List[Path] = []
+            # out_files: t.List[t.Tuple[Path, ArchiveFile]] = []
 
-            # # FIXME: empty folders won't be created.
-            # todo_files = tuple(
-            #     f
-            #     for f in handle.files
-            #     if not any(
-            #         (
-            #             f.is_directory,
-            #             f.is_socket,
-            #             f.is_symlink,
-            #             f.is_junction,
-            #         )
-            #     )
-            # )
-            # total = len(todo_files)
+            # FIXME: empty folders won't be created.
+            todo_files = tuple(
+                f
+                for f in handle.files
+                if not any(
+                    (
+                        f.is_directory,
+                        f.is_socket,
+                        f.is_symlink,
+                        f.is_junction,
+                    )
+                )
+            )
+            total = len(todo_files)
+            just_checks = []
 
-            # for i, f in enumerate(todo_files, 1):
-            #     if trim_src_prefix:
-            #         assert f.filename.startswith(top_name_i + '/')
-            #     relpath = (
-            #         f.filename[len(top_name_i) + 1 :]
-            #         if trim_src_prefix
-            #         else f.filename
-            #     )
-            #     assert relpath
+            for i, f in enumerate(todo_files, 1):
+                if trim_src_prefix:
+                    assert f.filename.startswith(top_name_i + '/')
+                relpath = (
+                    f.filename[len(top_name_i) + 1 :]
+                    if trim_src_prefix
+                    else f.filename
+                )
+                assert relpath
 
-            #     if _report:
-            #         _report(total, i, relpath)
+                if _report:
+                    _report(total, i, relpath)
 
-            #     print(
-            #         i,
-            #         f.filename,
-            #         f.emptystream,
-            #         f.compressed,
-            #         f.uncompressed,
-            #         # f.folder.get_decompressor(f.compressed),
-            #         ':lv',
-            #     )
-            #     out_path = out_root / relpath
-            #     out_path.parent.mkdir(parents=True, exist_ok=True)
-            #     with out_path.open('wb') as f_writer:
-            #         worker.decompress(
-            #             handle.fp,
-            #             f.folder,
-            #             f_writer,
-            #             f.uncompressed,
-            #             f.compressed or f.uncompressed,
-            #             src_end,
-            #         )
-            #         f_writer.seek(0)
-            #     if reserve_file_mtime and f.lastwritetime:
-            #         mtime = int(filetime_to_dt(f.lastwritetime).timestamp())
-            #         os.utime(str(out_path), (mtime, mtime))
+                # print(
+                #     i,
+                #     f.filename,
+                #     # f.emptystream,
+                #     src_start,
+                #     src_end,
+                #     f.compressed,
+                #     f.uncompressed,
+                #     # f.folder.get_decompressor(f.compressed),
+                #     ':lv',
+                # )
+                # assert f.compressed is not None, f.filename
+
+                worker._check(handle.fp, just_checks, src_end)
+                just_checks.clear()
+
+                out_path = out_root / relpath
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                with out_path.open('wb') as f_writer:
+                    crc32 = worker.decompress(
+                        handle.fp,
+                        f.folder,
+                        f_writer,
+                        f.uncompressed,
+                        f.compressed or f.uncompressed,
+                        src_end,
+                    )
+                    f_writer.seek(0)
+                    if f.crc32 and f.crc32 != crc32:
+                        raise Exception(f.filename, crc32, f.crc32)
+                if reserve_file_mtime and f.lastwritetime:
+                    mtime = int(filetime_to_dt(f.lastwritetime).timestamp())
+                    os.utime(str(out_path), (mtime, mtime))
 
             # --- b
 
-            # https://github.com/miurahr/py7zr/issues/526#issue-1816063884
-            class MyCallback(ExtractCallback):
-                def __init__(
-                    self,
-                    total_bytes: int,
-                    report_hook: t.Callable[[int, int, str], None],
-                ) -> None:
-                    self._total = total_bytes
-                    self._report_hook = report_hook
+            # # https://github.com/miurahr/py7zr/issues/526#issue-1816063884
+            # class MyCallback(ExtractCallback):
+            #     def __init__(
+            #         self,
+            #         total_bytes: int,
+            #         report_hook: t.Callable[[int, int, str], None],
+            #     ) -> None:
+            #         self._total = total_bytes
+            #         self._report_hook = report_hook
 
-                def report_update(self, decompressed_bytes: str) -> None:
-                    self._report_hook(self._total, int(decompressed_bytes), '')
+            #     def report_update(self, decompressed_bytes: str) -> None:
+            #         self._report_hook(self._total, int(decompressed_bytes), '')
 
-                # --------------------------------------------------------------
+            #     # --------------------------------------------------------------
 
-                def report_start_preparation(self) -> None:
-                    pass
+            #     def report_start_preparation(self) -> None:
+            #         pass
 
-                def report_start(
-                    self, processing_file_path: str, processing_bytes: str
-                ) -> None:
-                    pass
+            #     def report_start(
+            #         self, processing_file_path: str, processing_bytes: str
+            #     ) -> None:
+            #         pass
 
-                def report_end(
-                    self, processing_file_path: str, wrote_bytes: str
-                ) -> None:
-                    pass
+            #     def report_end(
+            #         self, processing_file_path: str, wrote_bytes: str
+            #     ) -> None:
+            #         pass
 
-                def report_warning(self, message: str) -> None:
-                    pass
+            #     def report_warning(self, message: str) -> None:
+            #         pass
 
-                def report_postprocess(self) -> None:
-                    pass
+            #     def report_postprocess(self) -> None:
+            #         pass
 
-            if progress is True:
-                _callback = MyCallback(
-                    handle.archiveinfo().uncompressed,
-                    _show_progress_in_console_1,
-                )
-            elif progress:
-                _callback = MyCallback(
-                    handle.archiveinfo().uncompressed,
-                    lambda total, curr, desc: ProgressItem(
-                        total, curr, min((1.0, curr / total)), ''
-                    ),
-                )
-            else:
-                _callback = None
+            # if progress is True:
+            #     _callback = MyCallback(
+            #         handle.archiveinfo().uncompressed,
+            #         _show_progress_in_console_1,
+            #     )
+            # elif progress:
+            #     _callback = MyCallback(
+            #         handle.archiveinfo().uncompressed,
+            #         lambda total, curr, desc: ProgressItem(
+            #             total, curr, min((1.0, curr / total)), ''
+            #         ),
+            #     )
+            # else:
+            #     _callback = None
 
-            if trim_src_prefix:
-                dst_temp = dst + '_(7z_temp_extracted)'
-                handle.extractall(dst_temp, callback=_callback)
-                shutil.move(dst_temp + '/' + top_name_i, dst)
-                shutil.rmtree(dst_temp)
-            else:
-                handle.extractall(dst, callback=_callback)
-            if reserve_file_mtime:
-                for f in handle.files:
-                    if f.lastwritetime:
-                        path = '{}/{}'.format(
-                            dst,
-                            f.filename[len(top_name_i) + 1 :]
-                            if trim_src_prefix
-                            else f.filename,
-                        )
-                        time = int(filetime_to_dt(f.lastwritetime).timestamp())
-                        os.utime(path, (time, time))
+            # if trim_src_prefix:
+            #     dst_temp = dst + '_(7z_temp_extracted)'
+            #     handle.extractall(dst_temp, callback=_callback)
+            #     shutil.move(dst_temp + '/' + top_name_i, dst)
+            #     shutil.rmtree(dst_temp)
+            # else:
+            #     handle.extractall(dst, callback=_callback)
+            # if reserve_file_mtime:
+            #     for f in handle.files:
+            #         if f.lastwritetime:
+            #             path = '{}/{}'.format(
+            #                 dst,
+            #                 f.filename[len(top_name_i) + 1 :]
+            #                 if trim_src_prefix
+            #                 else f.filename,
+            #             )
+            #             time = int(filetime_to_dt(f.lastwritetime).timestamp())
+            #             os.utime(path, (time, time))
 
             # ---
 
@@ -924,6 +936,9 @@ def _safe_long_path(path: str) -> str:
 def _show_progress_in_console_1(
     total: float, current: float, desc: str = ''
 ) -> None:
+    """
+    size-based progress bar.
+    """
     prog = current / total
     print(
         ':s1r',
@@ -939,6 +954,9 @@ def _show_progress_in_console_1(
 def _show_progress_in_console_2(
     total: t.Union[float, int], current: t.Union[float, int], desc: str = ''
 ) -> None:
+    """
+    count-based progress bar.
+    """
     prog = current / total
     print(
         ':s1r',

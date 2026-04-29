@@ -17,8 +17,8 @@ def test_zip(
 
 
 @cli
-def test_unzip(src: str, dst: str = '') -> None:
-    fs.unzip(src, dst, overwrite=True, progress=_plain_print)
+def test_unzip(src: str, dst: str = '', **kwargs) -> None:
+    fs.unzip(src, dst, overwrite=True, progress=_plain_print, **kwargs)
     print(':t', 'done')
 
 
