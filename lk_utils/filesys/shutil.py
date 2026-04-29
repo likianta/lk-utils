@@ -906,6 +906,8 @@ def unzip_file(
 zip = zip_dir
 unzip = unzip_file
 
+# ------------------------------------------------------------------------------
+
 
 def _overwrite(path: str, scheme: T.OverwriteScheme) -> bool:
     """
@@ -924,6 +926,13 @@ def _overwrite(path: str, scheme: T.OverwriteScheme) -> bool:
         return True
     else:  # raise error
         raise FileExistsError(path)
+
+
+def _padding_text(text: str, width: int = 80) -> str:
+    if len(text) > width:
+        return text[: width - 3] + '...'
+    else:
+        return text.ljust(width)
 
 
 def _safe_long_path(path: str) -> str:
@@ -948,7 +957,9 @@ def _show_progress_in_console_1(
         '[red]{}[/][bright_black]{}[/] {}'.format(
             '-' * round(prog * 60),
             '-' * (60 - round(prog * 60)),
-            desc and '{} ({:.2%})'.format(desc, prog) or '{:.2%}'.format(prog),
+            desc
+            and '{} ({:.2%})'.format(_padding_text(desc, 40), prog)
+            or '{:.2%}'.format(prog),
         ),
         end='\r',
     )
@@ -968,7 +979,9 @@ def _show_progress_in_console_2(
             total,
             '-' * round(prog * 60),
             '-' * (60 - round(prog * 60)),
-            desc and '{} ({:.2%})'.format(desc, prog) or '{:.2%}'.format(prog),
+            desc
+            and '{} ({:.2%})'.format(_padding_text(desc, 40), prog)
+            or '{:.2%}'.format(prog),
         ),
         end='\r',
     )
