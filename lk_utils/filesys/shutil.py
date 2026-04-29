@@ -8,7 +8,6 @@ from collections import namedtuple
 from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZipInfo
-
 from . import main
 from .finder import findall_dirs
 from .finder import findall_files
@@ -450,10 +449,9 @@ def zip_dir(
     elif dst.endswith('.7z'):
         import py7zr  # `pip install lk-utils[zip]` or `pip install py7zr`
 
-        # TODO: `todo_dirs` are required to reserve empty folders.
         top_name = basename(src)
-        todo_files = tuple(findall_files(src))
-        total = len(todo_files)
+        todo_paths = tuple(findall_dirs(src)) + tuple(findall_files(src))
+        total = len(todo_paths)
 
         # https://chatgpt.com/share/69f01d60-62a4-8320-aee3-b7ef6f390ddf
         zip_options = {
@@ -480,12 +478,12 @@ def zip_dir(
             **zip_options,  # type: ignore
         ) as handle:
             handle.write(src, arcname=top_name)
-            for i, f in enumerate(todo_files, 1):
+            for i, p in enumerate(todo_paths, 1):
                 if _report:
-                    _report(total, i, f.relpath)
+                    _report(total, i, p.name)
                 handle.write(
-                    os.path.realpath(f.path),
-                    arcname='{}/{}'.format(top_name, f.relpath),
+                    os.path.realpath(p.path),
+                    arcname='{}/{}'.format(top_name, p.relpath),
                 )
 
     elif dst.endswith('.tar.zst'):
@@ -654,8 +652,8 @@ def unzip_file(
         # https://chatgpt.com/share/69f042ab-03c0-8323-8187-70f87711119c
         from pathlib import Path
         from py7zr import SevenZipFile
-        # from py7zr.callbacks import ExtractCallback
         from py7zr.helpers import filetime_to_dt
+        # from py7zr.callbacks import ExtractCallback
 
         def detect_single_top(handle: SevenZipFile) -> str:
             top_names = set()
@@ -694,37 +692,24 @@ def unzip_file(
             handle.fp.seek(src_start)
 
             out_root = Path(dst)
-            # out_dirs: t.List[Path] = []
-            # out_files: t.List[t.Tuple[Path, ArchiveFile]] = []
-
-            # FIXME: empty folders won't be created.
-            todo_files = tuple(
-                f
-                for f in handle.files
-                if not any(
-                    (
-                        f.is_directory,
-                        f.is_socket,
-                        f.is_symlink,
-                        f.is_junction,
-                    )
-                )
-            )
-            total = len(todo_files)
+            total = len(handle.files)
             just_checks = []
 
-            for i, f in enumerate(todo_files, 1):
+            for i, f in enumerate(handle.files, 1):
+                if _report:
+                    _report(total, i, f.filename)
+
                 if trim_src_prefix:
-                    assert f.filename.startswith(top_name_i + '/')
+                    if f.filename == top_name_i:
+                        continue
+                    else:
+                        assert f.filename.startswith(top_name_i + '/')
                 relpath = (
                     f.filename[len(top_name_i) + 1 :]
                     if trim_src_prefix
                     else f.filename
                 )
                 assert relpath
-
-                if _report:
-                    _report(total, i, relpath)
 
                 # print(
                 #     i,
@@ -743,22 +728,40 @@ def unzip_file(
                 just_checks.clear()
 
                 out_path = out_root / relpath
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                with out_path.open('wb') as f_writer:
-                    crc32 = worker.decompress(
-                        handle.fp,
-                        f.folder,
-                        f_writer,
-                        f.uncompressed,
-                        f.compressed or f.uncompressed,
-                        src_end,
-                    )
-                    f_writer.seek(0)
-                    if f.crc32 and f.crc32 != crc32:
-                        raise Exception(f.filename, crc32, f.crc32)
-                if reserve_file_mtime and f.lastwritetime:
-                    mtime = int(filetime_to_dt(f.lastwritetime).timestamp())
-                    os.utime(str(out_path), (mtime, mtime))
+                if f.is_directory:
+                    out_path.mkdir(parents=True, exist_ok=True)
+                elif f.is_socket or f.is_symlink or f.is_junction:
+                    raise Exception(f.filename)
+                else:
+                    out_path.parent.mkdir(parents=True, exist_ok=True)
+                    with out_path.open('wb') as f_writer:
+                        crc32 = worker.decompress(
+                            handle.fp,
+                            f.folder,
+                            f_writer,
+                            f.uncompressed,
+                            f.compressed or f.uncompressed,
+                            src_end,
+                        )
+                        f_writer.seek(0)
+                        if f.crc32 and f.crc32 != crc32:
+                            raise Exception(f.filename, crc32, f.crc32)
+                    if reserve_file_mtime and f.lastwritetime:
+                        mtime = int(filetime_to_dt(f.lastwritetime).timestamp())
+                        os.utime(str(out_path), (mtime, mtime))
+
+            # resolve empty directories.
+            # for f in handle.files:
+            #     if f.is_directory:
+            #         if relpath := (
+            #             f.filename[len(top_name_i) + 1 :]
+            #             if trim_src_prefix
+            #             else f.filename
+            #         ):
+            #             print('post fix empty folder', relpath, ':v')
+            #             out_path = '{}/{}'.format(dst, relpath)
+            #             if not os.path.exists(out_path):
+            #                 os.makedirs(out_path)
 
             # --- b
 
