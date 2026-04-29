@@ -611,17 +611,14 @@ def unzip_file(
 
             todo_dirs: t.Set[str] = set()
             todo_files: t.Set[t.Tuple[str, ZipInfo, int]] = set()
-            for relpath in handle.namelist():
-                relpath = (
-                    relpath[len(top_name_i) + 1 :]
-                    if trim_src_prefix
-                    else relpath
-                )
-                if relpath:
+            for name in handle.namelist():
+                if relpath := (
+                    name[len(top_name_i) + 1 :] if trim_src_prefix else name
+                ):
                     if relpath.endswith('/'):
                         todo_dirs.add(relpath[:-1])
                     else:
-                        info = handle.NameToInfo[relpath]
+                        info = handle.NameToInfo[name]
                         time = int(datetime(*info.date_time).timestamp())
                         todo_files.add((relpath, info, time))
                         if '/' in relpath:

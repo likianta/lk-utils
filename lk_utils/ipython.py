@@ -3,14 +3,14 @@ import typing as t
 
 
 def start_ipython(
-    user_ns: t.Dict[str, t.Any] = None,
-    verbosity: t.Union[bool, int] = 1
+    user_ns: t.Optional[t.Dict[str, t.Any]] = None,
+    verbosity: t.Union[bool, int] = 1,
 ) -> None:
     if getattr(builtins, '__IPYTHON__', False):
         # we are already in ipython environment.
         print(':pv5', 'you are already in ipython environment')
         return
-    
+
     try:
         import IPython  # noqa
     except (ImportError, ModuleNotFoundError) as e:
@@ -24,31 +24,28 @@ def start_ipython(
         from lk_logger import deflector
         from lk_logger.console import console
         from rich.traceback import install
-    
+
     if user_ns and verbosity:
         print(
             ':lv2ps',
             'registered global variables:',
-            tuple(user_ns.keys()) if verbosity == 1 else user_ns
+            tuple(user_ns.keys()) if verbosity == 1 else user_ns,
         )
-    
+
     sys_argv_backup = sys.argv.copy()
     sys.argv = ['']  # avoid ipython to parse `sys.argv`.
     deflector.add(IPython, bprint, scope=True)
-    
+
     app = TerminalIPythonApp.instance(
-        user_ns={
-            '__USERNS__': user_ns,
-            **(user_ns or {})
-        }
+        user_ns={'__USERNS__': user_ns, **(user_ns or {})}
     )
     app.initialize()
-    
+
     # setup except hook for ipython
     setattr(builtins, 'get_ipython', get_ipython)
     install(console=console)
-    
-    app.start()
-    
+
+    app.start()  # type: ignore
+
     # afterwards
     sys.argv = sys_argv_backup
