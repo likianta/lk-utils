@@ -26,8 +26,6 @@ from .filesys import find_files
 from .filesys import findall_dirs
 from .filesys import findall_files
 # from .filesys import get_current_dir
-from .filesys import make_link as mklink
-from .filesys import make_links as mklinks
 from .filesys import normpath
 from .filesys import xpath
 from .filesys import xpath as p

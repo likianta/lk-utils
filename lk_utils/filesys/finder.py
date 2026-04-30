@@ -5,26 +5,7 @@ import os
 import re
 import typing as t
 from dataclasses import dataclass
-
-from .main import normpath
-
-__all__ = [
-    'Filter',
-    'Path',
-    'default_filter',
-    'find_dir_names',
-    'find_dir_paths',
-    'find_dirs',
-    'find_file_names',
-    'find_file_paths',
-    'find_files',
-    'findall_dir_names',
-    'findall_dir_paths',
-    'findall_dirs',
-    'findall_file_names',
-    'findall_file_paths',
-    'findall_files',
-]
+from .path import normpath
 
 
 @dataclass
@@ -78,7 +59,7 @@ class T:
     #       '.png'
     #       ('.png', '.jpg')
     
-    SortBy = t.Literal['name', 'path', 'time']
+    SortBy = t.Optional[t.Literal['name', 'path', 'time']]
 
 
 def _find_paths(
@@ -271,7 +252,7 @@ default_filter = Filter((
 ))
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def find_files(
@@ -370,7 +351,7 @@ def findall_file_names(
     ]
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def find_dirs(

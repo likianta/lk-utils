@@ -4,38 +4,8 @@ import typing as t
 from functools import partial
 from inspect import currentframe
 from types import FrameType
-
-__all__ = [
-    'abspath',
-    'barename',
-    'basename',
-    'cd_current_dir',
-    'dirname',
-    'dirpath',
-    'empty',
-    'exist',
-    'filename',
-    'filepath',
-    'filesize',
-    'filetime',
-    'get_current_dir',
-    'is_empty_dir',
-    'is_empty_file',
-    'isdir',
-    'isfile',
-    'islink',
-    'issame',
-    'normpath',
-    'parent',
-    'parent_path',
-    'real_exist',
-    'relpath',
-    'replace_ext',
-    'split',
-    'xpath',
-]
-
-IS_WINDOWS = os.name == 'nt'
+from .env import IS_WINDOWS
+from .checker import isdir
 
 
 class T:
@@ -60,6 +30,7 @@ abspath = partial(normpath, force_abspath=True)
 
 # ------------------------------------------------------------------------------
 
+
 def parent_path(path: T.Path) -> T.DirPath:
     if IS_WINDOWS:
         if path.endswith((':', ':/', ':\\')):
@@ -72,9 +43,8 @@ def parent_path(path: T.Path) -> T.DirPath:
 parent = parent_path  # alias
 
 
-def relpath(path: T.Path, start: T.Path = None) -> T.Path:
-    if not path: return ''
-    return normpath(osp.relpath(path, start))
+def relpath(path: T.Path, start: t.Optional[T.Path] = None) -> T.Path:
+    return normpath(osp.relpath(path, start)) if path else ''
 
 
 def dirpath(path: T.Path) -> T.DirPath:
@@ -108,7 +78,7 @@ def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
 
 
 def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
-    """ Return the file name from path.
+    """Return the file name from path.
 
     Examples:
         strict  input           output
@@ -143,7 +113,7 @@ def filetime(
     path: T.Path,
     # fmt: t.Union[str, t.Type] = 'y-m-d h:n:s',
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-    pretty_fmt: bool = False
+    pretty_fmt: bool = False,
 ) -> t.Union[int, str]:
     """
     fmt:
@@ -160,9 +130,11 @@ def filetime(
             tuple           (2025, 3, 20, 15, 31, 3)
     """
     from ..time import timestamp
+
     time_float = (
-        os.stat(path).st_ctime if by in ('c', 'created') else
-        os.stat(path).st_mtime
+        os.stat(path).st_ctime
+        if by in ('c', 'created')
+        else os.stat(path).st_mtime
     )
     if pretty_fmt:
         return timestamp('y-m-d h:n:s', t=time_float)
@@ -199,117 +171,18 @@ def barename(path: T.Path, strict: bool = False) -> str:
     return filename(path, suffix=False, strict=strict)
 
 
-# ------------------------------------------------------------------------------
-
-def empty(path: T.Path) -> bool:
-    if osp.isdir(path):
-        return is_empty_dir(path)
-    elif osp.isfile(path):
-        return is_empty_file(path)
-    elif osp.islink(path):
-        return empty(osp.realpath(path))
-    else:
-        raise Exception(path)
-
-
-system_privileged: t.Optional[bool] = None
-#   None: unknown; True: yes; False: no.
-
-
-def exist(path: T.Path) -> bool:
-    if osp.exists(path):
-        return True
-    elif osp.islink(path):
-        # for broken symlink, although `osp.exists` gives False, we still -
-        # return True.
-        # https://stackoverflow.com/questions/75444181
-        return True
-    elif system_privileged is not True:
-        if osp.isjunction(path):  # a broken junction link
-            return True
-    return False
-
-
-def real_exist(path: T.Path) -> bool:
-    return osp.exists(path)
-
-
-def isdir(path: T.Path) -> bool:
-    if path.strip('./') == '':
-        return True
-    if osp.isdir(path):
-        return True
-    if osp.isfile(path):
-        return False
-    if osp.islink(path):
-        path = osp.realpath(path)
-        return isdir(path)
-    # raise Exception('unknown path type', path)
-    return False
-
-
-def isfile(path: T.Path) -> bool:
-    if path.strip('./') == '':
-        return False
-    if osp.isfile(path):
-        return True
-    if osp.isdir(path):
-        return False
-    if osp.islink(path):
-        path = osp.realpath(path)
-        return isfile(path)
-    # raise Exception('unknown path type', path)
-    return False
-
-
-def islink(path: T.Path) -> bool:
-    if osp.islink(path):
-        return True
-    if system_privileged is not True:
-        if osp.isjunction(path):
-            return True
-    return False
-
-
-# issame = osp.samefile
-
-
-def issame(a: T.Path, b: T.Path) -> bool:
-    if real_exist(a) and real_exist(b):
-        return osp.samefile(a, b)
-    print(':pv6', 'the comparison may not be valid!', a, b)
-    return osp.realpath(a) == osp.realpath(b)
-
-
-def is_empty_dir(path: T.DirPath) -> bool:
-    for _ in os.listdir(path):
-        return False
-    return True
-
-
-def is_empty_file(path: T.FilePath) -> bool:
-    """
-    https://www.imooc.com/wenda/detail/350036?block_id=tuijian_yw
-    """
-    if osp.exists(path):
-        if osp.getsize(path):
-            return False
-        return True
-    return True
-
-
 # -----------------------------------------------------------------------------
 
 
 def cd_current_dir() -> T.AbsPath:
-    caller_frame = currentframe().f_back
+    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
     dir = _get_frame_dir(caller_frame)
     os.chdir(dir)
     return dir
 
 
 def get_current_dir() -> T.AbsPath:
-    caller_frame = currentframe().f_back
+    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
     return _get_frame_dir(caller_frame)
 
 
@@ -323,9 +196,9 @@ def replace_ext(path: T.Path, ext: str) -> T.Path:
     return osp.splitext(path)[0] + '.' + ext.lstrip('.')
 
 
-def split(path: T.Path, parts: int = 2) -> t.Union[
-    t.Tuple[str, str], t.Tuple[str, str, str]
-]:
+def split(
+    path: T.Path, parts: int = 2
+) -> t.Union[t.Tuple[str, str], t.Tuple[str, str, str]]:
     path = normpath(path)
     if '/' not in path:
         path = abspath(path)
@@ -347,7 +220,7 @@ def xpath(relpath: T.Path) -> T.AbsPath:
     `<dir_of_caller_frame>/<relpath>`.
     ref: https://blog.csdn.net/Likianta/article/details/89299937
     """
-    caller_frame = currentframe().f_back
+    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
     caller_dir = _get_frame_dir(caller_frame)
     if relpath in ('', '.', './'):
         return caller_dir
@@ -362,7 +235,7 @@ def _get_frame_dir(frame: FrameType, ignore_error: bool = False) -> T.AbsPath:
             print(
                 ':v8p2',
                 'unable to locate directory from caller frame! '
-                'fallback using current working directory instead.'
+                'fallback using current working directory instead.',
             )
             return normpath(os.getcwd(), True)
         else:

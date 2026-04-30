@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 import typing as t
 import urllib.request
 import zipfile
@@ -8,45 +7,20 @@ from collections import namedtuple
 from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZipInfo
-from . import main
+from . import env
+from .checker import exist
+from .checker import islink
+from .checker import real_exist
 from .finder import findall_dirs
 from .finder import findall_files
-from .main import IS_WINDOWS  # noqa
-from .main import abspath
-from .main import basename
-from .main import dirname
-from .main import exist
-from .main import real_exist
-from .main import xpath
+from .path import abspath
+from .path import basename
+from .path import dirname
+from .path import xpath
 from ..subproc import run_cmd_args
 from ..textwrap import dedent
 
-__all__ = [
-    'ProgressItem',
-    'clone_tree',
-    'copy_file',
-    'copy_tree',
-    'download',
-    'make_dir',
-    'make_dirs',
-    'make_file',
-    'make_link',
-    'make_links',
-    'make_shortcut',
-    'move',
-    'move_file',
-    'move_tree',
-    'remove',
-    'remove_file',
-    'remove_tree',
-    'unzip',
-    'unzip_file',
-    'zip',
-    'zip_dir',
-]
-
 ProgressItem = namedtuple('ProgressItem', 'total index percent text')
-_IS_PYTHON_314_OR_HIGHER = sys.version_info >= (3, 14)
 
 
 class T:
@@ -183,10 +157,10 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
         elif overwrite is None:
             return dst
 
-    if IS_WINDOWS:
-        if main.system_privileged is True:
+    if env.IS_WINDOWS:
+        if env.system_privileged is True:
             os.symlink(src, dst, target_is_directory=os.path.isdir(src))
-        elif main.system_privileged is False:
+        elif env.system_privileged is False:
             _make_link_fallback(src, dst)
         else:  # None type. only first-time calling reaches this case.
             try:
@@ -196,12 +170,12 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
                 if 'WinError 1314' in str(e):
                     # https://docs.python.org/3/library/os.html#os.symlink
                     print(':pv6', 'fallback symlink under low privileges')
-                    main.system_privileged = False
+                    env.system_privileged = False
                     _make_link_fallback(src, dst)
                     return dst
                 raise e
             else:
-                main.system_privileged = True
+                env.system_privileged = True
 
     return dst
 
@@ -263,7 +237,7 @@ def make_shortcut(
 
     if exist(dst) and not _overwrite(dst, overwrite):
         return
-    if not IS_WINDOWS:
+    if not env.IS_WINDOWS:
         raise NotImplementedError
 
     vbs = xpath('./_temp_shortcut_generator.vbs')
@@ -309,7 +283,7 @@ move_tree = move
 def remove(dst: str) -> None:
     if os.path.isfile(dst):
         os.remove(dst)
-    elif main.islink(dst):
+    elif islink(dst):
         os.unlink(dst)
     elif os.path.isdir(dst):
         shutil.rmtree(dst)
@@ -320,14 +294,14 @@ def remove(dst: str) -> None:
 def remove_file(dst: str) -> None:
     if os.path.isfile(dst):
         os.remove(dst)
-    elif main.islink(dst):
+    elif islink(dst):
         os.unlink(dst)
     else:
         raise Exception('inexistent or invalid path type', dst)
 
 
 def remove_tree(dst: str) -> None:
-    if main.islink(dst):
+    if islink(dst):
         os.unlink(dst)
     elif os.path.isdir(dst):
         shutil.rmtree(dst)
@@ -396,7 +370,7 @@ def zip_dir(
                 #       fast: ZIP_STORED
                 #       normal: ZIP_DEFLATED
                 #       maximum: ZIP_DEFLATED
-                _IS_PYTHON_314_OR_HIGHER
+                env.IS_PYTHON_314_OR_HIGHER
                 and zipfile.ZIP_ZSTANDARD
                 or compression_level == 'fast'
                 and zipfile.ZIP_STORED
@@ -407,7 +381,7 @@ def zip_dir(
                 #   ZIP_ZSTANDARD: -5 for fast, 3 for normal, 19 for maximum.
                 #   ZIP_STORED: value has no effect.
                 #   ZIP_DEFLATED: 1 for fast, 6 for normal, 9 for maximum.
-                _IS_PYTHON_314_OR_HIGHER
+                env.IS_PYTHON_314_OR_HIGHER
                 and (
                     compression_level == 'fast'
                     and -5
@@ -937,7 +911,7 @@ def _safe_long_path(path: str) -> str:
     avoid path limit error in windows.
     ref: docs/devnote/issues-summary-202401.zh.md
     """
-    if IS_WINDOWS:
+    if env.IS_WINDOWS:
         return '\\\\?\\' + os.path.abspath(path)
     return path
 
