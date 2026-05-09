@@ -12,16 +12,16 @@ class Activity:
     _process: t.Generator
     _remark: str
     _task: t.Optional[t.Callable[[...], t.Generator]]
-    
+
     @property
     def running(self) -> bool:
         return self.state == 'running'
-    
+
     def __init__(
         self,
         task: t.Optional[t.Callable[[...], t.Generator]],
         remark: str = '',
-        _generator: t.Generator = None,
+        _generator: t.Optional[t.Generator] = None,
     ) -> None:
         self.state = 'idle'
         self._remark = remark or str(task)
@@ -29,38 +29,38 @@ class Activity:
         if task is None:
             assert isinstance(_generator, GeneratorType)
             self._process = _generator
-    
+
     def __next__(self) -> t.Generator:
         assert self.state == 'running'
         return next(self._process)
-    
+
     def __str__(self) -> str:
         return self._remark
-    
-    def start(self, *args, **kwargs) -> t.Self:
+
+    def start(self, *args, **kwargs) -> 'Activity':
         self.state = 'running'
         if self._task:
             self._process = self._task(*args, **kwargs)
             assert isinstance(self._process, GeneratorType)
         return self
-    
+
     def pause(self) -> None:
         self.state = 'paused'
-    
+
     def resume(self) -> None:
         # assert self.state == 'paused'
         # assert self.state not in ('stopped', 'cancelled')
         self.state = 'running'
-    
+
     def stop(self) -> None:
         # currently this state is equal to "paused"
         self.state = 'stopped'
-    
+
     def restart(self, *args, **kwargs) -> None:
         assert self._task, 'Cannot restart a generator object'
         # self.stop()
         self.start(*args, **kwargs)
-    
+
     def cancel(self) -> None:
         self.state = 'cancelled'
         # wait for background loop to recycle it.
@@ -69,21 +69,24 @@ class Activity:
 class BackgroundActivityManager:
     busy: bool
     _activities: t.Dict[int, Activity]
+    _activiting: bool
     _timer: t.Dict[int, float]
-    
+
     def __init__(self) -> None:
         self.busy = False
         self._activities = {}
+        self._activiting = False
         self._timer = {}
         self._mainloop()
-    
+
     def __bool__(self) -> bool:
         return bool(self._activities)
 
     def close(self) -> None:
         self._activities.clear()
+        self._activiting = False
         self._timer.clear()
-    
+
     @staticmethod
     def delay(sec: t.Union[int, float]) -> '_Delay':
         """
@@ -95,20 +98,21 @@ class BackgroundActivityManager:
             act = bg.register_activity(mytask()).start()
 
         suggestion:
-            if your task needs long delay (e.g. >=1s), use this function; else -
+            if your task needs long delay (e.g. >=1s), use this function; else 
             no need to use -- just follow the background loop's schedule.
         """
         return _Delay(sec)
-    
+
     def register_activity(
         self,
         task: t.Union[t.Callable[[...], t.Generator], t.Generator],
-        remark: str = ''
+        remark: str = '',
     ) -> Activity:
         if isinstance(task, GeneratorType):
             print(
                 'directly registering a generator as activity is deprecated. '
-                'use callable instead.', ':v5p'
+                'use callable instead.',
+                ':v5p',
             )
             act = self._activities[id(task)] = Activity(
                 None, remark, _generator=task
@@ -117,19 +121,21 @@ class BackgroundActivityManager:
             assert callable(task)
             act = self._activities[id(task)] = Activity(task, remark)
         return act
-    
+
     @contextmanager
     def suspending(self) -> t.Iterator:
         """
         suspend all background activities.
         """
         self.busy = True
+        while self._activiting:
+            sleep(10e-3)
         yield
         self.busy = False
-    
+
     # def unregister_activity(self, task_id: int) -> None:
     #     self._activities.pop(task_id)
-    
+
     @new_thread()
     def _mainloop(self) -> None:
         while True:
@@ -137,20 +143,21 @@ class BackgroundActivityManager:
                 sleep(3)
                 continue
             
+            self._activiting = True
             for id in tuple(self._activities.keys()):
                 # print(id, ':iv')
+                if self.busy:  # check busy again, in the key point.
+                    break
                 if self._timer.get(id):
                     if time() > self._timer[id]:
                         self._timer.pop(id)
                     else:
                         sleep(10e-3)
                         continue
-                
-                act = self._activities.get(id)
+
+                act = self._activities[id]
                 if act.state == 'running':
                     try:
-                        if self.busy:  # check busy again, in the key point.
-                            break
                         x = next(act)
                     except StopIteration:
                         print(':v7', 'remove finished activity', act)
@@ -168,11 +175,12 @@ class BackgroundActivityManager:
                         if x and isinstance(x, _Delay):
                             self._timer[id] = time() + x.value
                     finally:
-                        sleep(10e-3)
+                        sleep(5e-3)
                 elif act.state == 'cancelled':
                     print(':v7', 'recycle cancelled activity', act)
                     self._activities.pop(id)
-            sleep(100e-3)
+            self._activiting = False
+            sleep(50e-3)
 
 
 @dataclass
