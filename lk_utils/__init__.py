@@ -2,12 +2,12 @@ if 1:
     import lk_logger
     lk_logger.setup(quiet=True, show_funcname=False, show_varnames=False)
 
-if 2:
-    import sys
-    if sys.version_info[:2] < (3, 11):
-        # print('fix typing module compatibility', ':vs')
-        from . import common_typing
-        sys.modules['typing'] = common_typing
+# if 2:
+#     import sys
+#     if sys.version_info[:2] < (3, 11):
+#         # print('fix typing module compatibility', ':vs')
+#         from . import common_typing
+#         sys.modules['typing'] = common_typing
 
 from . import binding
 from . import filesys as fs
