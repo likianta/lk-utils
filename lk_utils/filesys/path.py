@@ -4,8 +4,9 @@ import typing as t
 from functools import partial
 from inspect import currentframe
 from types import FrameType
-from .env import IS_WINDOWS
+
 from .checker import isdir
+from .env import IS_WINDOWS
 
 
 class T:
@@ -186,6 +187,15 @@ def get_current_dir() -> T.AbsPath:
     return _get_frame_dir(caller_frame)
 
 
+def here(relpath: str = '.') -> T.AbsPath:
+    caller_frame = t.cast(FrameType, currentframe().f_back)
+    caller_dir = _get_frame_dir(caller_frame)
+    if relpath in ('', '.', './'):
+        return caller_dir
+    else:
+        return normpath('{}/{}'.format(caller_dir, relpath))
+
+
 def replace_ext(path: T.Path, ext: str) -> T.Path:
     """
     params:
@@ -214,6 +224,7 @@ def split(
         raise ValueError(path, parts)
 
 
+# TODO: Delete this, use only `here` in future.
 def xpath(relpath: T.Path) -> T.AbsPath:
     """
     given a relative path, return a resolved path of -

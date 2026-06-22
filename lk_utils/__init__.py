@@ -1,11 +1,6 @@
-if 1:
-    import lk_logger
-    lk_logger.setup(quiet=True, show_funcname=False, show_varnames=False)
-
-# if 2:
+# if 1:
 #     import sys
 #     if sys.version_info[:2] < (3, 11):
-#         # print('fix typing module compatibility', ':vs')
 #         from . import common_typing
 #         sys.modules['typing'] = common_typing
 
@@ -25,7 +20,7 @@ from .filesys import find_dirs
 from .filesys import find_files
 from .filesys import findall_dirs
 from .filesys import findall_files
-# from .filesys import get_current_dir
+from .filesys import here
 from .filesys import normpath
 from .filesys import xpath
 from .filesys import xpath as p

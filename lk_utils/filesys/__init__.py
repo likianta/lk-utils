@@ -36,6 +36,7 @@ from .path import filepath
 from .path import filesize
 from .path import filetime
 from .path import get_current_dir
+from .path import here
 from .path import normpath
 from .path import parent
 from .path import parent_path
