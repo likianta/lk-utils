@@ -7,6 +7,9 @@ from collections import namedtuple
 from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZipInfo
+
+import neoprint as np
+
 from . import env
 from .checker import exist
 from .checker import islink
@@ -27,7 +30,6 @@ class T:
     AnyProgress = t.Optional[t.Union[t.Callable[[ProgressItem], None], bool]]
     CompressionLevel = t.Literal['fast', 'normal', 'maximum']
     OverwriteScheme = t.Optional[bool]
-    ReportProgress = t.Optional[t.Callable[[int, int, str], None]]
 
 
 def clone_tree(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> None:
@@ -86,7 +88,7 @@ def download(
 ) -> None:
     """
     params:
-        keep_file: whether to keep zip file after extracting.
+        keep_file: whether to keep zip file after extraction.
     """
     if exist(path) and not _overwrite(path, overwrite):
         return
@@ -94,12 +96,15 @@ def download(
     url = url.replace(' ', '%20')
 
     # fmt: off
-    _report: T.ReportProgress
+    np_prog: t.Optional[np.Progress] = None
     if progress is True:
-        def _report(count: int, block_size: int, total_size: int) -> None:
-            _show_progress_in_console_1(total_size, block_size * count)
+        np_prog = np.Progress(indicator_style='decimal')
+        def _report_hook(count: int, block_size: int, total_size: int) -> None:
+            if np_prog.total is None:
+                np_prog.total = total_size
+            np_prog.update(block_size * count)
     elif progress:
-        def _report(count: int, block_size: int, total_size: int) -> None:
+        def _report_hook(count: int, block_size: int, total_size: int) -> None:
             progress(
                 ProgressItem(
                     total_size,
@@ -109,7 +114,7 @@ def download(
                 )
             )
     else:
-        _report = None
+        _report_hook = None
     # fmt: on
 
     if extract:
@@ -118,12 +123,15 @@ def download(
         #   using `unzip_file()` function afterwards.
         ext = url.rsplit('.', 1)[-1]
         temp_file = '{}.tmp.{}'.format(path, ext)
-        urllib.request.urlretrieve(url, temp_file, _report)
+        urllib.request.urlretrieve(url, temp_file, _report_hook)
         unzip_file(temp_file, path)
         if not keep_file:
             remove_file(temp_file)
     else:
-        urllib.request.urlretrieve(url, path, _report)
+        urllib.request.urlretrieve(url, path, _report_hook)
+    
+    if np_prog:
+        np_prog.close()
 
 
 def make_dir(dst: str) -> None:
@@ -166,10 +174,10 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
             try:
                 os.symlink(src, dst, target_is_directory=os.path.isdir(src))
             except OSError as e:
-                # print(':v8p', e)
+                # np.show(':v8p', e)
                 if 'WinError 1314' in str(e):
                     # https://docs.python.org/3/library/os.html#os.symlink
-                    print(':pv6', 'fallback symlink under low privileges')
+                    np.show(':pv6', 'fallback symlink under low privileges')
                     env.system_privileged = False
                     _make_link_fallback(src, dst)
                     return dst
@@ -343,16 +351,15 @@ def zip_dir(
         return dst
 
     # fmt: off
-    _report: T.ReportProgress
+    _report1: t.Optional[np.Progress] = None
+    _report2: t.Optional[t.Callable[[int, int, str], None]] = None
     if progress is True:
-        _report = _show_progress_in_console_2
+        _report1 = np.Progress()
     elif progress:
-        def _report(total: int, index: int, name: str) -> None:
+        def _report2(total: int, index: int, name: str) -> None:
             progress(
                 ProgressItem(total, index, min((1.0, index / total)), name)
             )
-    else:
-        _report = None
     # fmt: on
 
     if dst.endswith('.zip'):
@@ -360,6 +367,8 @@ def zip_dir(
         todo_dirs = tuple(findall_dirs(src))
         todo_files = tuple(findall_files(src))
         total = len(todo_dirs) + len(todo_files)
+        if _report1:
+            _report1.total = total
 
         # https://chatgpt.com/share/69f010ae-553c-8320-8e88-00cb37b1b409
         zip_options = {
@@ -407,15 +416,19 @@ def zip_dir(
             i = 0
             for d in todo_dirs:
                 i += 1
-                if _report:
-                    _report(total, i, d.name)
+                if _report1:
+                    _report1.update(d.name)
+                elif _report2:
+                    _report2(total, i, d.name)
                 handle.write(
                     d.path, arcname='{}/{}'.format(top_name, d.relpath)
                 )
             for f in todo_files:
                 i += 1
-                if _report:
-                    _report(total, i, f.name)
+                if _report1:
+                    _report1.update(f.name)
+                elif _report2:
+                    _report2(total, i, f.name)
                 handle.write(
                     f.path, arcname='{}/{}'.format(top_name, f.relpath)
                 )
@@ -426,6 +439,8 @@ def zip_dir(
         top_name = basename(src)
         todo_paths = tuple(findall_dirs(src)) + tuple(findall_files(src))
         total = len(todo_paths)
+        if _report1:
+            _report1.total = total
 
         # https://chatgpt.com/share/69f01d60-62a4-8320-aee3-b7ef6f390ddf
         zip_options = {
@@ -453,19 +468,22 @@ def zip_dir(
         ) as handle:
             handle.write(src, arcname=top_name)
             for i, p in enumerate(todo_paths, 1):
-                if _report:
-                    _report(total, i, p.name)
+                if _report1:
+                    _report1.update(p.name)
+                elif _report2:
+                    _report2(total, i, p.name)
                 handle.write(
                     os.path.realpath(p.path),
                     arcname='{}/{}'.format(top_name, p.relpath),
                 )
 
     elif dst.endswith('.tar.zst'):
+        # fmt: off
         # https://chatgpt.com/share/69dde78d-8348-8321-b90d-0efc090f6b4f
         import tarfile
-
         # from compression import zstd  # TODO
         import zstandard as zstd  # pip install zstandard
+        # fmt: on
 
         top_name = basename(src)
         todo_files = tuple(findall_files(src))
@@ -483,6 +501,8 @@ def zip_dir(
             todo_dirs = ()
         total = len(todo_dirs) + len(todo_files)
         empty = xpath('.empty')
+        if _report1:
+            _report1.total = total
 
         with open(dst, 'wb') as file_out:
             with zstd.ZstdCompressor(**zip_options).stream_writer(
@@ -493,8 +513,10 @@ def zip_dir(
                     i = 0
                     for f in todo_files:
                         i += 1
-                        if _report:
-                            _report(total, i, f.name)
+                        if _report1:
+                            _report1.update(f.name)
+                        elif _report2:
+                            _report2(total, i, f.name)
                         if os.path.islink(f.path):
                             full_path = os.path.realpath(f.path)
                         else:
@@ -506,8 +528,12 @@ def zip_dir(
                     if keep_empty_folders:
                         for d in todo_dirs:
                             i += 1
-                            if _report:
-                                _report(
+                            if _report1:
+                                _report1.update(
+                                    d.rsplit('/', 1)[-1] + '/.empty'
+                                )
+                            elif _report2:
+                                _report2(
                                     total, i, d.rsplit('/', 1)[-1] + '/.empty'
                                 )
                             tar.add(
@@ -518,8 +544,8 @@ def zip_dir(
     else:
         raise Exception('no handler to compress this file type', dst)
 
-    if _report and progress is True:
-        print('', ':s2')
+    if _report1:
+        _report1.close()
     return dst
 
 
@@ -539,23 +565,22 @@ def unzip_file(
             if src.endswith(('.zip', '.7z'))
             else src.rsplit('.', 2)[0]
         )
-    # print(src, dst, overwrite, exist(path_o), ':lvp')
+    # np.show(src, dst, overwrite, exist(path_o), ':lvp')
     if exist(dst) and not _overwrite(dst, overwrite):
         return dst
     else:
         dst = dst.replace('\\', '/')
 
     # fmt: off
-    _report: T.ReportProgress
+    _report1: t.Optional[np.Progress] = None
+    _report2: t.Optional[t.Callable[[int, int, str], None]] = None
     if progress is True:
-        _report = _show_progress_in_console_2
+        _report1 = np.Progress()
     elif progress:
-        def _report(total: int, index: int, name: str) -> None:
+        def _report2(total: int, index: int, name: str) -> None:
             progress(
                 ProgressItem(total, index, min((1.0, index / total)), name)
             )
-    else:
-        _report = None
     # fmt: on
 
     if src.endswith('.zip'):
@@ -563,7 +588,7 @@ def unzip_file(
         def detect_single_top(handle: ZipFile) -> str:
             top_names = set()
             for name in handle.namelist():
-                # print(name, ':vi')
+                # np.show(name, ':vi')
                 if name.endswith('/'):
                     if '/' not in name[:-1]:
                         top_names.add(name[:-1])
@@ -577,7 +602,7 @@ def unzip_file(
         with ZipFile(src, 'r', **zip_options) as handle:
             top_name_i = detect_single_top(handle)
             top_name_o = dirname(dst)
-            # print(top_name_i, top_name_o, rewrite_top_name, ':v')
+            # np.show(top_name_i, top_name_o, rewrite_top_name, ':v')
             trim_src_prefix = False
             if top_name_i:
                 if top_name_i == top_name_o or rewrite_top_name:
@@ -598,21 +623,27 @@ def unzip_file(
                         if '/' in relpath:
                             todo_dirs.add(relpath.rsplit('/', 1)[0])
             total = len(todo_dirs) + len(todo_files)
+            if _report1:
+                _report1.total = total
 
             # -- make dirs
             os.mkdir(dst)
             i = 0
             for relpath in sorted(todo_dirs):
-                if _report:
+                if _report1:
+                    _report1.update(relpath)
+                elif _report2:
                     i += 1
-                    _report(total, i, relpath)
+                    _report2(total, i, relpath)
                 os.makedirs(dst + '/' + relpath, exist_ok=True)
 
             # -- dump files
             for relpath, info, time in sorted(todo_files, key=lambda x: x[0]):
-                if _report:
+                if _report1:
+                    _report1.update(relpath)
+                elif _report2:
                     i += 1
-                    _report(total, i, relpath)
+                    _report2(total, i, relpath)
                 with handle.open(info) as f_reader:
                     with open(dst + '/' + relpath, 'wb') as f_writer:
                         shutil.copyfileobj(f_reader, f_writer)
@@ -646,7 +677,7 @@ def unzip_file(
             if top_name_i:
                 if top_name_i == top_name_o or rewrite_top_name:
                     trim_src_prefix = True
-            print(top_name_i, top_name_o, trim_src_prefix, ':v')
+            np.show(top_name_i, top_name_o, trim_src_prefix, ':v')
 
             # --- a
             # reimplementation of `py7zr.SevenZipFile.extractall()`,
@@ -659,16 +690,20 @@ def unzip_file(
                 src_start
                 + worker.header.main_streams.packinfo.packpositions[-1]
             )
-            # print(src_start, src_end, ':v')
+            # np.show(src_start, src_end, ':v')
             handle.fp.seek(src_start)
 
             out_root = Path(dst)
             total = len(handle.files)
             just_checks = []
+            if _report1:
+                _report1.total = total
 
             for i, f in enumerate(handle.files, 1):
-                if _report:
-                    _report(total, i, f.filename)
+                if _report1:
+                    _report1.update(f.filename)
+                elif _report2:
+                    _report2(total, i, f.filename)
 
                 if trim_src_prefix:
                     if f.filename == top_name_i:
@@ -682,7 +717,7 @@ def unzip_file(
                 )
                 assert relpath
 
-                # print(
+                # np.show(
                 #     i,
                 #     f.filename,
                 #     # f.emptystream,
@@ -720,157 +755,11 @@ def unzip_file(
                     if reserve_file_mtime and f.lastwritetime:
                         mtime = int(filetime_to_dt(f.lastwritetime).timestamp())
                         os.utime(str(out_path), (mtime, mtime))
-
-            # resolve empty directories.
-            # for f in handle.files:
-            #     if f.is_directory:
-            #         if relpath := (
-            #             f.filename[len(top_name_i) + 1 :]
-            #             if trim_src_prefix
-            #             else f.filename
-            #         ):
-            #             print('post fix empty folder', relpath, ':v')
-            #             out_path = '{}/{}'.format(dst, relpath)
-            #             if not os.path.exists(out_path):
-            #                 os.makedirs(out_path)
-
-            # --- b
-
-            # # https://github.com/miurahr/py7zr/issues/526#issue-1816063884
-            # class MyCallback(ExtractCallback):
-            #     def __init__(
-            #         self,
-            #         total_bytes: int,
-            #         report_hook: t.Callable[[int, int, str], None],
-            #     ) -> None:
-            #         self._total = total_bytes
-            #         self._report_hook = report_hook
-
-            #     def report_update(self, decompressed_bytes: str) -> None:
-            #         self._report_hook(self._total, int(decompressed_bytes), '')
-
-            #     # --------------------------------------------------------------
-
-            #     def report_start_preparation(self) -> None:
-            #         pass
-
-            #     def report_start(
-            #         self, processing_file_path: str, processing_bytes: str
-            #     ) -> None:
-            #         pass
-
-            #     def report_end(
-            #         self, processing_file_path: str, wrote_bytes: str
-            #     ) -> None:
-            #         pass
-
-            #     def report_warning(self, message: str) -> None:
-            #         pass
-
-            #     def report_postprocess(self) -> None:
-            #         pass
-
-            # if progress is True:
-            #     _callback = MyCallback(
-            #         handle.archiveinfo().uncompressed,
-            #         _show_progress_in_console_1,
-            #     )
-            # elif progress:
-            #     _callback = MyCallback(
-            #         handle.archiveinfo().uncompressed,
-            #         lambda total, curr, desc: ProgressItem(
-            #             total, curr, min((1.0, curr / total)), ''
-            #         ),
-            #     )
-            # else:
-            #     _callback = None
-
-            # if trim_src_prefix:
-            #     dst_temp = dst + '_(7z_temp_extracted)'
-            #     handle.extractall(dst_temp, callback=_callback)
-            #     shutil.move(dst_temp + '/' + top_name_i, dst)
-            #     shutil.rmtree(dst_temp)
-            # else:
-            #     handle.extractall(dst, callback=_callback)
-            # if reserve_file_mtime:
-            #     for f in handle.files:
-            #         if f.lastwritetime:
-            #             path = '{}/{}'.format(
-            #                 dst,
-            #                 f.filename[len(top_name_i) + 1 :]
-            #                 if trim_src_prefix
-            #                 else f.filename,
-            #             )
-            #             time = int(filetime_to_dt(f.lastwritetime).timestamp())
-            #             os.utime(path, (time, time))
-
-            # ---
-
-            # todo_dirs: t.Set[str] = set()
-            # todo_files: t.Set[t.Tuple[str, ArchiveFile, int]] = set()
-            # # todo_files: t.Set[t.Tuple[str, str, int]] = set()
-            # for info in handle.files:
-            #     name = (
-            #         info.filename[len(top_name_i) + 1 :]
-            #         if trim_src_prefix
-            #         else info.filename
-            #     )
-            #     if info.is_directory:
-            #         todo_dirs.add(name.rstrip('/'))
-            #     else:
-            #         time = (
-            #             int(filetime_to_dt(info.lastwritetime).timestamp())
-            #             if info.lastwritetime
-            #             else 0
-            #         )
-            #         todo_files.add((name, info, time))
-            #         if '/' in name:
-            #             todo_dirs.add(name.rsplit('/', 1)[0])
-            # total = len(todo_dirs) + len(todo_files)
-
-            # # -- make dirs
-            # os.mkdir(dst)
-            # os.mkdir(temp_dir := dst + '/._temp_7z_extracted')
-            # i = 0
-            # for relpath in sorted(todo_dirs):
-            #     if _report:
-            #         i += 1
-            #         _report(total, i, relpath)
-            #     os.makedirs(dst + '/' + relpath, exist_ok=True)
-
-            # # def _skip_check(*_, **__):
-            # #     pass
-
-            # # setattr(handle.worker, '_check', _skip_check)
-
-            # # -- dump files
-            # for relpath, info, time in sorted(todo_files, key=lambda x: x[0]):
-            #     if _report:
-            #         i += 1
-            #         _report(total, i, relpath)
-            #     # -- c
-            #     # handle.extract(targets=[info.filename], path=temp_dir)
-            #     # shutil.move(temp_dir + '/' + info.filename, dst + '/' + relpath)
-            #     # -- d
-            #     # data = handle.read((key,))[key]
-            #     # f_reader = t.cast(t.BinaryIO, info.data())
-            #     # if f_reader is None:
-            #     #     raise Exception(relpath, info)
-            #     # with open(dst + '/' + relpath, 'wb') as f_writer:
-            #     #     f_writer.write(f_reader.read())
-            #     # -- e: minimal implementation of `py7zr.SevenZipFile.extract()`
-            #     file_o = Path(dst + '/' + relpath)
-            #     handle.worker.register_filelike(info.id, file_o)
-            #     handle.worker.extract(handle.fp, file_o.parent, parallel=False)
-            #     if reserve_file_mtime and time:
-            #         os.utime(dst + '/' + relpath, (time, time))
-            # shutil.rmtree(temp_dir)
-
     else:
         raise NotImplementedError
-
-    if _report and progress is True:
-        print('', ':s2')
+    
+    if _report1:
+        _report1.close()
     return dst
 
 
@@ -914,45 +803,3 @@ def _safe_long_path(path: str) -> str:
     if env.IS_WINDOWS:
         return '\\\\?\\' + os.path.abspath(path)
     return path
-
-
-def _show_progress_in_console_1(
-    total: float, current: float, desc: str = ''
-) -> None:
-    """
-    size-based progress bar.
-    """
-    prog = current / total
-    print(
-        ':s1r',
-        '[red]{}[/][bright_black]{}[/] {}'.format(
-            '-' * round(prog * 60),
-            '-' * (60 - round(prog * 60)),
-            desc
-            and '{} ({:.2%})'.format(_padding_text(desc, 40), prog)
-            or '{:.2%}'.format(prog),
-        ),
-        end='\r',
-    )
-
-
-def _show_progress_in_console_2(
-    total: t.Union[float, int], current: t.Union[float, int], desc: str = ''
-) -> None:
-    """
-    count-based progress bar.
-    """
-    prog = current / total
-    print(
-        ':s1r',
-        '\\[{}/{}] [red]{}[/][bright_black]{}[/] {}'.format(
-            current,
-            total,
-            '-' * round(prog * 60),
-            '-' * (60 - round(prog * 60)),
-            desc
-            and '{} ({:.2%})'.format(_padding_text(desc, 40), prog)
-            or '{:.2%}'.format(prog),
-        ),
-        end='\r',
-    )
