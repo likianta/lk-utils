@@ -68,11 +68,11 @@ class Task:
         self._target_inst = None
         self._updated_callbacks = {}
     
-    def __call__(self, *args, **kwargs) -> t.Self:
+    def __call__(self, *args, **kwargs) -> 'Task':
         self.run(*args, **kwargs)
         return self
     
-    def __get__(self, instance, owner) -> t.Self:
+    def __get__(self, instance, owner) -> 'Task':
         self._target_inst = instance
         return self
     
@@ -82,7 +82,7 @@ class Task:
     
     @property
     def over(self) -> bool:
-        return self._over
+        return t.cast(bool, self._over)
     
     @property
     def result(self) -> t.Any:
@@ -144,7 +144,7 @@ class Task:
                 self._crashed_callbacks[k](error)
         else:
             print(':e', error)
-            print(':v4', 'task broken!', self.id)
+            print(':v6', 'task broken!', self.id)
     
     # -------------------------------------------------------------------------
     
@@ -160,7 +160,7 @@ class Task:
                 break
         return self.result
     
-    def partial(self, *args, **kwargs) -> t.Self:
+    def partial(self, *args, **kwargs) -> 'Task':
         """
         usage:
             @coro_mgr().partial(123)
@@ -198,9 +198,8 @@ class Task:
             coro_mgr.add_to_running_loop(self, self._rollup())
         else:
             print(
-                '[yellow dim]task is not awaitable, '
-                'the result is returned immediately.[/]',
-                ':pr'
+                'task is not awaitable, the result is returned immediately.',
+                ':pv5'
             )
             final_result = pending_result
             self.update(final_result)
@@ -313,7 +312,7 @@ class CoroutineManager:
         print(':tp', 'all tasks done')
     
     def kill(self, *args) -> None:
-        print(':v4s', 'force kill', args)
+        print(':v7s', 'force kill', args)
         self._killed = True
         self._mainloop_thread.join()
         # raise SystemExit

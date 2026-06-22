@@ -1,15 +1,15 @@
 import atexit
 import os
+import psutil
 import re
 import shlex
 import subprocess as sp
 import typing as t
-
-import psutil
-from rich.text import Text
 from time import sleep
 
-from lk_logger import bprint
+from neoprint import bprint
+from rich.text import Text
+
 from .threading import Thread
 from .threading import new_thread
 from .threading import run_new_thread
@@ -21,7 +21,7 @@ _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 class Popen(sp.Popen):
     communication_thread: t.Optional[Thread]
     _introspection: bool
-    
+
     def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.communication_thread = None
@@ -29,31 +29,33 @@ class Popen(sp.Popen):
         atexit.register(self.kill)
         if keep_alive:
             self._watch_self_status()
-    
+
     @property
     def is_alive(self) -> bool:
         # return self.poll() is None
         return psutil.pid_exists(self.pid) and self.poll() is None
-    
+
     def kill(self) -> None:
         """
         kill self and child processes.
         """
-        if not self.is_alive: return
+        if not self.is_alive:
+            return
         pid = self.pid
         try:
             parent = psutil.Process(pid)
         except psutil.NoSuchProcess:
             return
-        print(':r', '[red dim]kill process: {} ({})[/]'.format(
-            pid, parent.name()
-        ))
+        print(':v7', 'kill process: {} ({})'.format(pid, parent.name()))
         self._introspection = False
         for child in parent.children(recursive=True):
             try:
-                print(':r', '[red dim]|- kill child process: {} ({})[/]'.format(
-                    child.pid, child.name()
-                ))
+                print(
+                    ':v7',
+                    '|- kill child process: {} ({})'.format(
+                        child.pid, child.name()
+                    ),
+                )
                 child.kill()
             except psutil.NoSuchProcess:
                 pass
@@ -62,9 +64,9 @@ class Popen(sp.Popen):
         except psutil.NoSuchProcess:
             pass
         if self.communication_thread:
-            print('[red dim]cut off subprocess printing.[/]', ':r')
+            print('cut off subprocess printing.', ':v7')
             self.communication_thread.kill()
-    
+
     @new_thread()
     def _watch_self_status(self) -> None:
         self._introspection = True
@@ -85,17 +87,17 @@ def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
             if mirror is empty, returns ['pip', 'install', 'lk-utils']
             else returns ['pip', 'install', 'lk-utils', '-i', mirror]
     """
-    
+
     def flatten(seq: t.Sequence) -> t.Iterator:
         for s in seq:
             if isinstance(s, (tuple, list)):
                 yield from flatten(s)
             else:
                 yield s
-    
+
     def stringify(x: t.Optional[t.AnyStr]) -> str:
         return '' if x is None else str(x).strip()
-    
+
     out = []
     for a in args:
         if isinstance(a, (tuple, list)):
@@ -127,7 +129,7 @@ def run_cmd_args(
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
     -command-output-and-show-it-in-terminal-at-realtime
-    
+
     params:
         force_term_color:
             by default (force_term_color=False), the prints from subprocess
@@ -143,7 +145,7 @@ def run_cmd_args(
                     https://rich.readthedocs.io/en/stable/console.html#terminal
                     -detection
         _refmt_args: set to False is faster. this is for internal use.
-    
+
     returns:
         if ignore_return:
             return None
@@ -152,7 +154,7 @@ def run_cmd_args(
                 return <string>
             else:
                 return <Popen object>
-    
+
     memo:
         `sp.run` is blocking, `sp.Popen` is non-blocking.
     """
@@ -162,7 +164,7 @@ def run_cmd_args(
     #     assert all(isinstance(x, str) for x in args)
     if verbose:
         print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
-    
+
     def communicate(
         remove_ansi_code: t.Optional[bool] = None,
         #   https://stackoverflow.com/questions/14693701
@@ -172,7 +174,7 @@ def run_cmd_args(
         """
         yield: line, without '\n' at the end.
         """
-        
+
         def readlines(source: t.IO) -> t.Iterator[str]:
             last: bytes = b''
             curr: bytes
@@ -197,47 +199,44 @@ def run_cmd_args(
                     break
             if temp:
                 yield (temp + b'\n').decode(errors='ignore')
-        
-        for line in readlines(process.stdout):
+
+        for line in readlines(process.stdout):  # type: ignore
             if verbose:
                 bprint(line, end='', flush=True)
             if remove_ansi_code:
                 yield _ANSI_ESCAPE.sub('', line)
             else:
                 yield line.rstrip()
-    
+
     def format_error(stdout: str) -> str:
         if verbose:  # we have printed the stdout, so do nothing.
             pass
         else:  # better to dump the stdout message to console.
             if stdout:
-                print(':s1r', '[red dim]original output from subprocess:[/]')
-                print(':s1r1', Text.from_ansi(
-                    textwrap.wrap(stdout, 4), style='red dim'
-                ))
+                print(':s1v7', 'original output from subprocess:')
+                print(
+                    ':s1r1',
+                    Text.from_ansi(textwrap.wrap(stdout, 4), style='red dim'),
+                )
             # print(':dv8', 'subprocess error')
         return textwrap.wrap(
-            '''
+            """
             error happened with exit code {}.
             the origin run command is:
                 {}
             each element is:
                 {}
-            ''',
+            """,
             lstrip=False,
         ).format(
             retcode,
             ' '.join(args),
             textwrap.join(
-                (
-                    '{:<2}  {}'.format(i, x)
-                    for i, x in enumerate(args, 1)
-                ),
-                8,
+                ('{:<2}  {}'.format(i, x) for i, x in enumerate(args, 1)), 8
             ),
         )
-    
-    '''
+
+    """
     backup: the 'pty' scheme:
         if sys.platform == 'win32':
             # pip install pywinpty
@@ -252,14 +251,14 @@ def run_cmd_args(
             line = p.readline()
             bprint(line)
             ...
-    '''
-    
+    """
+
     if env is None:
         if force_term_color:
             env = os.environ.copy()
             env['LK_LOGGER_FORCE_COLOR'] = '1'
         else:
-            env = os.environ
+            env = t.cast(dict, os.environ)
     else:
         if force_term_color:
             env['LK_LOGGER_FORCE_COLOR'] = '1'
@@ -278,7 +277,7 @@ def run_cmd_args(
         text=False,
         env=env,
     )
-    
+
     if blocking:
         comm = communicate(remove_ansi_code=force_term_color)
         if ignore_return:

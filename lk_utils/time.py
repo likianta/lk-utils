@@ -1,15 +1,11 @@
 import time
+import typing as tp
 from contextlib import contextmanager
-from typing import Any
-from typing import Callable
-from typing import Iterator
-from typing import Literal
-from typing import Union
 from collections import namedtuple
 
 
 class T:
-    Time = Union[int, float]
+    Time = tp.Union[int, float]
 
 
 def now(fmt: str = 'y-m-d h:n:s'):
@@ -47,7 +43,7 @@ def pretty_time(t: T.Time, fmt: str = 'y-m-d h:n:s') -> str:
 
 
 @contextmanager
-def timing() -> Iterator[Callable[[], None]]:
+def timing() -> tp.Iterator[tp.Callable[[], None]]:
     """
     example:
         with timing() as countup:
@@ -101,28 +97,28 @@ def timing() -> Iterator[Callable[[], None]]:
                     pretty_duration(shortest_interval), shortest_index,
                 ),
             },
-            ':r2p'
+            ':l2p2'
         )
     else:
         print('total_time: {}'.format(pretty_duration(end - start)), ':p')
 
 
 def timeit(
-    target: Union[Iterator, Callable],
-    type: Literal['auto', 'callable', 'iterator'] = 'iterator'
-) -> Any:
+    target: tp.Union[tp.Iterator, tp.Callable],
+    type: tp.Literal['auto', 'callable', 'iterator'] = 'iterator'
+) -> tp.Any:
     if type == 'auto':
         raise NotImplementedError
     if type == 'callable':
         start = time.time()
-        result = target()
+        result = target()  # type: ignore
         end = time.time()
         print('total_time: {}'.format(pretty_duration(end - start)), ':p')
         return result
     else:
         with timing() as countup:
             result = []
-            for datum in target():
+            for datum in target():  # type: ignore
                 result.append(datum)
                 countup()
         return result
@@ -143,12 +139,12 @@ def timestamp(fmt: str = 'y-m-d h:n:s', t: T.Time = None) -> str:
         return time.strftime(fmt, time.localtime(t))
 
 
-_ProgressItem = namedtuple('Progress', 'total index percent')
+_ProgressItem = namedtuple('_ProgressItem', 'total index percent')
 
 
 def wait(
     timeout: float, interval: float = 1, timeout_error: bool = True
-) -> Iterator[_ProgressItem]:
+) -> tp.Iterator[_ProgressItem]:
     count = int(timeout / interval)
     for i in range(count):
         yield _ProgressItem(count, i + 1, (i + 1) / count)

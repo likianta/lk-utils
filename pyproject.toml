@@ -1,28 +1,28 @@
 [project]
 name = "lk-utils"
-version = "3.6.0b4"
+version = "3.6.0b14"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "argsense>=1.2.0a2",
-    "neoprint>=0.1.0a6; python_version >= '3.10'",
+    "argsense>=1.2.0a6",
+    "neoprint>=0.1.0a40",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
-    "rich>=15.0.0",
+    "rich>=14.0.0",  # prefer ^15.0.0
     # "typing-extensions>=4.0.0",
 ]
 
 [build-system]
-requires = ["hatchling"]
 build-backend = "hatchling.build"
+requires = ["hatchling>=1.29.0"]
 
 [dependency-groups]
 dev = [
     "ipython>=9.13.0; python_version >= '3.12'",
-    "lk-logger>=6.0.8a1",
+    # "lk-logger>=6.0.8a1",
     "py7zr>=1.1.0; python_version >= '3.10'",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
@@ -31,7 +31,7 @@ dev = [
 
 [project.optional-dependencies]
 all = [
-    "ipython>=9.12.0; python_version >= '3.12'",
+    "ipython>=9.13.0; python_version >= '3.12'",
     "py7zr>=1.1.0; python_version >= '3.10'",
     "toml>=0.10.2; python_version < '3.11'",
     "xlrd==1.2.0",
@@ -39,7 +39,7 @@ all = [
     "zstandard>=0.25.0; python_version < '3.14'",
 ]
 dbg = [
-    "ipython>=9.12.0; python_version >= '3.12'"
+    "ipython>=9.13.0; python_version >= '3.12'",
 ]
 exl = [
     "xlrd==1.2.0",
@@ -58,8 +58,8 @@ zip = [
     "zstandard>=0.25.0; python_version < '3.14'"
 ]
 
-# [project.scripts]
-# lkrun = "lk_utils.runner:run"
+[project.scripts]
+lkrun = "lk_utils.runner:run"
 
 [project.urls]
 homepage = "https://github.com/likianta/lk-utils"
@@ -72,16 +72,27 @@ line-length = 80
 
 [tool.ruff.format]
 quote-style = "single"
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+extend-select = ["E501"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
-no-sections = true
+# no-sections = true
+relative-imports-order = "closest-to-furthest"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 83
 
 [tool.ty.rules]
 invalid-type-form = "ignore"
+
+[tool.uv]
+prerelease = "allow"
 
 [[tool.uv.index]]
 name = "tsinghua"
@@ -91,7 +102,7 @@ default = true
 [[tool.uv.index]]
 name = "likianta"
 url = "http://localhost:2191/"
-explicit = true
+# explicit = true
 
 [tool.uv.sources]
 argsense = { index = "likianta" }

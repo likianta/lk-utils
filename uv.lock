@@ -8,16 +8,19 @@ resolution-markers = [
     "python_full_version < '3.10'",
 ]
 
+[options]
+prerelease-mode = "allow"
+
 [[package]]
 name = "argsense"
-version = "1.2.0a2"
+version = "1.2.0a6"
 source = { registry = "http://localhost:2191/" }
 dependencies = [
-    { name = "lk-logger" },
-    { name = "rich", marker = "python_full_version < '4'" },
+    { name = "neoprint" },
+    { name = "rich" },
 ]
 wheels = [
-    { url = "http://localhost:2191/argsense/argsense-1.2.0a2-py3-none-any.whl" },
+    { url = "http://localhost:2191/argsense/argsense-1.2.0a6-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -461,23 +464,12 @@ wheels = [
 ]
 
 [[package]]
-name = "lk-logger"
-version = "6.0.8a1"
-source = { registry = "http://localhost:2191/" }
-dependencies = [
-    { name = "rich", marker = "python_full_version < '4'" },
-]
-wheels = [
-    { url = "http://localhost:2191/lk-logger/lk_logger-6.0.8a1-py3-none-any.whl" },
-]
-
-[[package]]
 name = "lk-utils"
-version = "3.6.0b4"
+version = "3.6.0b14"
 source = { editable = "." }
 dependencies = [
     { name = "argsense" },
-    { name = "neoprint", marker = "python_full_version >= '3.10'" },
+    { name = "neoprint" },
     { name = "psutil" },
     { name = "pyyaml" },
     { name = "rich" },
@@ -515,7 +507,6 @@ zip = [
 [package.dev-dependencies]
 dev = [
     { name = "ipython", marker = "python_full_version >= '3.12'" },
-    { name = "lk-logger" },
     { name = "py7zr", marker = "python_full_version >= '3.10'" },
     { name = "xlrd" },
     { name = "xlsxwriter" },
@@ -524,15 +515,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "argsense", specifier = ">=1.2.0a2", index = "http://localhost:2191/" },
-    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'all'", specifier = ">=9.12.0" },
-    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'dbg'", specifier = ">=9.12.0" },
-    { name = "neoprint", marker = "python_full_version >= '3.10'", specifier = ">=0.1.0a6", index = "http://localhost:2191/" },
+    { name = "argsense", specifier = ">=1.2.0a6", index = "http://localhost:2191/" },
+    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'all'", specifier = ">=9.13.0" },
+    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'dbg'", specifier = ">=9.13.0" },
+    { name = "neoprint", specifier = ">=0.1.0a40", index = "http://localhost:2191/" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "py7zr", marker = "python_full_version >= '3.10' and extra == 'all'", specifier = ">=1.1.0" },
     { name = "py7zr", marker = "python_full_version >= '3.10' and extra == 'zip'", specifier = ">=1.1.0" },
     { name = "pyyaml", specifier = ">=6.0.0" },
-    { name = "rich", specifier = ">=15.0.0" },
+    { name = "rich", specifier = ">=14.0.0" },
     { name = "toml", marker = "python_full_version < '3.11' and extra == 'all'", specifier = ">=0.10.2" },
     { name = "toml", marker = "python_full_version < '3.11' and extra == 'io'", specifier = ">=0.10.2" },
     { name = "toml", marker = "extra == 'tml'", specifier = ">=0.10.2" },
@@ -550,24 +541,10 @@ provides-extras = ["all", "dbg", "exl", "io", "tml", "zip"]
 [package.metadata.requires-dev]
 dev = [
     { name = "ipython", marker = "python_full_version >= '3.12'", specifier = ">=9.13.0" },
-    { name = "lk-logger", specifier = ">=6.0.8a1", index = "http://localhost:2191/" },
     { name = "py7zr", marker = "python_full_version >= '3.10'", specifier = ">=1.1.0" },
     { name = "xlrd", specifier = "==1.2.0" },
     { name = "xlsxwriter", specifier = ">=3.2.9" },
     { name = "zstandard", specifier = ">=0.25.0" },
-]
-
-[[package]]
-name = "loguru"
-version = "0.7.3"
-source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
-dependencies = [
-    { name = "colorama", marker = "python_full_version >= '3.10' and sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "python_full_version >= '3.10' and sys_platform == 'win32'" },
-]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
-wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
 ]
 
 [[package]]
@@ -634,24 +611,13 @@ wheels = [
 
 [[package]]
 name = "neoprint"
-version = "0.1.0a6"
+version = "0.1.0a40"
 source = { registry = "http://localhost:2191/" }
 dependencies = [
-    { name = "loguru", marker = "python_full_version >= '3.10'" },
-    { name = "objprint", marker = "python_full_version >= '3.10'" },
-    { name = "rich", marker = "python_full_version >= '3.10'" },
+    { name = "rich" },
 ]
 wheels = [
-    { url = "http://localhost:2191/neoprint/neoprint-0.1.0a6-py3-none-any.whl" },
-]
-
-[[package]]
-name = "objprint"
-version = "0.3.0"
-source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/81/b8/c10e96120f1585824a1992655334b49da3924edfb364e84a26cc0ecdb89b/objprint-0.3.0.tar.gz", hash = "sha256:b5d83f9d62db5b95353bb42959106e1cd43010dcaa3eed1ad8d7d0b2df9b2d5a", size = 47481, upload-time = "2024-11-09T00:05:16.73Z" }
-wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ec/af/572825252f16f36eeecbc8e3b721913d2640d69b984fdb8907aa8b4b0975/objprint-0.3.0-py3-none-any.whl", hash = "sha256:489083bfc8baf0526f8fd6af74673799511532636f0ce4141133255ded773405", size = 41619, upload-time = "2024-11-09T00:05:14.852Z" },
+    { url = "http://localhost:2191/neoprint/neoprint-0.1.0a40-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -670,9 +636,9 @@ source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
 dependencies = [
     { name = "ptyprocess", marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl", hash = "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523", size = 63772, upload-time = "2023-11-25T06:56:14.81Z" },
 ]
 
 [[package]]
@@ -1077,15 +1043,6 @@ source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/2c/ee/afaf0f85a9a18fe47a67f1e4422ed6cf1fe642f0ae0a2f81166231303c52/wcwidth-0.7.0.tar.gz", hash = "sha256:90e3a7ea092341c44b99562e75d09e4d5160fe7a3974c6fb842a101a95e7eed0", size = 182132, upload-time = "2026-05-02T16:04:12.653Z" }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/41/52/e465037f5375f43533d1a80b6923955201596a99142ed524d77b571a1418/wcwidth-0.7.0-py3-none-any.whl", hash = "sha256:5d69154c429a82910e241c738cd0e2976fac8a2dd47a1a805f4afed1c0f136f2", size = 110825, upload-time = "2026-05-02T16:04:11.033Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]

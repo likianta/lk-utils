@@ -1,8 +1,13 @@
+# fmt: off
 # if 1:
 #     import sys
 #     if sys.version_info[:2] < (3, 11):
 #         from . import common_typing
 #         sys.modules['typing'] = common_typing
+if 2:
+    import neoprint as np
+    np.setup()
+# fmt: on
 
 from . import binding
 from . import filesys as fs
@@ -35,7 +40,6 @@ from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
-# from .textwrap import wrap
 from .textwrap import wrap as dedent
 from .time import now
 from .time import pretty_time
