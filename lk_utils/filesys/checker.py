@@ -1,5 +1,7 @@
 import os
 import os.path as osp
+import stat
+
 from . import env
 
 
@@ -23,7 +25,7 @@ def exist(path: str) -> bool:
         # https://stackoverflow.com/questions/75444181
         return True
     elif env.system_privileged is not True:
-        if osp.isjunction(path):  # a broken junction link  # type: ignore
+        if _is_junction(path):  # a broken junction link
             return True
     return False
 
@@ -77,7 +79,7 @@ def islink(path: str) -> bool:
     if osp.islink(path):
         return True
     if env.system_privileged is not True:
-        if osp.isjunction(path):  # type: ignore
+        if _is_junction(path):  # a broken junction link
             return True
     return False
 
@@ -94,3 +96,19 @@ def issame(a: str, b: str) -> bool:
 
 def real_exist(path: str) -> bool:
     return osp.exists(path)
+
+
+def _is_junction(path: str) -> bool:
+    # note: `os.path.isjunction` is added in python 3.12.
+    if env.IS_PYTHON_312_OR_HIGHER:
+        return osp.isjunction(path)
+    else:
+        try:
+            st = os.lstat(path)
+        except OSError:
+            return False
+        is_reparse = st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+        is_mount_tag = (
+            getattr(st, 'st_reparse_tag', 0) == stat.IO_REPARSE_TAG_MOUNT_POINT
+        )
+        return bool(is_reparse and is_mount_tag)
