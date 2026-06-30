@@ -1,10 +1,9 @@
 # fmt: off
-# if 1:
-#     import sys
-#     if sys.version_info[:2] < (3, 11):
-#         from . import common_typing
-#         sys.modules['typing'] = common_typing
-if 2:
+if 1:
+    # import sys
+    # if sys.version_info[:2] < (3, 11):
+    #     from . import common_typing
+    #     sys.modules['typing'] = common_typing
     import neoprint as np
     np.setup()
 # fmt: on
@@ -12,6 +11,7 @@ if 2:
 from . import binding
 from . import filesys as fs
 from . import importer
+from . import regex
 from . import subproc
 from . import textwrap
 from . import time
