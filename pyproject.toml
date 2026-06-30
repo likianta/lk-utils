@@ -1,14 +1,14 @@
 [project]
 name = "lk-utils"
-version = "3.6.0b17"
+version = "3.6.0"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "argsense>=1.2.0a6",
-    "neoprint>=0.1.0",
+    "argsense>=1.1.2",
+    "neoprint>=0.1.4",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
     "rich>=14.0.0",  # prefer ^15.0.0
@@ -21,7 +21,7 @@ requires = ["hatchling>=1.29.0"]
 
 [dependency-groups]
 dev = [
-    "ipython>=9.13.0; python_version >= '3.12'",
+    "ipython>=9.15.0; python_version >= '3.12'",
     # "lk-logger>=6.0.8a1",
     "py7zr>=1.1.0; python_version >= '3.10'",
     "xlrd==1.2.0",
@@ -31,7 +31,7 @@ dev = [
 
 [project.optional-dependencies]
 all = [
-    "ipython>=9.13.0; python_version >= '3.12'",
+    "ipython>=9.15.0; python_version >= '3.12'",
     "py7zr>=1.1.0; python_version >= '3.10'",
     "toml>=0.10.2; python_version < '3.11'",
     "xlrd==1.2.0",
@@ -39,7 +39,7 @@ all = [
     "zstandard>=0.25.0; python_version < '3.14'",
 ]
 dbg = [
-    "ipython>=9.13.0; python_version >= '3.12'",
+    "ipython>=9.15.0; python_version >= '3.12'",
 ]
 exl = [
     "xlrd==1.2.0",
@@ -74,12 +74,11 @@ line-length = 80
 quote-style = "single"
 skip-magic-trailing-comma = true
 
-[tool.ruff.lint]
-extend-select = ["E501"]
+# [tool.ruff.lint]
+# extend-select = ["E501"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
-# no-sections = true
 relative-imports-order = "closest-to-furthest"
 
 [tool.ruff.lint.per-file-ignores]

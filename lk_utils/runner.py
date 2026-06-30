@@ -1,11 +1,13 @@
 import os
 import sys
+
 from .filesys import abspath
 from .filesys import basename
 from .filesys import isdir
 from .filesys import parent
 from .filesys import real_exist
 from .subproc import run_cmd_args
+
 
 def run(target_path: str) -> None:
     print(sys.argv, ':lv')
@@ -22,3 +24,8 @@ def run(target_path: str) -> None:
         cwd=parent(target_path),
         ignore_return=True,
     )
+
+
+def execfile(file_path: str) -> None:
+    with open(file_path, 'r') as f:
+        exec(f.read(), globals(), locals())

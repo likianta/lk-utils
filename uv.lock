@@ -419,7 +419,7 @@ wheels = [
 
 [[package]]
 name = "ipython"
-version = "9.13.0"
+version = "9.15.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
 dependencies = [
     { name = "colorama", marker = "python_full_version >= '3.12' and sys_platform == 'win32'" },
@@ -429,14 +429,14 @@ dependencies = [
     { name = "matplotlib-inline", marker = "python_full_version >= '3.12'" },
     { name = "pexpect", marker = "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
     { name = "prompt-toolkit", marker = "python_full_version >= '3.12'" },
-    { name = "psutil", marker = "python_full_version >= '3.12'" },
+    { name = "psutil", marker = "python_full_version >= '3.12' and sys_platform != 'cygwin' and sys_platform != 'emscripten'" },
     { name = "pygments", marker = "python_full_version >= '3.12'" },
     { name = "stack-data", marker = "python_full_version >= '3.12'" },
     { name = "traitlets", marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/cd/c4/87cda5842cf5c31837c06ddb588e11c3c35d8ece89b7a0108c06b8c9b00a/ipython-9.13.0.tar.gz", hash = "sha256:7e834b6afc99f020e3f05966ced34792f40267d64cb1ea9043886dab0dde5967", size = 4430549, upload-time = "2026-04-24T12:24:55.221Z" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/53/59/165d3b4d75cc34add3122c4417ecb229085140ac573103c223cd01dde96f/ipython-9.15.0.tar.gz", hash = "sha256:da2819ce2aa83135257df830660b1176d986c3d2876db24df01974fa955b2756", size = 4442580, upload-time = "2026-06-26T11:03:35.913Z" }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b9/86/3060e8029b7cc505cce9a0137431dda81d0a3fde93a8f0f50ee0bf37a795/ipython-9.13.0-py3-none-any.whl", hash = "sha256:57f9d4639e20818d328d287c7b549af3d05f12486ea8f2e7f73e52a36ec4d201", size = 627274, upload-time = "2026-04-24T12:24:53.038Z" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/40/3a/948263ca3b9d65bb2b1b0c521b3a49fad5d59ada58724bd87d2bd5ff3f36/ipython-9.15.0-py3-none-any.whl", hash = "sha256:515ad9c3cdf0c932a5a9f6245419e8aba706b7bd03c3e1d3a1c83d9351d6aa6e", size = 630895, upload-time = "2026-06-26T11:03:33.809Z" },
 ]
 
 [[package]]
@@ -465,7 +465,7 @@ wheels = [
 
 [[package]]
 name = "lk-utils"
-version = "3.6.0b16"
+version = "3.6.0b21"
 source = { editable = "." }
 dependencies = [
     { name = "argsense" },
@@ -515,10 +515,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "argsense", specifier = ">=1.2.0a6", index = "http://localhost:2191/" },
-    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'all'", specifier = ">=9.13.0" },
-    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'dbg'", specifier = ">=9.13.0" },
-    { name = "neoprint", specifier = ">=0.1.0", index = "http://localhost:2191/" },
+    { name = "argsense", specifier = ">=1.1.2", index = "http://localhost:2191/" },
+    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'all'", specifier = ">=9.15.0" },
+    { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'dbg'", specifier = ">=9.15.0" },
+    { name = "neoprint", specifier = ">=0.1.4", index = "http://localhost:2191/" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "py7zr", marker = "python_full_version >= '3.10' and extra == 'all'", specifier = ">=1.1.0" },
     { name = "py7zr", marker = "python_full_version >= '3.10' and extra == 'zip'", specifier = ">=1.1.0" },
@@ -540,7 +540,7 @@ provides-extras = ["all", "dbg", "exl", "io", "tml", "zip"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "ipython", marker = "python_full_version >= '3.12'", specifier = ">=9.13.0" },
+    { name = "ipython", marker = "python_full_version >= '3.12'", specifier = ">=9.15.0" },
     { name = "py7zr", marker = "python_full_version >= '3.10'", specifier = ">=1.1.0" },
     { name = "xlrd", specifier = "==1.2.0" },
     { name = "xlsxwriter", specifier = ">=3.2.9" },
@@ -611,13 +611,13 @@ wheels = [
 
 [[package]]
 name = "neoprint"
-version = "0.1.0"
+version = "0.1.4"
 source = { registry = "http://localhost:2191/" }
 dependencies = [
     { name = "rich" },
 ]
 wheels = [
-    { url = "http://localhost:2191/neoprint/neoprint-0.1.0-py3-none-any.whl" },
+    { url = "http://localhost:2191/neoprint/neoprint-0.1.4-py3-none-any.whl" },
 ]
 
 [[package]]
