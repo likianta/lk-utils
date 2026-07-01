@@ -47,6 +47,10 @@ def is_empty_file(path: str) -> bool:
     return True
 
 
+def is_parent(possible_parent: str, child: str) -> bool:
+    return child.startswith(possible_parent + '/')
+
+
 def isdir(path: str) -> bool:
     if path.strip('./') == '':
         return True
@@ -82,9 +86,6 @@ def islink(path: str) -> bool:
         if _is_junction(path):  # a broken junction link
             return True
     return False
-
-
-# issame = osp.samefile
 
 
 def issame(a: str, b: str) -> bool:

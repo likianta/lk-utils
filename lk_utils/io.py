@@ -259,7 +259,7 @@ def dump(
         elif type == 'binary':
             f.write(data)
         elif type == 'toml':
-            from toml import dump as tdump  # noqa
+            from toml import dump as tdump  # ty: ignore
             tdump(data, f, **kwargs)
         else:
             raise Exception('unreachable case')

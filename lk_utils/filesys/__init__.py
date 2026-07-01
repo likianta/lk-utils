@@ -5,6 +5,7 @@ from .checker import empty
 from .checker import exist
 from .checker import is_empty_dir
 from .checker import is_empty_file
+from .checker import is_parent
 from .checker import isdir
 from .checker import isfile
 from .checker import islink
@@ -43,6 +44,7 @@ from .path import parent_path
 from .path import relpath
 from .path import replace_ext
 from .path import split
+from .path import there
 from .path import xpath
 from .shutil import ProgressItem
 from .shutil import clone_tree
