@@ -188,7 +188,7 @@ def get_current_dir() -> T.AbsPath:
 
 
 def here(relpath: str = '.') -> T.AbsPath:
-    caller_frame = t.cast(FrameType, currentframe().f_back)
+    caller_frame = t.cast(FrameType, currentframe().f_back)  # ty: ignore
     caller_dir = _get_frame_dir(caller_frame)
     if relpath in ('', '.', './'):
         return caller_dir
@@ -222,6 +222,13 @@ def split(
         return a, b, c
     else:
         raise ValueError(path, parts)
+
+
+def there(relpath: str) -> T.AbsPath:
+    assert relpath not in ('', '.', './')
+    caller_frame = t.cast(FrameType, currentframe().f_back)  # ty: ignore
+    caller_dir = _get_frame_dir(caller_frame)
+    return normpath('{}/{}'.format(caller_dir, relpath))
 
 
 # TODO: Delete this, use only `here` in future.

@@ -27,9 +27,8 @@ from .filesys import findall_dirs
 from .filesys import findall_files
 from .filesys import here
 from .filesys import normpath
+from .filesys import there
 from .filesys import xpath
-from .filesys import xpath as p
-from .filesys import xpath as relpath  # backward compatible
 from .io import dump
 from .io import load
 from .ipython import start_ipython
@@ -46,4 +45,4 @@ from .time import pretty_time
 from .time import timestamp
 from .time import wait
 
-__version__ = '3.6.0'
+__version__ = '3.6.1'
