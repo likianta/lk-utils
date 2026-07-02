@@ -52,6 +52,8 @@ def start_ipython(
     app = TerminalIPythonApp.instance(
         user_ns={'__userns__': context, **(context or {})}
     )
+    if verbosity and message:
+        app.display_banner = False
     app.initialize()
 
     # setup except hook for ipython
@@ -82,9 +84,12 @@ def _break_into_ipython(type, value, traceback) -> None:
             | {'__error__': value, 'whatsup': _whatsup},
             """
             █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░
+
+            You are getting into this place because an error occurred in your 
+            program.
             
             - To check all context variables, type `__userns__`.
-            - To check the error text, type `__error__`.
+            - To check the error message, type `__error__`.
             - To check the error details, type `raise __error__` or `whatsup()`.
             - To exit the IPython session, type `exit` or `quit`.
             
