@@ -31,6 +31,7 @@ from .filesys import there
 from .filesys import xpath
 from .io import dump
 from .io import load
+from .ipython import setup_breakpoint
 from .ipython import start_ipython
 from .subproc import Activity
 from .subproc import bg
@@ -45,4 +46,4 @@ from .time import pretty_time
 from .time import timestamp
 from .time import wait
 
-__version__ = '3.6.1'
+__version__ = '3.6.2'
