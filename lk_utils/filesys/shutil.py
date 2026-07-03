@@ -102,7 +102,7 @@ def download(
         def _report_hook(count: int, block_size: int, total_size: int) -> None:
             if np_prog.total is None:
                 np_prog.total = total_size
-            np_prog.update(block_size * count)
+            np_prog.update(str(block_size * count))
     elif progress:
         def _report_hook(count: int, block_size: int, total_size: int) -> None:
             progress(
@@ -181,7 +181,7 @@ def make_link(src: str, dst: str, overwrite: T.OverwriteScheme = None) -> str:
                     env.system_privileged = False
                     _make_link_fallback(src, dst)
                     return dst
-                raise e
+                raise
             else:
                 env.system_privileged = True
 

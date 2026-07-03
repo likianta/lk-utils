@@ -24,7 +24,7 @@ def load(
     file: str,
     type: T.FileType = 'auto',
     *,
-    default: t.Any = None,
+    default: t.Union[t.Any, t.Callable[[], t.Any]] = None,
     **kwargs
 ) -> t.Any:  # t.Union[dict, list, str, t.Iterator[str], t.List[list], ...]:
     """
@@ -38,8 +38,9 @@ def load(
             prefer_int_not_float: bool[True]
     """
     if default is not None and not os.path.exists(file):
-        dump(default, file)
-        return default
+        default_value = default() if callable(default) else default
+        dump(default_value, file)
+        return default_value
     if type == 'auto':
         type = _detect_file_type(file)
     
