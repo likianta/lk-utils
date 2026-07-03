@@ -83,7 +83,7 @@ def _break_into_ipython(type, value, traceback) -> None:
             | frame.f_locals
             | {'__error__': value, 'whatsup': _whatsup},
             """
-            █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░
+            {banner}
 
             You are getting into this place because an error occurred in your 
             program.
@@ -93,8 +93,8 @@ def _break_into_ipython(type, value, traceback) -> None:
             - To check the error details, type `raise __error__` or `whatsup()`.
             - To exit the IPython session, type `exit` or `quit`.
             
-            █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░ █ ░
-            """,
+            {banner}
+            """.format(banner='█ ░ ' * (np.console.width // 4)),
         )
         # raise value
 
