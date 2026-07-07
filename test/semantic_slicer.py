@@ -13,3 +13,7 @@ version = (
 )
 # fmt: on
 print(version, ':n')
+
+url = 'https://github.com/likianta/lk-utils'
+project = re.slice(url).find('/likianta').move(1).slice()
+print(project, ':n')

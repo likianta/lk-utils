@@ -83,6 +83,7 @@ def search(pattern: str, string: str) -> Match:
 
 class SemanticSlicer:
     """
+    doc: docs/efficiency-of-semantic-slicing.zh.md
     example:
         text = open('__init__.py', 'r').read()
         #   there was a `__version__ = '0.1.0'` in the file, we want to extract
