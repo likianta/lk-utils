@@ -94,7 +94,7 @@ def _break_into_ipython(type, value, traceback) -> None:
             - To exit the IPython session, type `exit` or `quit`.
             
             {banner}
-            """.format(banner='█ ░ ' * (np.console.width // 4)),
+            """.format(banner='█ ░ ' * (min((np.console.width, 80)) // 4)),
         )
         # raise value
 

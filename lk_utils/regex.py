@@ -178,34 +178,3 @@ class SemanticSlicer:
 
 def slice(text: str) -> SemanticSlicer:
     return SemanticSlicer(text)
-
-
-# def find_part(
-#     text: str,
-#     start: tp.Union[str, tp.Sequence[tp.Union[str, int]]],
-#     end: tp.Union[str, tp.Sequence[tp.Union[str, int]]],
-#     rfind_the_end: bool = False,
-# ) -> tp.Optional[str]:
-
-#     if isinstance(start, str):
-#         start_idx = text.index(start)
-#     else:
-#         start_idx = 0
-#         for x in start:
-#             if isinstance(x, str):
-#                 idx = text.index(x)
-#                 text = text[idx:]
-#             else:  # offset
-#                 text = text[x:]
-
-#     if rfind_the_end:
-#         if isinstance(end, str):
-#             idx = text.rindex(end)
-#             text = text[:idx]
-#         else:
-#             temp_idx = len(temp_str)
-#             if isinstance(end[0], str):
-#                 idx = temp_str.rindex(end[0])
-#                 temp_str = temp_str[:idx]
-#             for x in end:
-#                 if isinstance(x, str):

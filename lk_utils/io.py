@@ -1,13 +1,13 @@
 import os
 import sys
-import typing as t
+import typing as tp
 
 
 class T:
-    ContextHolder = t.Iterator
-    DataHolder = t.TypeVar('DataHolder', bound=t.Any)
-    FileMode = t.Literal['a', 'r', 'rb', 'w', 'wb']
-    FileType = t.Literal[
+    ContextHolder = tp.Iterator
+    DataHolder = tp.TypeVar('DataHolder', bound=tp.Any)
+    FileMode = tp.Literal['a', 'r', 'rb', 'w', 'wb']
+    FileType = tp.Literal[
         'auto',
         'binary',
         'excel',
@@ -24,9 +24,9 @@ def load(
     file: str,
     type: T.FileType = 'auto',
     *,
-    default: t.Union[t.Any, t.Callable[[], t.Any]] = None,
+    default: tp.Union[tp.Any, tp.Callable[[], tp.Any]] = None,
     **kwargs
-) -> t.Any:  # t.Union[dict, list, str, t.Iterator[str], t.List[list], ...]:
+) -> tp.Any:  # t.Union[dict, list, str, t.Iterator[str], t.List[list], ...]:
     """
     kwargs:
         for plain:
@@ -48,7 +48,7 @@ def load(
         sheetx = kwargs.get('sheet')
         _prefer_int_not_float = kwargs.get('prefer_int_not_float', True)
         
-        def read_sheet(sheet) -> t.List[list]:
+        def read_sheet(sheet) -> tp.List[list]:
             if _prefer_int_not_float:
                 return [
                     [_prefer_int(value) for value in sheet.row_values(rowx)]
@@ -60,7 +60,7 @@ def load(
                     for rowx in range(sheet.nrows)
                 ]
         
-        def _prefer_int(value: t.Any) -> t.Union[int, t.Any]:
+        def _prefer_int(value: tp.Any) -> tp.Union[int, tp.Any]:
             if isinstance(value, float) and value.is_integer():
                 return int(value)
             return value
@@ -117,21 +117,21 @@ def load(
             if sys.version_info >= (3, 11, 0):
                 from tomllib import load as tload
             else:
-                from toml import load as tload  # pip install toml  # noqa
+                from toml import load as tload  # pip install toml  # ty: ignore
             return tload(f, **kwargs)
         else:
             raise Exception('unreachable case')
 
 
 def dump(
-    data: t.Any,
+    data: tp.Any,
     file: str,
     type: T.FileType = 'auto',
     ensure_line_feed: bool = True,
     **kwargs
 ) -> None:
     """
-    file types:
+    kwargs by file type:
         excel:
             data type:
                 rows | {sheet_name: rows, ...}
@@ -239,7 +239,7 @@ def dump(
                 **kwargs,
             }
             # noinspection PyTypeChecker
-            jdump(data, f, **kwargs)
+            jdump(data, f, **kwargs)  # ty: ignore
         elif type == 'yaml':
             from yaml import dump as ydump
             kwargs = {
