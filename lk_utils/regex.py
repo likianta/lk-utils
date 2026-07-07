@@ -76,3 +76,136 @@ def match(pattern: str, string: str) -> Match:
 
 def search(pattern: str, string: str) -> Match:
     return Match(re.search(pattern, string))
+
+
+# ------------------------------------------------------------------------------
+
+
+class SemanticSlicer:
+    """
+    example:
+        text = open('__init__.py', 'r').read()
+        #   there was a `__version__ = '0.1.0'` in the file, we want to extract
+        #   it.
+        version = (
+            SemanticSlicer(text)
+            .find("__version__ = '").end().cut()
+            .find("'").cut()
+            .slice()
+        )
+        assert version == '0.1.0'
+    """
+
+    def __init__(self, text: str) -> None:
+        assert text
+        self.text = text
+        self._start_index = 0
+        self._end_index = len(text)
+        self._start_index_alt = 0
+        self._end_index_alt = len(text)
+        self._finding_start = True
+        self._finding_end = False
+
+    @property
+    def determined(self) -> bool:
+        return not self._finding_start and not self._finding_end
+
+    @property
+    def _alt_index(self) -> int:
+        return (
+            self._start_index_alt
+            if self._finding_start
+            else self._end_index_alt
+        )
+
+    @_alt_index.setter
+    def _alt_index(self, idx: int) -> None:
+        if self._finding_start:
+            self._start_index_alt = idx
+        elif self._finding_end:
+            self._end_index_alt = idx
+        else:
+            raise Exception('slicing is done')
+
+    @property
+    def _current_index(self) -> int:
+        return self._start_index if self._finding_start else self._end_index
+
+    @_current_index.setter
+    def _current_index(self, idx: int) -> None:
+        if self._finding_start:
+            self._start_index = idx
+        elif self._finding_end:
+            self._end_index = idx
+        else:
+            raise Exception('slicing is done')
+
+    # --------------------------------------------------------------------------
+
+    def cut(self) -> 'SemanticSlicer':
+        if self._finding_start and not self._finding_end:
+            self._finding_start = False
+            self._finding_end = True
+            self._end_index = self._start_index
+        elif not self._finding_start and self._finding_end:
+            self._finding_end = False
+        else:
+            raise Exception('cannot call `cut` more than twice!')
+        return self
+
+    def end(self) -> 'SemanticSlicer':
+        self._current_index = self._alt_index
+        return self
+
+    def find(self, substring: str) -> 'SemanticSlicer':
+        self._current_index += self.text[self._start_index :].index(substring)
+        self._alt_index = self._current_index + len(substring)
+        return self
+
+    def move(self, offset: int) -> 'SemanticSlicer':
+        self._current_index += offset
+        assert self._current_index >= 0
+        return self
+
+    def rfind(self, substring: str) -> 'SemanticSlicer':
+        self._current_index = self.text[self._start_index :].rindex(substring)
+        self._alt_index = self._current_index + len(substring)
+        return self
+
+    def slice(self) -> str:
+        return self.text[self._start_index : self._end_index]
+
+
+def slice(text: str) -> SemanticSlicer:
+    return SemanticSlicer(text)
+
+
+# def find_part(
+#     text: str,
+#     start: tp.Union[str, tp.Sequence[tp.Union[str, int]]],
+#     end: tp.Union[str, tp.Sequence[tp.Union[str, int]]],
+#     rfind_the_end: bool = False,
+# ) -> tp.Optional[str]:
+
+#     if isinstance(start, str):
+#         start_idx = text.index(start)
+#     else:
+#         start_idx = 0
+#         for x in start:
+#             if isinstance(x, str):
+#                 idx = text.index(x)
+#                 text = text[idx:]
+#             else:  # offset
+#                 text = text[x:]
+
+#     if rfind_the_end:
+#         if isinstance(end, str):
+#             idx = text.rindex(end)
+#             text = text[:idx]
+#         else:
+#             temp_idx = len(temp_str)
+#             if isinstance(end[0], str):
+#                 idx = temp_str.rindex(end[0])
+#                 temp_str = temp_str[:idx]
+#             for x in end:
+#                 if isinstance(x, str):

@@ -33,6 +33,8 @@ from .io import dump
 from .io import load
 from .ipython import setup_breakpoint
 from .ipython import start_ipython
+from .regex import SemanticSlicer
+from .regex import slice
 from .subproc import Activity
 from .subproc import bg
 from .subproc import coro_mgr as coro
@@ -46,4 +48,4 @@ from .time import pretty_time
 from .time import timestamp
 from .time import wait
 
-__version__ = '3.6.2'
+__version__ = '3.7.0'
