@@ -8,9 +8,13 @@ _pattern_counter = defaultdict(int)
 
 class Match:
     _match_obj: tp.Optional[re.Match]
+    _remark: str
 
-    def __init__(self, match_obj: tp.Optional[re.Match]) -> None:
+    def __init__(
+        self, match_obj: tp.Optional[re.Match], _remark: str = ''
+    ) -> None:
         self._match_obj = match_obj
+        self._remark = _remark
 
     def group(self, group: int = 0) -> tp.Optional[str]:
         return self._match_obj.group(group)  # type: ignore
@@ -19,7 +23,7 @@ class Match:
         return self._match_obj.groups()  # type: ignore
 
     def sure(self) -> 'SureMatch':
-        assert self._match_obj is not None
+        assert self._match_obj is not None, self._remark
         return SureMatch(self._match_obj)
 
 
@@ -38,13 +42,28 @@ class Pattern:
         self._pattern_obj = re.compile(pattern)
 
     def fullmatch(self, string: str) -> Match:
-        return Match(self._pattern_obj.fullmatch(string))
+        return Match(
+            self._pattern_obj.fullmatch(string),
+            'apply fullmatch pattern `{}` to string "{}"'.format(
+                self._pattern_obj.pattern, string
+            ),
+        )
 
     def match(self, string: str) -> Match:
-        return Match(self._pattern_obj.match(string))
+        return Match(
+            self._pattern_obj.match(string),
+            'apply match pattern `{}` to string "{}"'.format(
+                self._pattern_obj.pattern, string
+            ),
+        )
 
     def search(self, string: str) -> Match:
-        return Match(self._pattern_obj.search(string))
+        return Match(
+            self._pattern_obj.search(string),
+            'apply search pattern `{}` to string "{}"'.format(
+                self._pattern_obj.pattern, string
+            ),
+        )
 
 
 def compile(pattern: str) -> Pattern:
@@ -67,15 +86,24 @@ def _auto_cache(func):
 
 
 def fullmatch(pattern: str, string: str) -> Match:
-    return Match(re.fullmatch(pattern, string))
+    return Match(
+        re.fullmatch(pattern, string),
+        'apply fullmatch pattern `{}` to string "{}"'.format(pattern, string),
+    )
 
 
 def match(pattern: str, string: str) -> Match:
-    return Match(re.match(pattern, string))
+    return Match(
+        re.match(pattern, string),
+        'apply match pattern `{}` to string "{}"'.format(pattern, string),
+    )
 
 
 def search(pattern: str, string: str) -> Match:
-    return Match(re.search(pattern, string))
+    return Match(
+        re.search(pattern, string),
+        'apply search pattern `{}` to string "{}"'.format(pattern, string),
+    )
 
 
 # ------------------------------------------------------------------------------

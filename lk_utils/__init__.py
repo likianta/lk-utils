@@ -6,6 +6,8 @@ if 1:
     #     sys.modules['typing'] = common_typing
     import neoprint as np
     np.setup()
+if 2:
+    import typing as tp
 # fmt: on
 
 from . import binding
