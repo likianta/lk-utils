@@ -202,6 +202,8 @@ class SemanticSlicer:
         return self
 
     def slice(self) -> str:
+        if self._end_index == self._start_index and self._finding_end:
+            return self.text[self._start_index :]
         return self.text[self._start_index : self._end_index]
 
 

@@ -12,8 +12,13 @@ version = (
     .slice()
 )
 # fmt: on
-print(version, ':n')
+print(version, ':ni')
 
 url = 'https://github.com/likianta/lk-utils'
 project = re.slice(url).find('/likianta').move(1).slice()
-print(project, ':n')
+print(project, ':ni')
+
+file = fs.here('./semantic_slicer.py')
+ext1 = re.slice(file).rfind('.').end().cut().slice()
+ext2 = re.slice(file).rfind('.').end().slice()
+print(ext1, ext2, ':ni')
