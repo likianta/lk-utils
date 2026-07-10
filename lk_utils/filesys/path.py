@@ -7,6 +7,7 @@ from types import FrameType
 
 from .checker import isdir
 from .env import IS_WINDOWS
+from ..time import pretty_time
 
 
 class T:
@@ -112,57 +113,22 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 
 def filetime(
     path: T.Path,
-    # fmt: t.Union[str, t.Type] = 'y-m-d h:n:s',
+    fmt: t.Union[t.Type, str] = int,
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-    pretty_fmt: bool = False,
 ) -> t.Union[int, str]:
-    """
-    fmt:
-        examples:
-            fmt value       returns
-            -------------   ------------------------
-            'y-m-d'         '2025-03-20'
-            'y-m-d h:n:s'   '2025-03-20 15:31:03'
-            'ymd hns'       '20250320 153103'
-            float           1742455863.6410432
-            int             1742455863
-            round           1742455864
-            str             '2025-03-20 15:31:03'
-            tuple           (2025, 3, 20, 15, 31, 3)
-    """
-    from ..time import timestamp
-
     time_float = (
         os.stat(path).st_ctime
         if by in ('c', 'created')
         else os.stat(path).st_mtime
     )
-    if pretty_fmt:
-        return timestamp('y-m-d h:n:s', t=time_float)
-    else:
+    if fmt is int:
         return int(time_float)
-    # if isinstance(fmt, str):
-    #     return timestamp(fmt, t=time_float)
-    # elif fmt is int:
-    #     return int(time_float)
-    # elif fmt is tuple:
-    #     time_str = timestamp('ymdhns', t=time_float)
-    #     return (
-    #         int(time_str[0:4]),
-    #         int(time_str[4:6]),
-    #         int(time_str[6:8]),
-    #         int(time_str[8:10]),
-    #         int(time_str[10:12]),
-    #         int(time_str[12:14]),
-    #     )
-    # elif fmt is float:
-    #     return time_float
-    # elif fmt is str:
-    #     return timestamp('y-m-d h:n:s', t=time_float)
-    # elif fmt is round:
-    #     return round(time_float)
-    # else:
-    #     raise ValueError(fmt)
+    elif fmt is str:
+        return pretty_time(time_float, 'y-m-d h:n:s')
+    elif isinstance(fmt, str):
+        return pretty_time(time_float, fmt)
+    else:
+        raise ValueError(fmt)
 
 
 basename = filename
