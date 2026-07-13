@@ -140,6 +140,14 @@ class SemanticSlicer:
         return not self._finding_start and not self._finding_end
 
     @property
+    def start_index(self) -> int:
+        return self._start_index
+
+    @property
+    def end_index(self) -> int:
+        return self._end_index
+
+    @property
     def _alt_index(self) -> int:
         return (
             self._start_index_alt
@@ -205,6 +213,8 @@ class SemanticSlicer:
         if self._end_index == self._start_index and self._finding_end:
             return self.text[self._start_index :]
         return self.text[self._start_index : self._end_index]
+
+    str = slice
 
 
 def slice(text: str) -> SemanticSlicer:

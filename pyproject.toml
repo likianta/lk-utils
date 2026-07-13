@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.7.0b0"
+version = "3.7.0"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -11,7 +11,7 @@ dependencies = [
     "neoprint>=0.1.6",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
-    "rich>=14.0.0",  # prefer ^15.0.0
+    "rich>=14.0.0",
     # "typing-extensions>=4.0.0",
 ]
 
