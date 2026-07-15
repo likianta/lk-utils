@@ -126,6 +126,8 @@ def filetime(
     elif fmt is str:
         return pretty_time(time_float, 'y-m-d h:n:s')
     elif isinstance(fmt, str):
+        if fmt in ('c', 'created', 'm', 'modified'):
+            raise Exception('incorrect argument position', (path, fmt, by))
         return pretty_time(time_float, fmt)
     else:
         raise ValueError(fmt)
