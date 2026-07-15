@@ -1,12 +1,12 @@
 # fmt: off
 if 1:
+    import neoprint as np
+    np.setup()
+if 2:
     # import sys
     # if sys.version_info[:2] < (3, 11):
     #     from . import common_typing
     #     sys.modules['typing'] = common_typing
-    import neoprint as np
-    np.setup()
-if 2:
     import typing as tp
 # fmt: on
 
@@ -49,5 +49,6 @@ from .time import now
 from .time import pretty_time
 from .time import timestamp
 from .time import wait
+from .uuid import uuid
 
-__version__ = '3.7.0'
+__version__ = '3.7.1'
