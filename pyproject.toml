@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.7.1"
+version = "3.7.2"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -8,7 +8,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "argsense>=1.1.2",
-    "neoprint>=0.1.7",
+    "neoprint>=0.1.8",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
     "rich>=14.0.0",
@@ -22,11 +22,10 @@ requires = ["hatchling>=1.29.0"]
 [dependency-groups]
 dev = [
     "ipython>=9.15.0; python_version >= '3.12'",
-    # "lk-logger>=6.0.8a1",
     "py7zr>=1.1.0; python_version >= '3.10'",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
-    "zstandard>=0.25.0",
+    # "zstandard>=0.25.0",
 ]
 
 [project.optional-dependencies]
@@ -82,7 +81,7 @@ force-single-line = true
 relative-imports-order = "closest-to-furthest"
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403"]
+"__init__.py" = ["F401"]
 
 [tool.ruff.lint.pycodestyle]
 max-line-length = 83
@@ -105,5 +104,4 @@ url = "http://localhost:2191/"
 
 [tool.uv.sources]
 argsense = { index = "likianta" }
-lk-logger = { index = "likianta" }
 neoprint = { index = "likianta" }

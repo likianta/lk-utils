@@ -35,8 +35,6 @@ from .io import dump
 from .io import load
 from .ipython import setup_breakpoint
 from .ipython import start_ipython
-from .regex import SemanticSlicer
-from .regex import slice
 from .subproc import Activity
 from .subproc import bg
 from .subproc import coro_mgr as coro
@@ -44,6 +42,7 @@ from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
+from .text_slicer import slice
 from .textwrap import wrap as dedent
 from .time import now
 from .time import pretty_time
@@ -51,4 +50,4 @@ from .time import timestamp
 from .time import wait
 from .uuid import uuid
 
-__version__ = '3.7.1'
+__version__ = '3.7.2'
