@@ -30,6 +30,7 @@ from .path import abspath
 from .path import barename
 from .path import basename
 from .path import cd_current_dir
+from .path import ctime
 from .path import dirname
 from .path import dirpath
 from .path import filename
@@ -38,6 +39,7 @@ from .path import filesize
 from .path import filetime
 from .path import get_current_dir
 from .path import here
+from .path import mtime
 from .path import normpath
 from .path import parent
 from .path import parent_path

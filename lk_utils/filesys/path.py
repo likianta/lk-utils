@@ -133,6 +133,9 @@ def filetime(
         raise ValueError(fmt)
 
 
+mtime = partial(filetime, by='m')
+ctime = partial(filetime, by='c')
+
 basename = filename
 
 
