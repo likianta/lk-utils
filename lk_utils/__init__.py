@@ -50,4 +50,4 @@ from .time import timestamp
 from .time import wait
 from .uuid import uuid
 
-__version__ = '3.7.2'
+__version__ = '3.7.3'

@@ -114,13 +114,23 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 def filetime(
     path: T.Path,
     fmt: t.Union[t.Type, str] = int,
+    recursive: bool = False,
     by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
 ) -> t.Union[int, str]:
-    time_float = (
-        os.stat(path).st_ctime
-        if by in ('c', 'created')
-        else os.stat(path).st_mtime
-    )
+    if recursive and isdir(path):
+        from .finder import findall_dirs
+        from .finder import findall_files
+
+        property = 'ctime' if by in ('c', 'created') else 'mtime'
+        time_float_a = max((getattr(d, property) for d in findall_dirs(path)))
+        time_float_b = max((getattr(f, property) for f in findall_files(path)))
+        time_float = max(time_float_a, time_float_b)
+    else:
+        time_float = (
+            os.stat(path).st_ctime
+            if by in ('c', 'created')
+            else os.stat(path).st_mtime
+        )
     if fmt is int:
         return int(time_float)
     elif fmt is str:

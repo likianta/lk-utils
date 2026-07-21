@@ -130,7 +130,7 @@ def download(
             remove_file(temp_file)
     else:
         urllib.request.urlretrieve(url, path, _report_hook)
-    
+
     if np_prog:
         np_prog.close()
 
@@ -261,8 +261,7 @@ def make_shortcut(
             objLink.Save
             """
             ).format(
-                file_i=src.replace('/', '\\'),
-                file_o=dst.replace('/', '\\'),
+                file_i=src.replace('/', '\\'), file_o=dst.replace('/', '\\')
             )
         )
     run_cmd_args('cscript', '/nologo', vbs)
@@ -482,8 +481,9 @@ def zip_dir(
         # fmt: off
         # https://chatgpt.com/share/69dde78d-8348-8321-b90d-0efc090f6b4f
         import tarfile
+
         # from compression import zstd  # TODO
-        import zstandard as zstd  # pip install zstandard
+        import zstandard as zstd  # pip install zstandard  # ty: ignore
         # fmt: on
 
         top_name = basename(src)
@@ -654,6 +654,7 @@ def unzip_file(
     elif src.endswith('.7z'):
         # https://chatgpt.com/share/69f042ab-03c0-8323-8187-70f87711119c
         from pathlib import Path
+
         from py7zr import SevenZipFile
         from py7zr.helpers import filetime_to_dt
         # from py7zr.callbacks import ExtractCallback
@@ -758,7 +759,7 @@ def unzip_file(
                         os.utime(str(out_path), (mtime, mtime))
     else:
         raise NotImplementedError
-    
+
     if _report1:
         _report1.close()
     return dst

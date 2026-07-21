@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.7.2"
+version = "3.7.3b0"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -13,6 +13,8 @@ dependencies = [
     "pyyaml>=6.0.0",
     "rich>=14.0.0",
     # "typing-extensions>=4.0.0",
+    # "watchfiles>=1.2.0; python_version >= '3.10'",
+    # "watchfiles<1.2.0; python_version >= '3.9' and python_version < '3.10'",
 ]
 
 [build-system]
@@ -25,6 +27,7 @@ dev = [
     "py7zr>=1.1.0; python_version >= '3.10'",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
+    "watchfiles>=1.2.0; python_version >= '3.10'",
     # "zstandard>=0.25.0",
 ]
 
