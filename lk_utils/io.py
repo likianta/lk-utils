@@ -35,7 +35,7 @@ def load(
             sheet: int | str
                 int: get sheet by index. 0 based.
                 str: get sheet by name. case sensitive.
-            prefer_int_not_float: bool[True]
+            prefer_int_over_float: bool[True]
     """
     if default is not None and not os.path.exists(file):
         default_value = default() if callable(default) else default
@@ -46,10 +46,10 @@ def load(
     
     if type == 'excel':
         sheetx = kwargs.get('sheet')
-        _prefer_int_not_float = kwargs.get('prefer_int_not_float', True)
+        _prefer_int_over_float = kwargs.get('prefer_int_over_float', True)
         
         def read_sheet(sheet) -> tp.List[list]:
-            if _prefer_int_not_float:
+            if _prefer_int_over_float:
                 return [
                     [_prefer_int(value) for value in sheet.row_values(rowx)]
                     for rowx in range(sheet.nrows)
@@ -89,6 +89,7 @@ def load(
         ) else 'r'),
         encoding=kwargs.pop('encoding', None if x == 'rb' else 'utf-8'),
     ) as f:
+        # fmt: off
         if type == 'plain':
             # out = f.read()
             # # strip BOM charset from the beginning of the file.
@@ -121,6 +122,7 @@ def load(
             return tload(f, **kwargs)
         else:
             raise Exception('unreachable case')
+        # fmt: on
 
 
 def dump(
