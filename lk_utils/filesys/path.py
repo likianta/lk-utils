@@ -122,15 +122,38 @@ def filetime(
         from .finder import findall_files
 
         property = 'ctime' if by in ('c', 'created') else 'mtime'
-        time_float_a = max((getattr(d, property) for d in findall_dirs(path)))
-        time_float_b = max((getattr(f, property) for f in findall_files(path)))
-        time_float = max(time_float_a, time_float_b)
+        try:
+            time_float_a = max(
+                (getattr(d, property) for d in findall_dirs(path))
+            )
+        except ValueError as e:
+            if str(e) == 'max() iterable argument is empty':
+                time_float_a = 0
+            else:
+                raise e
+        try:
+            time_float_b = max(
+                (getattr(f, property) for f in findall_files(path))
+            )
+        except ValueError as e:
+            if str(e) == 'max() iterable argument is empty':
+                time_float_b = 0
+            else:
+                raise e
+        time_float = max(
+            (
+                time_float_a,
+                time_float_b,
+                getattr(os.stat(path), 'st_{}'.format(property)),
+            )
+        )
     else:
         time_float = (
             os.stat(path).st_ctime
             if by in ('c', 'created')
             else os.stat(path).st_mtime
         )
+
     if fmt is int:
         return int(time_float)
     elif fmt is str:
