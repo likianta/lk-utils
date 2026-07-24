@@ -117,7 +117,9 @@ class SemanticSlicer:
         return self
 
     def rfind(self, substring: str) -> 'SemanticSlicer':
-        self._current_index = self.text[self._start_index :].rindex(substring)
+        self._current_index = self._start_index + self.text[
+            self._start_index :
+        ].rindex(substring)
         self._alt_index = self._current_index + len(substring)
         return self
 
