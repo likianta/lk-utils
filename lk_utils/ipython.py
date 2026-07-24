@@ -2,6 +2,9 @@ import builtins
 import os
 import sys
 import typing as t
+from inspect import currentframe
+from traceback import walk_tb
+from types import FrameType
 
 import neoprint as np
 
@@ -78,10 +81,44 @@ def _break_into_ipython(type, value, traceback) -> None:
         def _whatsup() -> None:
             raise value
 
+        def _check_out_context(
+            partial_script_path: str, function_name: str = ''
+        ) -> None:
+            assert partial_script_path.endswith('.py')
+            caller_frame: FrameType = currentframe().f_back  # type: ignore
+            stack_view = []
+            for frame, lineno in walk_tb(traceback):
+                stack_view.append(
+                    (frame.f_code.co_filename, lineno, frame.f_code.co_name)
+                )
+                if frame.f_code.co_filename.replace('\\', '/').endswith(
+                    partial_script_path
+                ):
+                    if (
+                        not function_name
+                        or frame.f_code.co_name == function_name
+                    ):
+                        np.show(
+                            ':p',
+                            'find frame in ~/{}:{}'.format(
+                                partial_script_path, lineno
+                            ),
+                        )
+                        caller_frame.f_globals.update(frame.f_globals)
+                        caller_frame.f_locals.update(frame.f_locals)
+                        return
+            raise Exception(
+                'cannot find target frame', np.format(stack_view, ':l')
+            )
+
         start_ipython(
             frame.f_globals
             | frame.f_locals
-            | {'__error__': value, 'whatsup': _whatsup},
+            | {
+                '__error__': value,
+                'whatsup': _whatsup,
+                'check_out_context': _check_out_context,
+            },
             """
             {banner}
 
@@ -96,7 +133,6 @@ def _break_into_ipython(type, value, traceback) -> None:
             {banner}
             """.format(banner='█ ░ ' * (min((np.console.width, 80)) // 4)),
         )
-        # raise value
 
 
 if os.getenv('LKUTILS_BREAKPOINT') == '1':
