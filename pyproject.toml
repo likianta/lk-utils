@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.7.4a0"
+version = "3.7.4"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -8,7 +8,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "argsense>=1.1.2",
-    "neoprint>=0.1.8",
+    "neoprint>=0.1.9",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
     "rich>=14.0.0",

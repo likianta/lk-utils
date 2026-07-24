@@ -298,3 +298,24 @@ task = run_cmd_args(sys.executable, 'long_lived_task.py', blocking=False)
 
 ...
 
+## IPython 断点调试
+
+> [!NOTE]
+> 需要先安装 IPython (`pip install ipython`).
+
+有两种打断点方案, 一种是设置环境变量:
+
+```nu
+$env.LKUTILS_BREAKPOINT = '1'
+```
+
+另一种是在脚本中调用:
+
+```python
+import lk_utils
+lk_utils.setup_breakpoint()
+```
+
+当程序运行报错时, 会进入 IPython 环境, 如下所示:
+
+![](./docs/images/260724-152616.png)
