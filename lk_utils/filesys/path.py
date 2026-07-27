@@ -1,12 +1,14 @@
 import os
 import os.path as osp
-import typing as t
+import typing as tp
 from functools import partial
 from inspect import currentframe
 from types import FrameType
 
 from .checker import isdir
 from .env import IS_WINDOWS
+from .finder import findall_dirs
+from .finder import findall_files
 from ..time import pretty_time
 
 
@@ -33,27 +35,8 @@ abspath = partial(normpath, force_abspath=True)
 # ------------------------------------------------------------------------------
 
 
-def parent_path(path: T.Path) -> T.DirPath:
-    if IS_WINDOWS:
-        if path.endswith((':', ':/', ':\\')):
-            raise Exception('cannot get parent path of drive letter', path)
-    elif path.startswith('/') and '/' not in path[1:]:
-        raise Exception('cannot get parent path of root directory', path)
-    return normpath(osp.dirname(path.rstrip('/\\')))
-
-
-parent = parent_path  # alias
-
-
-def relpath(path: T.Path, start: t.Optional[T.Path] = None) -> T.Path:
-    return normpath(osp.relpath(path, start)) if path else ''
-
-
-def dirpath(path: T.Path) -> T.DirPath:
-    if osp.isdir(path):
-        return normpath(path)
-    else:
-        return normpath(osp.dirname(path))
+def barename(path: T.Path, strict: bool = False) -> str:
+    return filename(path, suffix=False, strict=strict)
 
 
 def dirname(path: T.Path) -> str:
@@ -70,23 +53,26 @@ def dirname(path: T.Path) -> str:
         return osp.basename(path)
 
 
-def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
-    if strict and isdir(path):
-        raise Exception('Cannot get filepath from a directory!')
-    if suffix:
+def dirpath(path: T.Path) -> T.DirPath:
+    if osp.isdir(path):
         return normpath(path)
     else:
-        return normpath(osp.splitext(path)[0])
+        return normpath(osp.dirname(path))
+
+
+def dirsize(path: T.Path, fmt: type = int) -> tp.Union[int, str]:
+    return filesize(path, fmt, recursive=True)
 
 
 def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
     """Return the file name from path.
 
     Examples:
-        strict  input           output
-        True    'a/b/c.txt'     'c.txt'
-        True    'a/b'            error
-        False   'a/b'           'b'
+        strict  input       output
+        ------  ----------- -------
+        True    'a/b/c.txt' 'c.txt'
+        True    'a/b'       error
+        False   'a/b'       'b'
     """
     if strict and isdir(path):
         raise Exception('Cannot get filename from a directory!')
@@ -96,8 +82,23 @@ def filename(path: T.Path, suffix: bool = True, strict: bool = False) -> str:
         return osp.splitext(osp.basename(path))[0]
 
 
-def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
-    size = osp.getsize(path)
+def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
+    if strict and isdir(path):
+        raise Exception('Cannot get filepath from a directory!')
+    if suffix:
+        return normpath(path)
+    else:
+        return normpath(osp.splitext(path)[0])
+
+
+def filesize(
+    path: T.Path, fmt: type = int, recursive: bool = False
+) -> tp.Union[int, str]:
+    if recursive:
+        assert isdir(path)
+        size = sum(f.size for f in findall_files(path))
+    else:
+        size = osp.getsize(path)
     if fmt is int:
         return size
     elif fmt is str:
@@ -113,14 +114,11 @@ def filesize(path: T.Path, fmt: type = int) -> t.Union[int, str]:
 
 def filetime(
     path: T.Path,
-    fmt: t.Union[t.Type, str] = int,
+    fmt: tp.Union[tp.Type, str] = int,
     recursive: bool = False,
-    by: t.Literal['c', 'created', 'm', 'modified'] = 'm',
-) -> t.Union[int, str]:
+    by: tp.Literal['c', 'created', 'm', 'modified'] = 'm',
+) -> tp.Union[int, str]:
     if recursive and isdir(path):
-        from .finder import findall_dirs
-        from .finder import findall_files
-
         property = 'ctime' if by in ('c', 'created') else 'mtime'
         try:
             time_float_a = max(
@@ -166,33 +164,42 @@ def filetime(
         raise ValueError(fmt)
 
 
-mtime = partial(filetime, by='m')
-ctime = partial(filetime, by='c')
+def parent_path(path: T.Path) -> T.DirPath:
+    if IS_WINDOWS:
+        if path.endswith((':', ':/', ':\\')):
+            raise Exception('cannot get parent path of drive letter', path)
+    elif path.startswith('/') and '/' not in path[1:]:
+        raise Exception('cannot get parent path of root directory', path)
+    return normpath(osp.dirname(path.rstrip('/\\')))
+
+
+def relpath(path: T.Path, start: tp.Optional[T.Path] = None) -> T.Path:
+    return normpath(osp.relpath(path, start)) if path else ''
+
 
 basename = filename
-
-
-def barename(path: T.Path, strict: bool = False) -> str:
-    return filename(path, suffix=False, strict=strict)
+ctime = partial(filetime, by='c')
+mtime = partial(filetime, by='m')
+parent = parent_path
 
 
 # -----------------------------------------------------------------------------
 
 
 def cd_current_dir() -> T.AbsPath:
-    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
+    caller_frame = tp.cast(FrameType, currentframe().f_back)  # type: ignore
     dir = _get_frame_dir(caller_frame)
     os.chdir(dir)
     return dir
 
 
 def get_current_dir() -> T.AbsPath:
-    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
+    caller_frame = tp.cast(FrameType, currentframe().f_back)  # type: ignore
     return _get_frame_dir(caller_frame)
 
 
 def here(relpath: str = '.') -> T.AbsPath:
-    caller_frame = t.cast(FrameType, currentframe().f_back)  # ty: ignore
+    caller_frame = tp.cast(FrameType, currentframe().f_back)  # type: ignore
     caller_dir = _get_frame_dir(caller_frame)
     if relpath in ('', '.', './'):
         return caller_dir
@@ -212,7 +219,7 @@ def replace_ext(path: T.Path, ext: str) -> T.Path:
 
 def split(
     path: T.Path, parts: int = 2
-) -> t.Union[t.Tuple[str, str], t.Tuple[str, str, str]]:
+) -> tp.Union[tp.Tuple[str, str], tp.Tuple[str, str, str]]:
     path = normpath(path)
     if '/' not in path:
         path = abspath(path)
@@ -230,7 +237,7 @@ def split(
 
 def there(relpath: str) -> T.AbsPath:
     assert relpath not in ('', '.', './')
-    caller_frame = t.cast(FrameType, currentframe().f_back)  # ty: ignore
+    caller_frame = tp.cast(FrameType, currentframe().f_back)  # type: ignore
     caller_dir = _get_frame_dir(caller_frame)
     return normpath('{}/{}'.format(caller_dir, relpath))
 
@@ -242,7 +249,7 @@ def xpath(relpath: T.Path) -> T.AbsPath:
     `<dir_of_caller_frame>/<relpath>`.
     ref: https://blog.csdn.net/Likianta/article/details/89299937
     """
-    caller_frame = t.cast(FrameType, currentframe().f_back)  # type: ignore
+    caller_frame = tp.cast(FrameType, currentframe().f_back)  # type: ignore
     caller_dir = _get_frame_dir(caller_frame)
     if relpath in ('', '.', './'):
         return caller_dir
