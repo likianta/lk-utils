@@ -46,6 +46,7 @@ from .path import mtime
 from .path import normpath
 from .path import parent
 from .path import parent_path
+from .path import pretty_size
 from .path import relpath
 from .path import replace_ext
 from .path import split

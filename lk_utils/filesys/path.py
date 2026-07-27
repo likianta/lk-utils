@@ -102,12 +102,7 @@ def filesize(
     if fmt is int:
         return size
     elif fmt is str:
-        for unit in ('B', 'KB', 'MB', 'GB'):
-            if size < 1024:
-                return f'{size:.2f}{unit}'
-            size /= 1024
-        else:
-            return f'{size:.2f}TB'
+        return pretty_size(size)
     else:
         raise Exception(fmt, path)
 
@@ -171,6 +166,15 @@ def parent_path(path: T.Path) -> T.DirPath:
     elif path.startswith('/') and '/' not in path[1:]:
         raise Exception('cannot get parent path of root directory', path)
     return normpath(osp.dirname(path.rstrip('/\\')))
+
+
+def pretty_size(size: float, sep: tp.Literal['', ' '] = '') -> str:
+    for unit in ('B', 'KB', 'MB', 'GB'):
+        if size < 1024:
+            return f'{size:.2f}{sep}{unit}'
+        size /= 1024
+    else:
+        return f'{size:.2f}{sep}TB'
 
 
 def relpath(path: T.Path, start: tp.Optional[T.Path] = None) -> T.Path:
