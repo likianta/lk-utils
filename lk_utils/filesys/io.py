@@ -79,7 +79,7 @@ def load(
             return {sheet.name: read_sheet(sheet) for sheet in book.sheets()}
     assert type != 'excel'
     
-    # -------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     
     with open(
         file,

@@ -26,6 +26,8 @@ from .finder import findall_dirs
 from .finder import findall_file_names
 from .finder import findall_file_paths
 from .finder import findall_files
+from .io import load
+from .io import dump
 from .path import abspath
 from .path import barename
 from .path import basename
@@ -33,6 +35,7 @@ from .path import cd_current_dir
 from .path import ctime
 from .path import dirname
 from .path import dirpath
+from .path import dirsize
 from .path import filename
 from .path import filepath
 from .path import filesize
@@ -69,7 +72,3 @@ from .shutil import unzip
 from .shutil import unzip_file
 from .shutil import zip
 from .shutil import zip_dir
-
-# for convenience
-from ..io import load  # noqa
-from ..io import dump  # noqa

@@ -23,16 +23,15 @@ from .binding import bind_with
 from .binding import call_once
 from .chunk import chunkwise
 from .filesys import cd_current_dir
+from .filesys import dump
 from .filesys import find_dirs
 from .filesys import find_files
 from .filesys import findall_dirs
 from .filesys import findall_files
 from .filesys import here
+from .filesys import load
 from .filesys import normpath
 from .filesys import there
-from .filesys import xpath
-from .io import dump
-from .io import load
 from .ipython import setup_breakpoint
 from .ipython import start_ipython
 from .ipython import start_ipython as enter_ipython  # alias
