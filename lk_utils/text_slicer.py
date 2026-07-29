@@ -99,16 +99,34 @@ class SemanticSlicer:
         self._alt_index = self._current_index + len(substring)
         return self
 
-    def inplace(self, substring: str) -> 'SemanticSlicer':
-        if self._end_index == self._start_index and self._finding_end:
-            self.text = self.text[: self._start_index] + substring
+    def inplace(self, *args) -> 'SemanticSlicer':
+        if len(args) == 1:
+            substring = args[0]
+            if self._end_index == self._start_index and self._finding_end:
+                self.text = self.text[: self._start_index] + substring
+            else:
+                self.text = (
+                    self.text[: self._start_index]
+                    + substring
+                    + self.text[self._end_index :]
+                )
+            self._reset_indexes()
+        elif len(args) == 2 or len(args) == 3:
+            old, new, cnt = args + (-1,)
+            if self._end_index == self._start_index and self._finding_end:
+                self.text = self.text[: self._start_index] + self.text[
+                    self._start_index :
+                ].replace(old, new, cnt)
+            else:
+                self.text = (
+                    self.text[: self._start_index]
+                    + self.text[self._start_index : self._end_index].replace(
+                        old, new, cnt
+                    )
+                    + self.text[self._end_index :]
+                )
         else:
-            self.text = (
-                self.text[: self._start_index]
-                + substring
-                + self.text[self._end_index :]
-            )
-        self._reset_indexes()
+            raise Exception(args)
         return self
 
     def move(self, offset: int) -> 'SemanticSlicer':

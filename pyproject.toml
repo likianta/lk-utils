@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.7.5b0"
+version = "3.7.5"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -106,5 +106,5 @@ url = "http://localhost:2191/"
 # explicit = true
 
 [tool.uv.sources]
-argsense = { index = "likianta" }
+# argsense = { index = "likianta" }
 neoprint = { index = "likianta" }

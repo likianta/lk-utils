@@ -70,21 +70,6 @@ def compile(pattern: str) -> Pattern:
     return Pattern(pattern)
 
 
-def _auto_cache(func):
-    def wrapper(pattern: str, string: str):
-        if pattern in _cache:
-            return getattr(_cache[pattern], func.__name__)(string)
-        else:
-            _pattern_counter[pattern] += 1
-            if _pattern_counter[pattern] > 3:
-                _cache[pattern] = compile(pattern)
-                return getattr(_cache[pattern], func.__name__)(string)
-            else:
-                return func(pattern, string)
-
-    return wrapper
-
-
 def fullmatch(pattern: str, string: str) -> Match:
     return Match(
         re.fullmatch(pattern, string),
@@ -104,3 +89,22 @@ def search(pattern: str, string: str) -> Match:
         re.search(pattern, string),
         'apply search pattern `{}` to string "{}"'.format(pattern, string),
     )
+
+
+sub = re.sub
+
+
+# DELETE
+def _auto_cache(func):
+    def wrapper(pattern: str, string: str):
+        if pattern in _cache:
+            return getattr(_cache[pattern], func.__name__)(string)
+        else:
+            _pattern_counter[pattern] += 1
+            if _pattern_counter[pattern] > 3:
+                _cache[pattern] = compile(pattern)
+                return getattr(_cache[pattern], func.__name__)(string)
+            else:
+                return func(pattern, string)
+
+    return wrapper

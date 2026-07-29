@@ -32,6 +32,7 @@ from .filesys import here
 from .filesys import load
 from .filesys import normpath
 from .filesys import there
+from .filesys import xpath
 from .ipython import setup_breakpoint
 from .ipython import start_ipython
 from .ipython import start_ipython as enter_ipython  # alias

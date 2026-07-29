@@ -14,7 +14,7 @@ version = (
 )
 # fmt: on
 print(version, ':ni3')
-assert version == '3.7.4'
+assert version == '3.7.5'
 
 url = 'https://github.com/likianta/lk-utils'
 project = slice(url).find('/likianta').end().move(1).slice()
@@ -31,3 +31,8 @@ link = '![](docs/images/151542.png)'
 path = slice(link).find('(').end().cut().rfind(')').out()
 print(path, ':ni3')
 assert path == 'docs/images/151542.png'
+
+time0 = '2026-07-24T08:11:00.908914Z'
+time1 = slice(time0).cut().rfind('.').cut().inplace('T', ' ').out()
+print(time1, ':ni3')
+assert time1 == '2026-07-24 08:11:00'
