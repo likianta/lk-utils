@@ -13,9 +13,8 @@ if 2:
 from . import binding
 from . import filesys as fs
 from . import importer
-from . import regex
 from . import subproc
-from . import textwrap
+from . import text_util
 from . import time
 from .binding import Reactive
 from .binding import Signal
@@ -43,12 +42,15 @@ from .subproc import new_thread
 from .subproc import run_cmd_args
 from .subproc import run_cmd_line
 from .subproc import run_new_thread
-from .text_slicer import slice
-from .textwrap import wrap as dedent
+from .text_util import dedent
+from .text_util import manipulate
+# from .text_util import manipulate as manipulate_text
+from .text_util import regex as re
+from .text_util import slice
 from .time import now
 from .time import pretty_time
 from .time import timestamp
 from .time import wait
 from .uuid import uuid
 
-__version__ = '3.7.5'
+__version__ = '3.8.0'

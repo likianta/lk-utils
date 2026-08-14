@@ -16,6 +16,9 @@ class Match:
         self._match_obj = match_obj
         self._remark = _remark
 
+    def __bool__(self) -> bool:
+        return self._match_obj is not None
+
     def group(self, group: int = 0) -> tp.Optional[str]:
         return self._match_obj.group(group)  # type: ignore
 
@@ -89,9 +92,6 @@ def search(pattern: str, string: str) -> Match:
         re.search(pattern, string),
         'apply search pattern `{}` to string "{}"'.format(pattern, string),
     )
-
-
-sub = re.sub
 
 
 # DELETE

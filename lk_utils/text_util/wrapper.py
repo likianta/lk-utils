@@ -1,6 +1,6 @@
 import re
 import textwrap as _tw
-import typing as t
+import typing as tp
 
 
 def wrap(
@@ -8,7 +8,7 @@ def wrap(
     indent: int = 0,
     lstrip: bool = True,
     rstrip: bool = True,
-    join_sep: str = None,
+    join_sep: tp.Optional[str] = None,
     _dedent: bool = True,
 ) -> str:
     """
@@ -35,7 +35,7 @@ dedent = wrap  # DELETE?
 
 
 def join(
-    parts: t.Iterable[str],
+    parts: tp.Iterable[str],
     indent: int = 0,
     sep: str = '\n',
     lstrip: bool = True,
