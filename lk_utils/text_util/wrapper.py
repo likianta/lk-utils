@@ -1,6 +1,7 @@
 import re
 import textwrap as _tw
 import typing as tp
+from functools import partial
 
 
 def wrap(
@@ -32,6 +33,7 @@ def wrap(
 
 
 dedent = wrap  # DELETE?
+indent = partial(wrap, indent=4)
 
 
 def join(
@@ -39,7 +41,7 @@ def join(
     indent: int = 0,
     sep: str = '\n',
     lstrip: bool = True,
-    **kwargs
+    **kwargs,
 ) -> str:
     text = sep.join(parts)
     if indent:

@@ -1,20 +1,18 @@
 [project]
 name = "lk-utils"
-version = "3.8.0a1"
+version = "3.8.0a6"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"  # reason: 3.11 introduces `typing.Self`.
 dependencies = [
     "argsense>=1.1.2",
     "neoprint>=0.1.9",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
     "rich>=14.0.0",
-    # "typing-extensions>=4.0.0",
-    # "watchfiles>=1.2.0; python_version >= '3.10'",
-    # "watchfiles<1.2.0; python_version >= '3.9' and python_version < '3.10'",
+    # "watchfiles>=1.2.0",
 ]
 
 [build-system]
@@ -24,18 +22,17 @@ requires = ["hatchling>=1.29.0"]
 [dependency-groups]
 dev = [
     "ipython>=9.15.0; python_version >= '3.12'",
-    "py7zr>=1.1.0; python_version >= '3.10'",
+    "py7zr>=1.1.0",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
-    "watchfiles>=1.2.0; python_version >= '3.10'",
+    # "watchfiles>=1.2.0",
     # "zstandard>=0.25.0",
 ]
 
 [project.optional-dependencies]
 all = [
     "ipython>=9.15.0; python_version >= '3.12'",
-    "py7zr>=1.1.0; python_version >= '3.10'",
-    "toml>=0.10.2; python_version < '3.11'",
+    "py7zr>=1.1.0",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
     "zstandard>=0.25.0; python_version < '3.14'",
@@ -48,7 +45,6 @@ exl = [
     "xlsxwriter>=3.2.9",
 ]
 io = [
-    "toml>=0.10.2; python_version < '3.11'",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
 ]
@@ -56,7 +52,7 @@ tml = [
     "toml>=0.10.2",
 ]
 zip = [
-    "py7zr>=1.1.0; python_version >= '3.10'",
+    "py7zr>=1.1.0",
     "zstandard>=0.25.0; python_version < '3.14'"
 ]
 

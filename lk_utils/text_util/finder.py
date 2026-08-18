@@ -39,6 +39,12 @@ class SureMatch(Match):
     def groups(self) -> tp.Tuple[str, ...]:
         return self._match_obj.groups()
 
+    def start(self) -> int:
+        return self._match_obj.start()
+
+    def end(self) -> int:
+        return self._match_obj.end()
+
 
 class Pattern:
     def __init__(self, pattern: str) -> None:

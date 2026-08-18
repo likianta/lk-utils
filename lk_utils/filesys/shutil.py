@@ -21,7 +21,7 @@ from .path import basename
 from .path import dirname
 from .path import xpath
 from ..subproc import run_cmd_args
-from ..textwrap import dedent
+from ..text_util import dedent
 
 ProgressItem = namedtuple('ProgressItem', 'total index percent text')
 

@@ -13,7 +13,7 @@ from rich.text import Text
 from .threading import Thread
 from .threading import new_thread
 from .threading import run_new_thread
-from .. import textwrap
+from ..text_util import textwrap
 
 _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
