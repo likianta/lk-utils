@@ -143,12 +143,14 @@ class _ContextChanger:
             np.show(table_rows, ':r2')
 
     def check_out_frame(
-        self, search: str = '', interactive: bool = True
+        self, search: tp.Union[str, int] = '', interactive: bool = True
     ) -> None:
         caller_frame: FrameType
         target_frame: FrameType
 
-        if search:
+        if isinstance(search, int):
+            target_frame = self._frames[search][3]
+        elif search != '':
             partial_path: str
             lineno: int = 0
             func_name: str = ''
@@ -181,7 +183,6 @@ class _ContextChanger:
                     self.preview(_format=True),
                     search,
                 )
-
         elif interactive:
             self.preview()
             while True:
@@ -191,7 +192,6 @@ class _ContextChanger:
                 if index.isdigit():
                     target_frame = self._frames[int(index)][3]
                     break
-
         else:
             raise Exception
 
