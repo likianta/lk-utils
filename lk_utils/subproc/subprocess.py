@@ -283,7 +283,7 @@ def run_cmd_args(
         if ignore_return:
             for _ in comm:
                 pass
-            stdout = None
+            stdout = ''
         else:
             stdout = '\n'.join(comm)
         if retcode := process.wait():

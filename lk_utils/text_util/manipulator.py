@@ -39,70 +39,6 @@ class TextManipulator(TextSlicer):
             self._cut_point.end = self._cut_point.start + len(text_d)
         return self
 
-        if len(args) == 1:
-            new_str = args[0]  # type: ignore
-            assert self._cut_point.valid
-            self.text = (
-                self.text[: self._cut_point.start]
-                + new_str
-                + self.text[self._cut_point.end :]
-            )
-            self._cut_point.end = self._cut_point.start + len(new_str)
-
-        elif len(args) == 2:
-            if isinstance(args[1], str):
-                old_str, new_str = args  # type: ignore
-                if self._has_cut_point():
-                    if self._finding_end:
-                        if self._just_about_to_find_end:
-                            self.text = self.text[
-                                : self._start_index
-                            ] + self.text[self._end_index :].replace(
-                                old_str, new_str
-                            )
-                        else:
-                            self.text = (
-                                self.text[: self._start_index]
-                                + self.text[
-                                    self._start_index : self._end_index
-                                ].replace(old_str, new_str)
-                                + self.text[self._end_index :]
-                            )
-                        self._reset_indexes(
-                            # 0 if self._hit_the_end else self._end_index
-                            alt_offset=self._end_index
-                        )
-                    else:
-                        assert self._finding_start and self._start_index == 0
-                        self.text = self.text.replace(old_str, new_str)
-            else:  # isinstance(args[1], int)
-                raise Exception(args)
-
-        else:  # len(args) == 3
-            old_str, new_str, cnt = args  # type: ignore
-            if self._finding_end:
-                if self._just_about_to_find_end:
-                    self.text = self.text[: self._start_index] + self.text[
-                        self._end_index :
-                    ].replace(old_str, new_str, cnt)
-                else:
-                    self.text = (
-                        self.text[: self._start_index]
-                        + self.text[
-                            self._start_index : self._end_index
-                        ].replace(old_str, new_str, cnt)
-                        + self.text[self._end_index :]
-                    )
-                self._reset_indexes(
-                    # 0 if self._hit_the_end else self._end_index
-                    alt_offset=self._end_index
-                )
-            else:
-                assert self._finding_start and self._start_index == 0
-                self.text = self.text.replace(old_str, new_str, cnt)
-
-        return self
-
     def replace_all(
         self,
         x: str,
@@ -203,10 +139,13 @@ class TextManipulator(TextSlicer):
         return text_a, text_b, text_c
 
     inplace = replace
+    inplace_all = replace_all
+    inplacex = replacex
+    inplacex_all = replacex_all
     sub = replace
-    suball = replace_all
+    sub_all = replace_all
     subx = replacex
-    subxall = replacex_all
+    subx_all = replacex_all
 
 
 def manipulate(origin_text: str) -> TextManipulator:

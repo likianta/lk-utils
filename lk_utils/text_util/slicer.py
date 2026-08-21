@@ -138,16 +138,6 @@ class TextSlicer:
 
     # --------------------------------------------------------------------------
 
-    def continue_find(self, target: str) -> tp.Self:
-        self.move_end()
-        self.find(target)
-        return self
-
-    def continue_findx(self, pattern: str) -> tp.Self:
-        self.move_end()
-        self.findx(pattern)
-        return self
-
     def cut(self) -> tp.Self:
         # if self._cut_point.valid:
         #     raise Exception
@@ -204,10 +194,25 @@ class TextSlicer:
             return self.text[self._start_index :]
         return self.text[self._start_index : self._end_index]
 
+    def then_cut(self) -> tp.Self:
+        self.move_end()
+        self.cut()
+        return self
+
+    def then_find(self, target: str) -> tp.Self:
+        self.move_end()
+        self.find(target)
+        return self
+
+    def then_findx(self, pattern: str) -> tp.Self:
+        self.move_end()
+        self.findx(pattern)
+        return self
+
     end = move_end
     out = str = slice
-    then_find = continue_find
-    then_findx = continue_findx
+    continue_find = then_find
+    continue_findx = then_findx
 
 
 def slice(text: str) -> TextSlicer:
