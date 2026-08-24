@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.8.0a6"
+version = "3.8.0b0"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -98,7 +98,7 @@ default = true
 
 [[tool.uv.index]]
 name = "likianta"
-url = "http://localhost:2191/"
+url = "http://localhost:2131/"
 # explicit = true
 
 [tool.uv.sources]

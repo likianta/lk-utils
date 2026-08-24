@@ -1,4 +1,5 @@
 import typing as tp
+# from builtins import slice as Span
 
 from .finder import search
 
@@ -51,84 +52,53 @@ class TextSlicer:
     _cut_point: CutPoint
     _partial_cut: bool
 
-    _start_index: int
-    _end_index: int
-    _start_index_alt: int
-    _end_index_alt: int
-    _finding_start: bool
-    _finding_end: bool
-
-    def __init__(self, text: str) -> None:
-        assert text
-        self.text = text
+    def __init__(self, origin_text: str) -> None:
+        assert origin_text
+        self.text = origin_text
         self._cut_point = CutPoint()
         self._reset_indexes()
 
     @property
-    def determined(self) -> bool:
-        return not self._finding_start and not self._finding_end
+    def _partial_text(self) -> str:
+        return self.text[self._cut_point.start : self._cut_point.end]
 
     @property
-    def start_index(self) -> int:
-        return self._start_index
+    def _partial_text_2(self) -> str:
+        return self.text[self._cut_point.start :]
+
+    # @property
+    # def _span(self) -> Span:
+    #     return Span(self._cut_point.start, self._cut_point.end)
+
+    # @property
+    # def _long_span(self) -> Span:
+    #     return Span(self._cut_point.start, len(self.text))
 
     @property
-    def end_index(self) -> int:
-        return self._end_index
+    def _start(self) -> int:
+        return self._cut_point.start
+
+    @_start.setter
+    def _start(self, index: int) -> None:
+        self._cut_point.start = index
 
     @property
-    def _alt_index(self) -> int:
-        return (
-            self._start_index_alt
-            if self._finding_start
-            else self._end_index_alt
-        )
+    def _end(self) -> int:
+        return self._cut_point.end
 
-    @_alt_index.setter
-    def _alt_index(self, idx: int) -> None:
-        if self._finding_start:
-            self._start_index_alt = idx
-        elif self._finding_end:
-            self._end_index_alt = idx
-        else:
-            raise Exception('slicing is done')
+    @_end.setter
+    def _end(self, index: int) -> None:
+        self._cut_point.end = index
 
     @property
-    def _current_index(self) -> int:
-        return self._start_index if self._finding_start else self._end_index
+    def _end_alt(self) -> int:
+        return self._cut_point.end_alt
 
-    @_current_index.setter
-    def _current_index(self, idx: int) -> None:
-        if self._finding_start:
-            self._start_index = idx
-        elif self._finding_end:
-            self._end_index = idx
-        else:
-            raise Exception('slicing is done')
-
-    @property
-    def _hit_the_end(self) -> bool:
-        return self._end_index == len(self.text)
-
-    @property
-    def _just_about_to_find_end(self) -> bool:
-        return self._end_index == self._start_index and self._finding_end
-
-    # def _has_cut_point(self) -> bool:
-    #     return self._finding_start and not self._finding_end
+    @_end_alt.setter
+    def _end_alt(self, index: int) -> None:
+        self._cut_point.end_alt = index
 
     def _reset_indexes(self, _cuz_start: int = -1, _cuz_end: int = -1) -> None:
-        # if offset:
-        #     assert offset < len(self.text)
-        # if alt_offset == -1:
-        #     alt_offset = offset
-        # self._start_index = offset
-        # self._end_index = len(self.text)
-        # self._start_index_alt = alt_offset
-        # self._end_index_alt = len(self.text)
-        # self._finding_start = True
-        # self._finding_end = False
-
         if _cuz_start != -1 and _cuz_end != -1:
             self._cut_point.start = _cuz_start
             self._cut_point.end = _cuz_end
@@ -139,43 +109,41 @@ class TextSlicer:
     # --------------------------------------------------------------------------
 
     def cut(self) -> tp.Self:
-        # if self._cut_point.valid:
-        #     raise Exception
-        # elif self._cut_point.partial_valid:
-        #     self._cut_point.end = self._cut_point.start
-        # else:
-        #     self._cut_point.start = self._cut_point.start
-        #     # self._cut_point.end = self._cut_point.end
         self._partial_cut = not self._partial_cut
+        if self._partial_cut:
+            self._end_alt = self._end
+            self._end = self._start
         return self
 
     def find(self, substring: str) -> tp.Self:
-        i = self.text[self._cut_point.start:].index(substring)
+        i = self._partial_text_2.index(substring)
         if self._partial_cut:
-            self._cut_point.end = self._cut_point.start + i
-            self._cut_point.end_alt = self._cut_point.end + len(substring)
+            self._end = self._start + i
+            self._end_alt = self._end + len(substring)
         else:
-            self._cut_point.start += i
-            self._cut_point.end = self._cut_point.start + len(substring)
+            self._start += i
+            self._end = self._start + len(substring)
         return self
 
     def findx(self, pattern):
-        m = search(pattern, self.text[self._cut_point.start :]).sure()
-        self._cut_point.start += m.start()
-        self._cut_point.end = self._cut_point.start + len(m.group())
+        m = search(pattern, self._partial_text_2).sure()
+        self._start += m.start()
+        self._end = self._start + len(m.group())
         return self
 
     def move(self, offset: int) -> tp.Self:
-        self._current_index += offset
-        assert self._current_index >= 0
+        self._start += offset
+        if self._end < self._start:
+            self._end = self._start
         return self
 
     def move_end(self) -> tp.Self:
         if self._partial_cut:
-            assert self._cut_point.end_alt != -1
-            self._cut_point.end = self._cut_point.end_alt
+            assert self._end_alt != -1
+            self._end = self._end_alt
         else:
-            self._cut_point.start = self._cut_point.end
+            self._start = self._end
+            self._end = len(self.text)
         return self
 
     def reset_index(self) -> tp.Self:
@@ -183,16 +151,20 @@ class TextSlicer:
         return self
 
     def rfind(self, substring: str) -> tp.Self:
-        self._current_index = self._start_index + self.text[
-            self._start_index :
-        ].rindex(substring)
-        self._alt_index = self._current_index + len(substring)
+        i = self._partial_text_2.rindex(substring)
+        if self._partial_cut:
+            self._end = self._start + i
+            self._end_alt = self._end + len(substring)
+        else:
+            self._start += i
+            self._end = self._start + len(substring)
         return self
 
     def slice(self) -> str:
-        if self._just_about_to_find_end:
-            return self.text[self._start_index :]
-        return self.text[self._start_index : self._end_index]
+        if self._partial_cut:
+            if self._end == self._start:
+                return self._partial_text_2
+        return self._partial_text
 
     def then_cut(self) -> tp.Self:
         self.move_end()
@@ -210,7 +182,8 @@ class TextSlicer:
         return self
 
     end = move_end
-    out = str = slice
+    # out = str = slice
+    part = slice
     continue_find = then_find
     continue_findx = then_findx
 
