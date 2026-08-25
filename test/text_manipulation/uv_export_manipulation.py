@@ -3,6 +3,7 @@ from lk_utils import fs
 from lk_utils import manipulate_text
 from lk_utils import now
 from lk_utils import run_cmd_args
+from lk_utils import __version__
 from neoprint import print
 
 run_cmd_args(
@@ -54,8 +55,8 @@ text = (
         )
     )
     .then_insert(
-        'lk-utils @ http://localhost:2131/lk-utils/lk_utils-3.8.0b3-py3-none'
-        '-any.whl\n\n'
+        'lk-utils @ http://localhost:2131/lk-utils/lk_utils-{}-py3-none-any.whl'
+        '\n\n'.format(__version__)
     )
     .end()
     .subx_all(
