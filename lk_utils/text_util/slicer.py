@@ -98,12 +98,17 @@ class TextSlicer:
     def _end_alt(self, index: int) -> None:
         self._cut_point.end_alt = index
 
-    def _reset_indexes(self, _cuz_start: int = -1, _cuz_end: int = -1) -> None:
-        if _cuz_start != -1 and _cuz_end != -1:
-            self._cut_point.start = _cuz_start
-            self._cut_point.end = _cuz_end
+    def _reset_indexes(
+        self, _start: int = -1, _end: int = -1, _end_alt: int = -1
+    ) -> None:
+        if _start != -1 and _end != -1:
+            self._start = _start
+            self._end = _end
+            self._end_alt = _end_alt if _end_alt != -1 else len(self.text)
         else:
-            self._cut_point.reset(self.text)
+            self._start = 0
+            self._end = len(self.text)
+            self._end_alt = -1
         self._partial_cut = False
 
     # --------------------------------------------------------------------------

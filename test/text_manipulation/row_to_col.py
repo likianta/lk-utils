@@ -3,13 +3,13 @@ import difflib
 from lk_utils import dump
 from lk_utils import here
 from lk_utils import load
-from lk_utils import manipulate
+from lk_utils import manipulate_text
 from neoprint import print
 
-text_i = load(here('input_row.qml'), 'plain')
+text_i = load(here('row_in.qml'), 'plain')
 # fmt: off
 text_o = (
-    manipulate(text_i)
+    manipulate_text(text_i)
     .prepend(
         '// This file was auto translated from ./Row.qml, please do not \n'
         '// modify it manuall.\n'
@@ -48,16 +48,16 @@ text_o = (
 )
 # fmt: on
 
-dump(text_o, here('output_col.qml'))
+dump(text_o, here('col_out.qml'))
 
 # diff = difflib.unified_diff(
 #     text_i.splitlines(),
 #     text_o.splitlines(),
-#     fromfile='input_row.qml',
-#     tofile='output_col.qml',
+#     fromfile='row_in.qml',
+#     tofile='col_out.qml',
 # )
-# dump(diff, here('io_diff.txt'))
+# dump(diff, here('row_to_col_diff.txt'))
 
 diff = difflib.HtmlDiff().make_file(text_i.splitlines(), text_o.splitlines())
-dump(diff, here('io_diff.html'))
-print('see "output_col.qml" and "io_diff.html"', ':v4')
+dump(diff, here('row_to_col_diff.html'))
+print('see "col_out.qml" and "row_to_col_diff.html"', ':v4')

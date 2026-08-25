@@ -25,12 +25,17 @@ class TextManipulator(TextSlicer):
         self.text += suffix
         return self
 
+    def insert(self, text: str) -> tp.Self:
+        self.text = self.text[: self._start] + text + self.text[self._start :]
+        self._end = self._start + len(text)
+        return self
+
     def output(self) -> str:
         return self.text
 
     def prepend(self, prefix: str) -> tp.Self:
         self.text = prefix + self.text
-        self._reset_indexes()
+        self._reset_indexes(0, len(prefix))
         return self
 
     def replace(
@@ -113,6 +118,11 @@ class TextManipulator(TextSlicer):
     def swapx_all(self, pattern_a: str, pattern_b: str) -> tp.Self:
         result = self._swapx(self._start, len(self.text), pattern_a, pattern_b)
         self.text = ''.join(result)
+        return self
+
+    def then_insert(self, text: str) -> tp.Self:
+        self.move_end()
+        self.insert(text)
         return self
 
     def _split(
