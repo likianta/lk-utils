@@ -4,7 +4,7 @@ import psutil
 import re
 import shlex
 import subprocess as sp
-import typing as t
+import typing as tp
 from time import sleep
 
 from neoprint import bprint
@@ -19,7 +19,7 @@ _ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 class Popen(sp.Popen):
-    communication_thread: t.Optional[Thread]
+    communication_thread: tp.Optional[Thread]
     _introspection: bool
 
     def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
@@ -79,7 +79,7 @@ class Popen(sp.Popen):
                 return
 
 
-def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
+def compose_cmd(*args: tp.Any, filter: bool = True) -> tp.List[str]:
     """
     examples:
         ('pip', 'install', '', 'lk-utils') -> ['pip', 'install', 'lk-utils']
@@ -88,14 +88,14 @@ def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
             else returns ['pip', 'install', 'lk-utils', '-i', mirror]
     """
 
-    def flatten(seq: t.Sequence) -> t.Iterator:
+    def flatten(seq: tp.Sequence) -> tp.Iterator:
         for s in seq:
             if isinstance(s, (tuple, list)):
                 yield from flatten(s)
             else:
                 yield s
 
-    def stringify(x: t.Optional[t.AnyStr]) -> str:
+    def stringify(x: tp.Optional[tp.AnyStr]) -> str:
         return '' if x is None else str(x).strip()
 
     out = []
@@ -104,7 +104,7 @@ def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
             a = tuple(stringify(x) for x in flatten(a))
             if all(a) or not filter:
                 out.extend(a)
-        else:
+        else:  # str
             a = stringify(a)
             if a or not filter:
                 out.append(a)
@@ -112,11 +112,11 @@ def compose_cmd(*args: t.Any, filter: bool = True) -> t.List[str]:
 
 
 def run_cmd_args(
-    *args: t.Any,
+    args: tp.Iterable[tp.Union[str, tp.Iterable[str]]],
     verbose: bool = False,
     shell: bool = False,
-    cwd: t.Optional[str] = None,
-    env: t.Optional[t.Dict[str, str]] = None,
+    cwd: tp.Optional[str] = None,
+    env: tp.Optional[tp.Dict[str, str]] = None,
     blocking: bool = True,
     ignore_error: bool = False,
     ignore_return: bool = False,
@@ -125,7 +125,7 @@ def run_cmd_args(
     # subprocess_scheme: str = 'default',
     # subprocess_scheme: str = os.getenv('LK_SUBPROCESS_SCHEME', 'default'),
     _refmt_args: bool = True,
-) -> t.Union[str, Popen, None]:
+) -> tp.Optional[tp.Union[str, Popen]]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
     -command-output-and-show-it-in-terminal-at-realtime
@@ -158,24 +158,26 @@ def run_cmd_args(
     memo:
         `sp.run` is blocking, `sp.Popen` is non-blocking.
     """
+    plain_args: tp.Iterable[str]
     if _refmt_args:
-        args = compose_cmd(*args, filter=filter)  # type: ignore
-    # else:
-    #     assert all(isinstance(x, str) for x in args)
+        plain_args = compose_cmd(*args, filter=filter)
+    else:
+        assert all(isinstance(x, str) for x in args)
+        plain_args = args  # type: ignore
     if verbose:
-        print('[magenta dim]{}[/]'.format(' '.join(args)), ':psr')
+        print('[magenta dim]{}[/]'.format(' '.join(plain_args)), ':psr')
 
     def communicate(
-        remove_ansi_code: t.Optional[bool] = None,
+        remove_ansi_code: tp.Optional[bool] = None,
         #   https://stackoverflow.com/questions/14693701
         #   https://stackoverflow.com/questions/4324790
         #   https://stackoverflow.com/questions/17480656
-    ) -> t.Iterator[str]:
+    ) -> tp.Iterator[str]:
         """
         yield: line, without '\n' at the end.
         """
 
-        def readlines(source: t.IO) -> t.Iterator[str]:
+        def readlines(source: tp.IO) -> tp.Iterator[str]:
             last: bytes = b''
             curr: bytes
             temp: bytes = b''
@@ -230,9 +232,10 @@ def run_cmd_args(
             lstrip=False,
         ).format(
             retcode,
-            ' '.join(args),
+            ' '.join(plain_args),
             textwrap.join(
-                ('{:<2}  {}'.format(i, x) for i, x in enumerate(args, 1)), 8
+                ('{:<2}  {}'.format(i, x) for i, x in enumerate(plain_args, 1)),
+                8,
             ),
         )
 
@@ -258,7 +261,7 @@ def run_cmd_args(
             env = os.environ.copy()
             env['LK_LOGGER_FORCE_COLOR'] = '1'
         else:
-            env = t.cast(dict, os.environ)
+            env = tp.cast(dict, os.environ)
     else:
         if force_term_color:
             env['LK_LOGGER_FORCE_COLOR'] = '1'
@@ -266,7 +269,7 @@ def run_cmd_args(
     # process may exit before communicating, which raises 'ValueError: read of
     # closed file' or 'invalid arguments' error.
     process = Popen(
-        args,
+        plain_args,
         stdout=sp.PIPE,
         stderr=sp.STDOUT,
         cwd=cwd,
@@ -303,7 +306,7 @@ def run_cmd_args(
         return process
 
 
-def run_cmd_line(cmd: str, **kwargs) -> t.Union[str, Popen, None]:
+def run_cmd_line(cmd: str, **kwargs) -> tp.Optional[tp.Union[str, Popen]]:
     return run_cmd_args(
-        *shlex.split(cmd), **kwargs, filter=False, _refmt_args=False
+        shlex.split(cmd), **kwargs, filter=False, _refmt_args=False
     )
