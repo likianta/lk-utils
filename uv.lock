@@ -377,7 +377,7 @@ wheels = [
 
 [[package]]
 name = "lk-utils"
-version = "3.8.0b3"
+version = "3.8.0b5"
 source = { editable = "." }
 dependencies = [
     { name = "argsense" },
@@ -449,7 +449,7 @@ provides-extras = ["all", "dbg", "exl", "io", "tml", "zip"]
 [package.metadata.requires-dev]
 dev = [
     { name = "ipython", marker = "python_full_version >= '3.12'", specifier = ">=9.15.0" },
-    { name = "neoprint", specifier = ">=0.1.10a2", index = "http://localhost:2131/" },
+    { name = "neoprint", specifier = ">=0.1.10a3", index = "http://localhost:2131/" },
     { name = "py7zr", specifier = ">=1.1.0" },
     { name = "xlrd", specifier = "==1.2.0" },
     { name = "xlsxwriter", specifier = ">=3.2.9" },
@@ -499,13 +499,13 @@ wheels = [
 
 [[package]]
 name = "neoprint"
-version = "0.1.10a2"
+version = "0.1.10a3"
 source = { registry = "http://localhost:2131/" }
 dependencies = [
     { name = "rich" },
 ]
 wheels = [
-    { url = "http://localhost:2131/neoprint/neoprint-0.1.10a2-py3-none-any.whl" },
+    { url = "http://localhost:2131/neoprint/neoprint-0.1.10a3-py3-none-any.whl" },
 ]
 
 [[package]]

@@ -127,7 +127,7 @@ def run_cmd_args(
     _refmt_args: bool = True,
 ) -> tp.Optional[tp.Union[str, Popen]]:
     """
-    https://stackoverflow.com/questions/58302588/how-to-both-capture-shell -
+    https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
     -command-output-and-show-it-in-terminal-at-realtime
 
     params:

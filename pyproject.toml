@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.8.0b3"
+version = "3.8.0"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
@@ -22,7 +22,7 @@ requires = ["hatchling>=1.29.0"]
 [dependency-groups]
 dev = [
     "ipython>=9.15.0; python_version >= '3.12'",
-    "neoprint>=0.1.10a2",
+    "neoprint>=0.1.10a3",
     "py7zr>=1.1.0",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
