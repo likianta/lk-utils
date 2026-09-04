@@ -92,7 +92,7 @@ def filepath(path: T.Path, suffix: bool = True, strict: bool = False) -> T.Path:
 
 
 def filesize(
-    path: T.Path, fmt: type = int, recursive: bool = False
+    path: T.Path, fmt: type = int, recursive: bool = False, echo: bool = False
 ) -> tp.Union[int, str]:
     if recursive:
         assert isdir(path)
@@ -102,6 +102,8 @@ def filesize(
     if fmt is int:
         return size
     elif fmt is str:
+        if echo:
+            print('{} ({})'.format(path, pretty_size(size)), ':p')
         return pretty_size(size)
     else:
         raise Exception(fmt, path)
