@@ -29,10 +29,18 @@ def download(
             else:
                 return fs.normpath(dst)
         else:
-            return fs.normpath(
-                '{}/Downloads/{}'.format(
-                    os.environ['HOME'], _get_file_name_from_url()
+            # https://gist.github.com/brunogama/3056519
+            home = (
+                os.environ['HOME']
+                if 'HOME' in os.environ
+                else os.path.expanduser('~')
+                if os.name == 'posix'
+                else '{}{}'.format(
+                    os.environ['HOMEDRIVE'], os.environ['HOMEPATH']
                 )
+            )
+            return fs.normpath(
+                '{}/Downloads/{}'.format(home, _get_file_name_from_url())
             )
 
     def _get_file_name_from_url() -> str:
