@@ -1,11 +1,101 @@
+import os
+import os.path
 import typing as tp
-from os.path import basename
-from os.path import exists
 
 from argsense import cli
 from neoprint import print
 
-from . import fs
+from . import filesys as fs
+from .text_util import regex as re
+from .time import now
+
+
+@cli
+def download(
+    url: str, dst: str = '', progress: bool = False, auto_extract: bool = False
+) -> None:
+    """
+    Args:
+        progress (-p):
+        auto_extract (-e):
+    """
+
+    def get_file_path() -> str:
+        if dst:
+            if fs.isdir(dst):
+                return fs.normpath(
+                    '{}/{}'.format(dst, _get_file_name_from_url())
+                )
+            else:
+                return fs.normpath(dst)
+        else:
+            return fs.normpath(
+                '{}/Downloads/{}'.format(
+                    os.environ['HOME'], _get_file_name_from_url()
+                )
+            )
+
+    def _get_file_name_from_url() -> str:
+        if m := re.match(r'\w+:///?(.+)', url):
+            a = tp.cast(str, m.group(1))
+        else:
+            a = url
+        b = a.rstrip('/')
+        if '/' in b:
+            c = b.rsplit('/', 1)[1]
+        else:
+            raise Exception(url)
+        if '.' in c:
+            d, e = c.rsplit('.', 1)
+            if re.fullmatch(r'[a-zA-Z0-9]+', e):
+                ext = e.lower()
+            else:
+                ext = ''
+        else:
+            d = c
+            ext = ''
+        if any(
+            x in d
+            for x in (
+                '<',
+                '>',
+                '|',
+                '?',
+                '*',
+                ':',
+                '~',
+                '=',
+                '$',
+                '#',
+                '!',
+                '{',
+                '}',
+            )
+        ):
+            file_stem_name = 'file-{}'.format(now('ymd-hns'))
+        else:
+            file_stem_name = d
+        return '{}.{}'.format(file_stem_name, ext).rstrip('.')
+
+    file = get_file_path()
+
+    if auto_extract:
+        if file.endswith(('.zip', '.7z')):
+            extract = True
+        else:
+            extract = False
+    else:
+        extract = False
+
+    fs.download(
+        url,
+        file,
+        overwrite=True,
+        progress=progress,
+        extract=extract,
+        keep_file=True,
+    )
+    print(':nt', 'file is downloaded', file)
 
 
 @cli
@@ -54,7 +144,7 @@ def unzip(src: str, dst: str = '', **kwargs) -> None:
 
 
 def _dst_or_dst_under(src: str, dst: str) -> str:
-    if exists(dst) and basename(dst) != (x := basename(src)):
+    if fs.exist(dst) and os.path.basename(dst) != (x := os.path.basename(src)):
         dst += '/' + x
     return dst
 
