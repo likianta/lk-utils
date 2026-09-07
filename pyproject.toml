@@ -1,6 +1,6 @@
 [project]
 name = "lk-utils"
-version = "3.8.1b0"
+version = "3.8.1"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"

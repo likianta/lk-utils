@@ -50,7 +50,7 @@ def start_ipython(
             np.show(
                 ':lv2p',
                 'registered global variables:',
-                tuple(context.keys()) if verbosity == 1 else context,
+                sorted(context.keys()) if verbosity == 1 else context,
             )
 
     sys_argv_backup = sys.argv.copy()
