@@ -103,7 +103,12 @@ def download(
         extract=extract,
         keep_file=True,
     )
-    print(':nt', 'file is downloaded', file)
+    print(
+        ':t2rv4',
+        'file is downloaded: {} [dim]({})[/]'.format(
+            file, fs.filesize(file, str)
+        ),
+    )
 
 
 @cli

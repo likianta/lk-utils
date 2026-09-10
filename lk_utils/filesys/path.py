@@ -99,11 +99,13 @@ def filesize(
         size = sum(f.size for f in findall_files(path))
     else:
         size = osp.getsize(path)
+
+    if echo:
+        print('{} ({})'.format(path, pretty_size(size)), ':p')
+
     if fmt is int:
         return size
     elif fmt is str:
-        if echo:
-            print('{} ({})'.format(path, pretty_size(size)), ':p')
         return pretty_size(size)
     else:
         raise Exception(fmt, path)
@@ -114,6 +116,7 @@ def filetime(
     fmt: tp.Union[tp.Type, str] = int,
     recursive: bool = False,
     by: tp.Literal['c', 'created', 'm', 'modified'] = 'm',
+    echo: bool = False,
 ) -> tp.Union[int, str]:
     if recursive and isdir(path):
         property = 'ctime' if by in ('c', 'created') else 'mtime'
@@ -147,6 +150,11 @@ def filetime(
             os.stat(path).st_ctime
             if by in ('c', 'created')
             else os.stat(path).st_mtime
+        )
+
+    if echo:
+        print(
+            '{} @ {}'.format(path, pretty_time(time_float, 'y-m-d h:n:s')), ':p'
         )
 
     if fmt is int:
