@@ -133,7 +133,7 @@ def run_cmd_args(
     params:
         force_term_color:
             by default (force_term_color=False), the prints from subprocess
-            don't render ansi color code.
+            don't render ansi color codes.
             if you need to keep the color effect, set it true.
             warning:
                 - this is an experimental feature.
@@ -282,14 +282,20 @@ def run_cmd_args(
     )
 
     if blocking:
-        comm = communicate(remove_ansi_code=force_term_color)
-        if ignore_return:
-            for _ in comm:
-                pass
-            stdout = ''
-        else:
-            stdout = '\n'.join(comm)
-        if retcode := process.wait():
+        try:
+            comm = communicate(remove_ansi_code=force_term_color)
+            if ignore_return:
+                for _ in comm:
+                    pass
+                stdout = ''
+            else:
+                stdout = '\n'.join(comm)
+            retcode = process.wait()
+        except Exception:
+            _reap_process(process)
+            raise
+
+        if retcode:
             if ignore_error:
                 return stdout
             else:
@@ -310,3 +316,19 @@ def run_cmd_line(cmd: str, **kwargs) -> tp.Optional[tp.Union[str, Popen]]:
     return run_cmd_args(
         shlex.split(cmd), **kwargs, filter=False, _refmt_args=False
     )
+
+
+def _reap_process(process: Popen, graceful_timeout: int = 2) -> None:
+    if process.poll() is not None:
+        return
+    try:
+        process.wait(timeout=graceful_timeout)
+        return
+    except sp.TimeoutExpired:
+        pass
+    process.terminate()
+    try:
+        process.wait(timeout=3)
+    except sp.TimeoutExpired:
+        process.kill()
+        process.wait()
