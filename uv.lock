@@ -12,14 +12,14 @@ prerelease-mode = "allow"
 
 [[package]]
 name = "argsense"
-version = "1.1.2"
+version = "3.1.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
 dependencies = [
     { name = "neoprint" },
     { name = "rich" },
 ]
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/23/d7/2d4cb64c745fb9149733e4cd02305f8222fc8b84cca8d460366d5bf02416/argsense-1.1.2-py3-none-any.whl", hash = "sha256:4b8dfd0ce8ba7d5be91784507c2afca7220a9786e76f94096da53c1ea40a0dac", size = 47773, upload-time = "2026-06-30T02:39:09.112Z" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/1f/e1/5c82897908d4786ade3f9689eb4ad9229ccab82ebea0e3a322cd78919416/argsense-3.1.0-py3-none-any.whl", hash = "sha256:4abe0b041783c8c41edad51f690de702ca1c902f0b7f2efe1f5fffb7e72b7971", size = 110992, upload-time = "2026-10-23T07:00:09.737Z" },
 ]
 
 [[package]]
@@ -367,7 +367,7 @@ wheels = [
 
 [[package]]
 name = "lk-utils"
-version = "3.8.2a0"
+version = "3.8.3"
 source = { editable = "." }
 dependencies = [
     { name = "argsense" },
@@ -407,7 +407,6 @@ zip = [
 [package.dev-dependencies]
 dev = [
     { name = "ipython", marker = "python_full_version >= '3.12'" },
-    { name = "neoprint" },
     { name = "py7zr" },
     { name = "xlrd" },
     { name = "xlsxwriter" },
@@ -415,10 +414,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "argsense", specifier = ">=1.1.2" },
+    { name = "argsense", specifier = ">=1.4.0" },
     { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'all'", specifier = ">=9.17.0" },
     { name = "ipython", marker = "python_full_version >= '3.12' and extra == 'dbg'", specifier = ">=9.17.0" },
-    { name = "neoprint", specifier = ">=0.1.10", index = "http://localhost:2131/" },
+    { name = "neoprint", specifier = ">=1.0.0" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "py7zr", marker = "extra == 'all'", specifier = ">=1.1.0" },
     { name = "py7zr", marker = "extra == 'zip'", specifier = ">=1.1.0" },
@@ -439,7 +438,6 @@ provides-extras = ["all", "dbg", "exl", "io", "tml", "zip"]
 [package.metadata.requires-dev]
 dev = [
     { name = "ipython", marker = "python_full_version >= '3.12'", specifier = ">=9.17.0" },
-    { name = "neoprint", specifier = ">=0.1.10b3", index = "http://localhost:2131/" },
     { name = "py7zr", specifier = ">=1.1.0" },
     { name = "xlrd", specifier = "==1.2.0" },
     { name = "xlsxwriter", specifier = ">=3.2.9" },
@@ -489,13 +487,13 @@ wheels = [
 
 [[package]]
 name = "neoprint"
-version = "0.1.11b0"
-source = { registry = "http://localhost:2131/" }
+version = "1.0.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
 dependencies = [
     { name = "rich" },
 ]
 wheels = [
-    { url = "http://localhost:2131/neoprint/neoprint-0.1.11b0-py3-none-any.whl" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/80/7b/1c1300093c5c762c52714d866201525f4c3e2e02908470737ae51c4b4ce9/neoprint-1.0.0-py3-none-any.whl", hash = "sha256:b4687d0b33cc839708c6d0f7388b60fb5ada00927e30efe3be04ec7a942c0cd4", size = 46993, upload-time = "2026-10-21T07:03:56.509Z" },
 ]
 
 [[package]]
@@ -843,9 +841,9 @@ wheels = [
 name = "texttable"
 version = "1.7.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple/" }
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/1c/dc/0aff23d6036a4d3bf4f1d8c8204c5c79c4437e25e0ae94ffe4bbb55ee3c2/texttable-1.7.0.tar.gz", hash = "sha256:2d2068fb55115807d3ac77a4ca68fa48803e84ebb0ee2340f858107a36522638" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/1c/dc/0aff23d6036a4d3bf4f1d8c8204c5c79c4437e25e0ae94ffe4bbb55ee3c2/texttable-1.7.0.tar.gz", hash = "sha256:2d2068fb55115807d3ac77a4ca68fa48803e84ebb0ee2340f858107a36522638", size = 12831, upload-time = "2023-10-03T09:48:12.272Z" }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/24/99/4772b8e00a136f3e01236de33b0efda31ee7077203ba5967fcc76da94d65/texttable-1.7.0-py2.py3-none-any.whl", hash = "sha256:72227d592c82b3d7f672731ae73e4d1f88cd8e2ef5b075a7a7f01a23a3743917" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/24/99/4772b8e00a136f3e01236de33b0efda31ee7077203ba5967fcc76da94d65/texttable-1.7.0-py2.py3-none-any.whl", hash = "sha256:72227d592c82b3d7f672731ae73e4d1f88cd8e2ef5b075a7a7f01a23a3743917", size = 10768, upload-time = "2023-10-03T09:48:10.434Z" },
 ]
 
 [[package]]

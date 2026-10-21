@@ -22,8 +22,32 @@ class Popen(sp.Popen):
     communication_thread: tp.Optional[Thread]
     _introspection: bool
 
-    def __init__(self, *args, keep_alive: bool = False, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        *args,
+        keep_alive: bool = False,
+        console_window: tp.Literal[
+            'attach', 'detached', 'hidden', 'inherit', 'new'
+        ] = 'inherit',
+        **kwargs,
+    ) -> None:
+        """
+        console_window_scheme:
+            ref: https://chatgpt.com/share/6ad8834f-e118-83ee-9a23-043c67ea37f8
+            currently the option 'attach' and 'inherit' are effectively the
+            same.
+        """
+        super().__init__(
+            *args,
+            creationflags=sp.CREATE_NO_WINDOW
+            if console_window == 'hidden'
+            else 0
+            if console_window == 'attach' or console_window == 'inherit'
+            else sp.CREATE_NEW_CONSOLE
+            if console_window == 'new'
+            else sp.DETACHED_PROCESS,
+            **kwargs,
+        )
         self.communication_thread = None
         self._introspection = False
         atexit.register(self.kill)
@@ -122,9 +146,8 @@ def run_cmd_args(
     ignore_return: bool = False,
     force_term_color: bool = False,
     filter: bool = True,
-    # subprocess_scheme: str = 'default',
-    # subprocess_scheme: str = os.getenv('LK_SUBPROCESS_SCHEME', 'default'),
     _refmt_args: bool = True,
+    **kwargs
 ) -> tp.Optional[tp.Union[str, Popen]]:
     """
     https://stackoverflow.com/questions/58302588/how-to-both-capture-shell
@@ -279,6 +302,7 @@ def run_cmd_args(
         # printing progress bar.
         text=False,
         env=env,
+        **kwargs
     )
 
     if blocking:

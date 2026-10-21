@@ -1,18 +1,17 @@
 [project]
 name = "lk-utils"
-version = "3.8.3a0"
+version = "3.8.3"
 description = "A set of utility wrappers made for data processing."
 authors = [{ name = "Likianta", email = "likianta@foxmail.com" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"  # reason: 3.11 introduces `typing.Self`.
 dependencies = [
-    "argsense>=1.1.2",
-    "neoprint>=0.1.10",
+    "argsense>=1.4.0",
+    "neoprint>=1.0.0",
     "psutil>=7.2.2",
     "pyyaml>=6.0.0",
     "rich>=14.0.0",
-    # "watchfiles>=1.2.0",
 ]
 
 [build-system]
@@ -22,7 +21,6 @@ requires = ["hatchling>=1.29.0"]
 [dependency-groups]
 dev = [
     "ipython>=9.17.0; python_version >= '3.12'",
-    "neoprint>=0.1.10b3",
     "py7zr>=1.1.0",
     "xlrd==1.2.0",
     "xlsxwriter>=3.2.9",
@@ -57,8 +55,8 @@ zip = [
     "zstandard>=0.25.0; python_version < '3.14'"
 ]
 
-[project.scripts]
-lkrun = "lk_utils.runner:run"
+# [project.scripts]
+# lkrun = "lk_utils.runner:run"
 
 [project.urls]
 homepage = "https://github.com/likianta/lk-utils"
@@ -102,6 +100,6 @@ name = "likianta"
 url = "http://localhost:2131/"
 explicit = true
 
-[tool.uv.sources]
+# [tool.uv.sources]
 # argsense = { index = "likianta" }
-neoprint = { index = "likianta" }
+# neoprint = { index = "likianta" }
