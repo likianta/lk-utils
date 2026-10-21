@@ -175,7 +175,10 @@ def parent_path(path: T.Path) -> T.DirPath:
             raise Exception('cannot get parent path of drive letter', path)
     elif path.startswith('/') and '/' not in path[1:]:
         raise Exception('cannot get parent path of root directory', path)
-    return normpath(osp.dirname(path.rstrip('/\\')))
+    if path == '.':
+        return normpath(osp.dirname(os.getcwd()))
+    else:
+        return normpath(osp.dirname(path.rstrip('/\\')))
 
 
 def pretty_size(size: float, sep: tp.Literal['', ' '] = '') -> str:
